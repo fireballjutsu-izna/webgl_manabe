@@ -36,6 +36,17 @@ export function buildDocument(options: DocumentOptions): string {
 <script type="importmap">${importMap}</script>
 <script>
 (function () {
+  // three は親ページ側で動いているので、iframe の中で作った TypedArray は
+  // three の instanceof 判定を通らない（realm が違うため別のコンストラクタになる）。
+  // 作られる型を親側のものに揃えて、この食い違いを消す。
+  var shared = ['ArrayBuffer', 'DataView', 'Int8Array', 'Uint8Array', 'Uint8ClampedArray',
+    'Int16Array', 'Uint16Array', 'Int32Array', 'Uint32Array', 'Float32Array', 'Float64Array'];
+  for (var i = 0; i < shared.length; i++) {
+    try {
+      if (parent[shared[i]]) window[shared[i]] = parent[shared[i]];
+    } catch (e) { /* 触れないときは諦める */ }
+  }
+
   var send = function (payload) {
     try { parent.postMessage(Object.assign({ __sandbox: true }, payload), '*'); } catch (e) { /* noop */ }
   };

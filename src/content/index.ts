@@ -16,6 +16,10 @@ import { chapter13 } from './chapters/13-random.ts';
 import { chapter14 } from './chapters/14-capstone.ts';
 
 import { chapterT01 } from './chapters/t01-first-scene.ts';
+import { chapterT02 } from './chapters/t02-geometry.ts';
+import { chapterT03 } from './chapters/t03-material.ts';
+import { chapterT04 } from './chapters/t04-texture.ts';
+import { chapterT05 } from './chapters/t05-light-shadow.ts';
 
 /** 学ぶ順に並べた全章。目次・前提知識マップ・検索索引はここから作られる。 */
 export const chapters: Chapter[] = [
@@ -35,6 +39,10 @@ export const chapters: Chapter[] = [
   chapter14,
 
   chapterT01,
+  chapterT02,
+  chapterT03,
+  chapterT04,
+  chapterT05,
 ];
 
 const bySlug = new Map(chapters.map((chapter) => [chapter.slug, chapter]));
