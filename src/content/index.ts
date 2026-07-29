@@ -1,4 +1,4 @@
-import type { Chapter } from './types.ts';
+import { PARTS, type Chapter, type Part, type PartInfo } from './types.ts';
 
 import { chapter01 } from './chapters/01-space.ts';
 import { chapter02 } from './chapters/02-vector.ts';
@@ -15,7 +15,9 @@ import { chapter12 } from './chapters/12-curve.ts';
 import { chapter13 } from './chapters/13-random.ts';
 import { chapter14 } from './chapters/14-capstone.ts';
 
-/** 学ぶ順に並べた全14章。目次・前提知識マップ・検索索引はここから作られる。 */
+import { chapterT01 } from './chapters/t01-first-scene.ts';
+
+/** 学ぶ順に並べた全章。目次・前提知識マップ・検索索引はここから作られる。 */
 export const chapters: Chapter[] = [
   chapter01,
   chapter02,
@@ -31,10 +33,27 @@ export const chapters: Chapter[] = [
   chapter12,
   chapter13,
   chapter14,
+
+  chapterT01,
 ];
 
 const bySlug = new Map(chapters.map((chapter) => [chapter.slug, chapter]));
 
 export function chapterBySlug(slug: string): Chapter | undefined {
   return bySlug.get(slug);
+}
+
+export { PARTS };
+
+export function partInfo(part: Part): PartInfo {
+  return PARTS.find((info) => info.id === part) ?? PARTS[0]!;
+}
+
+export function chaptersOfPart(part: Part): Chapter[] {
+  return chapters.filter((chapter) => chapter.part === part);
+}
+
+/** 目次や見出しに出す章番号。`2-05` の形。 */
+export function chapterLabel(chapter: Chapter): string {
+  return `${partInfo(chapter.part).index}-${String(chapter.number).padStart(2, '0')}`;
 }

@@ -6,9 +6,13 @@
  * ここが食い違うとリンク切れやデモ欠けになる。機械的に潰しておく。
  */
 
-import { chapters } from '../src/content/index.ts';
+import { chapters, chaptersOfPart, PARTS } from '../src/content/index.ts';
 import { glossary } from '../src/content/glossary.ts';
+import { docsUrl, isKnownUnlinked } from '../src/content/three-docs.ts';
 import { demos } from '../src/demos/registry.ts';
+
+/** 1 章に置けるサンドボックスの上限。WebGL コンテキストを使い切らないための歯止め。 */
+const MAX_SANDBOXES = 3;
 
 const errors: string[] = [];
 const warnings: string[] = [];
@@ -20,12 +24,20 @@ const terms = new Set(glossary.map((entry) => entry.term));
 const usedDemos = new Set<string>();
 const usedTerms = new Set<string>();
 
-for (const [index, chapter] of chapters.entries()) {
-  const where = `${chapter.slug}`;
-
-  if (chapter.number !== index + 1) {
-    errors.push(`${where}: number が ${chapter.number} ですが、並び順では ${index + 1} 章目です`);
+// 章番号は部の中で 1 から連番になっていること
+for (const part of PARTS) {
+  for (const [index, chapter] of chaptersOfPart(part.id).entries()) {
+    if (chapter.number !== index + 1) {
+      errors.push(
+        `${chapter.slug}: number が ${chapter.number} ですが、${part.title}では ${index + 1} 章目です`,
+      );
+    }
   }
+}
+
+for (const chapter of chapters) {
+  const where = `${chapter.slug}`;
+  let sandboxes = 0;
   if (chapter.goal.trim().length === 0) {
     errors.push(`${where}: goal が空です`);
   }
@@ -40,8 +52,10 @@ for (const [index, chapter] of chapters.entries()) {
     if (!slugs.has(required)) {
       errors.push(`${where}: requires に存在しない章 "${required}" が指定されています`);
     }
-    const target = chapters.find((c) => c.slug === required);
-    if (target && target.number >= chapter.number) {
+    // 「前提」は読む順で先に来ていること。部をまたぐので、並び順そのもので比べる
+    const here = chapters.findIndex((c) => c.slug === chapter.slug);
+    const there = chapters.findIndex((c) => c.slug === required);
+    if (there >= 0 && there >= here) {
       warnings.push(
         `${where}: 前提として指定された ${required} が、この章より後ろにあります`,
       );
@@ -76,6 +90,41 @@ for (const [index, chapter] of chapters.entries()) {
     }
     if (block.kind === 'code' && block.code.trim().length === 0) {
       errors.push(`${where}: 空のコードブロックがあります`);
+    }
+    if (block.kind === 'sandbox') {
+      sandboxes += 1;
+      if (block.code.trim().length === 0) {
+        errors.push(`${where}: 空のサンドボックスがあります`);
+      }
+      if (block.caption) texts.push(block.caption);
+      if (!/\bimport\b/.test(block.code)) {
+        warnings.push(`${where}: サンドボックスに import がありません（意図どおりか確認）`);
+      }
+    }
+  }
+
+  if (sandboxes > MAX_SANDBOXES) {
+    errors.push(
+      `${where}: サンドボックスが ${sandboxes} 個あります（1 章 ${MAX_SANDBOXES} 個まで）`,
+    );
+  }
+
+  // 章冒頭の「この章で使う数学」
+  for (const recall of chapter.mathRecall ?? []) {
+    if (!slugs.has(recall.slug)) {
+      errors.push(`${where}: mathRecall に存在しない章 "${recall.slug}" が指定されています`);
+    }
+    if (recall.note.trim().length === 0) {
+      errors.push(`${where}: mathRecall の note が空です`);
+    }
+  }
+
+  // API チップが公式ドキュメントへ飛べるか
+  for (const api of chapter.threeApis) {
+    if (docsUrl(api) === null && !isKnownUnlinked(api)) {
+      warnings.push(
+        `${where}: "${api}" は three-docs.ts に載っていないため、リンクになりません`,
+      );
     }
   }
   for (const question of chapter.quiz) texts.push(question.q, question.explain);

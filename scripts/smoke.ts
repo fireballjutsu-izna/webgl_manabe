@@ -5,9 +5,10 @@
  * 1. preview サーバを立てる
  * 2. 全ルートを順に訪問し、console error / pageerror が 1 件も出ないことを確かめる
  * 3. 各章でデモのキャンバスが実際に生成されているかを見る
- * 4. 14章を連続で行き来しても WebGL コンテキストが枯渇しないことを確かめる
- * 5. ダーク／ライト両テーマでコントラスト比を実測する
- * 6. スクリーンショットを artifacts/ に保存する（目視確認用）
+ * 4. サンドボックスが自動実行され、iframe の中にキャンバスを作ることを確かめる
+ * 5. 全章を連続で行き来しても WebGL コンテキストが枯渇しないことを確かめる
+ * 6. ダーク／ライト両テーマでコントラスト比を実測する
+ * 7. スクリーンショットを artifacts/ に保存する（目視確認用）
  */
 
 import { spawn } from 'node:child_process';
@@ -16,7 +17,7 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import type { Browser, ConsoleMessage, Page } from 'playwright';
-import { chapters } from '../src/content/index.ts';
+import { chapterLabel, chapters } from '../src/content/index.ts';
 
 const PORT = 4173;
 const BASE = `http://127.0.0.1:${PORT}/webgl_manabe/`;
@@ -154,6 +155,7 @@ async function main(): Promise<void> {
     /* ---- 全14章を連続で訪問（同一セッションのまま） ---- */
 
     for (const chapter of chapters) {
+      const label = chapterLabel(chapter);
       recorder.reset();
       await page.goto(`${BASE}#/ch/${chapter.slug}`);
       await page.waitForLoadState('networkidle');
@@ -161,38 +163,92 @@ async function main(): Promise<void> {
       await page.waitForTimeout(900);
 
       const demoCount = chapter.blocks.filter((block) => block.kind === 'demo').length;
+      const sandboxCount = chapter.blocks.filter((block) => block.kind === 'sandbox').length;
+
+      // サンドボックスは画面に入ったときに自動実行されるので、順に送ってやる
+      if (sandboxCount > 0) {
+        const cards = page.locator('.sandbox');
+        for (let i = 0; i < sandboxCount; i += 1) {
+          await cards.nth(i).scrollIntoViewIfNeeded();
+          await page.waitForTimeout(2200);
+        }
+        await page.evaluate(() => window.scrollTo({ top: 0 }));
+      }
+
       const canvasCount = await page.locator('.demo__stage canvas').count();
       const stillLoading = await page.getByText('デモを読み込んでいます').count();
       const broken = await page.getByText('このデモは表示できませんでした').count();
 
       if (canvasCount !== demoCount) {
-        fail(`CH.${chapter.number} ${chapter.slug}: キャンバス ${canvasCount} 個（期待 ${demoCount} 個）`);
+        fail(`${label} ${chapter.slug}: キャンバス ${canvasCount} 個（期待 ${demoCount} 個）`);
       }
-      if (stillLoading > 0) fail(`CH.${chapter.number}: 読み込み中のままのデモがあります`);
-      if (broken > 0) fail(`CH.${chapter.number}: 表示に失敗したデモがあります`);
+      if (stillLoading > 0) fail(`${label}: 読み込み中のままのデモがあります`);
+      if (broken > 0) fail(`${label}: 表示に失敗したデモがあります`);
+      // サンドボックスは iframe の中でキャンバスを作る
+      let sandboxOk = true;
+      if (sandboxCount > 0) {
+        const frames = await page.locator('.sandbox__frame').count();
+        if (frames !== sandboxCount) {
+          fail(`${label} ${chapter.slug}: サンドボックスの実行枠が ${frames} 個（期待 ${sandboxCount} 個）`);
+          sandboxOk = false;
+        }
+        for (let i = 0; i < frames; i += 1) {
+          const handle = await page.locator('.sandbox__frame').nth(i).elementHandle();
+          const inner = await handle?.contentFrame();
+          const canvases = inner ? await inner.locator('canvas').count() : 0;
+          if (canvases === 0) {
+            fail(`${label} ${chapter.slug}: ${i + 1} つ目のサンドボックスがキャンバスを作りませんでした`);
+            sandboxOk = false;
+          }
+        }
+        const errorMessages = await page
+          .locator(".sandbox__msg[data-tone='error']")
+          .allTextContents();
+        if (errorMessages.length > 0) {
+          fail(`${label} ${chapter.slug}: サンドボックスがエラーを出しました ${errorMessages.join(' / ')}`);
+          sandboxOk = false;
+        }
+      }
+
       if (recorder.errors.length > 0) {
-        fail(`CH.${chapter.number} ${chapter.slug}: ${recorder.errors.join(' / ')}`);
+        fail(`${label} ${chapter.slug}: ${recorder.errors.join(' / ')}`);
       }
       if (
         canvasCount === demoCount &&
         stillLoading === 0 &&
         broken === 0 &&
+        sandboxOk &&
         recorder.errors.length === 0
       ) {
-        ok(`CH.${String(chapter.number).padStart(2, '0')} ${chapter.slug}（デモ ${demoCount} 個）`);
+        const parts = [
+          demoCount > 0 ? `デモ ${demoCount} 個` : null,
+          sandboxCount > 0 ? `サンドボックス ${sandboxCount} 個` : null,
+        ].filter(Boolean);
+        ok(`${label} ${chapter.slug}（${parts.join('・') || '本文のみ'}）`);
       }
 
       await page.screenshot({ path: `${OUT}/ch-${chapter.slug}.png`, fullPage: false });
     }
 
-    // ここまで 14 章ぶんを同じタブで開いた。まだ描けているなら破棄は効いている
+    // ここまで全章を同じタブで開いた。デモのある章に戻って、まだ描けるなら破棄は効いている
+    await page.goto(`${BASE}#/ch/14-capstone`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1200);
     const lastCanvas = page.locator('.demo__stage canvas').first();
     const alive = await lastCanvas.evaluate((node) => {
       const canvas = node as HTMLCanvasElement;
       return canvas.width > 0 && canvas.height > 0;
     });
-    if (alive) ok('14章を連続で開いても WebGL コンテキストが生きている');
+    if (alive) ok(`${chapters.length}章を連続で開いても WebGL コンテキストが生きている`);
     else fail('最後の章のキャンバスが失われています（破棄漏れの疑い）');
+
+    /* ---- API チップが公式ドキュメントへのリンクになっているか ---- */
+
+    await page.goto(`${BASE}#/ch/03-dot`);
+    await page.waitForLoadState('networkidle');
+    const apiLinks = await page.locator('.api-chip--link[href*="threejs.org"]').count();
+    if (apiLinks > 0) ok(`API チップが公式ドキュメントへのリンクになっている（${apiLinks} 件）`);
+    else fail('API チップが公式ドキュメントへのリンクになっていません');
 
     /* ---- コントラスト比の実測 ---- */
 

@@ -1,6 +1,6 @@
 /** トップページ。学び方の案内と、全14章の一覧。 */
 
-import { chapters } from '../../content/index.ts';
+import { chapterLabel, chaptersOfPart, PARTS } from '../../content/index.ts';
 import { el } from '../../ui/dom.ts';
 import { renderMarkup } from '../../ui/markup.ts';
 import { getProgress } from '../progress.ts';
@@ -17,6 +17,9 @@ Three.js は、箱を 1 つ画面に出すところまでは驚くほど簡単�
 
 各章は、Three.js で何ができなくて困るか → 直感 → 図とデモ → はじめて数式 → 実際のコード、
 の順に進みます。数式から始まる章はひとつもありません。
+
+**第1部**で数学の土台を作り、**第2部**でそれを Three.js のコードにします。
+第2部のコードはすべて、このページの中で書き換えて動かせます。
 `;
 
 const HOWTO = `
@@ -53,24 +56,38 @@ export const renderHomePage: PageRenderer = (root) => {
 
   root.appendChild(el('div', { class: 'prose', html: renderMarkup(HOWTO) }));
 
-  root.appendChild(
-    el(
-      'div',
-      { class: 'card-grid' },
-      ...chapters.map((chapter) =>
-        el(
-          'a',
-          { class: 'ch-card', href: `#/ch/${chapter.slug}` },
-          getProgress(chapter.slug).read
-            ? el('span', { class: 'ch-card__done', title: '読了' }, '✓')
-            : null,
-          el('div', { class: 'ch-card__num' }, `CH.${String(chapter.number).padStart(2, '0')}`),
-          el('div', { class: 'ch-card__title' }, chapter.title),
-          el('div', { class: 'ch-card__goal' }, chapter.goal),
+  for (const part of PARTS) {
+    const partChapters = chaptersOfPart(part.id);
+    if (partChapters.length === 0) continue;
+
+    root.appendChild(
+      el(
+        'div',
+        { class: 'part-head' },
+        el('h2', { class: 'part-head__title' }, part.title),
+        el('p', { class: 'part-head__lead' }, part.lead),
+      ),
+    );
+
+    root.appendChild(
+      el(
+        'div',
+        { class: 'card-grid' },
+        ...partChapters.map((chapter) =>
+          el(
+            'a',
+            { class: 'ch-card', href: `#/ch/${chapter.slug}` },
+            getProgress(chapter.slug).read
+              ? el('span', { class: 'ch-card__done', title: '読了' }, '✓')
+              : null,
+            el('div', { class: 'ch-card__num' }, chapterLabel(chapter)),
+            el('div', { class: 'ch-card__title' }, chapter.title),
+            el('div', { class: 'ch-card__goal' }, chapter.goal),
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 
   root.appendChild(el('div', { class: 'prose', html: renderMarkup(NAME_STORY) }));
 };

@@ -17,6 +17,8 @@ export type Block =
   | { kind: 'demo'; id: string; caption?: string }
   /** Three.js のコード片。表示とコピーのみ。 */
   | { kind: 'code'; title?: string; code: string }
+  /** その場で編集して実行できるコード。第2部で使う。 */
+  | { kind: 'sandbox'; title?: string; code: string; caption?: string }
   /** 補足カード。 */
   | { kind: 'callout'; tone: CalloutTone; title: string; text: string };
 
@@ -33,9 +35,38 @@ export interface QuizQuestion {
   explain: string;
 }
 
+/** 部。第1部が数学編、第2部が Three.js 編。 */
+export type Part = 'math' | 'threejs';
+
+export interface PartInfo {
+  id: Part;
+  /** 表示に使う部番号（1 起点）。章番号は `2-05` のように部番号と組み合わせる。 */
+  index: number;
+  title: string;
+  lead: string;
+}
+
+export const PARTS: PartInfo[] = [
+  {
+    id: 'math',
+    index: 1,
+    title: '第1部　数学編',
+    lead: 'Three.js を書くために必要な数学だけを、3D デモを触りながら順番に身につけます。',
+  },
+  {
+    id: 'threejs',
+    index: 2,
+    title: '第2部　Three.js 編',
+    lead: '手に入れた数学を実際のコードにします。各章のコードはその場で書き換えて動かせます。',
+  },
+];
+
 export interface Chapter {
   /** URL に出るキー。例: '03-dot' → #/ch/03-dot */
   slug: string;
+  /** 所属する部。 */
+  part: Part;
+  /** 部の中での通し番号（1 起点）。表示は `2-05` の形になる。 */
   number: number;
   title: string;
   /** 「この章を読むとできるようになること」。目次カードと章頭に出る。 */
@@ -44,6 +75,11 @@ export interface Chapter {
   requires: string[];
   /** 対応する Three.js の API。章末に一覧で出る。 */
   threeApis: string[];
+  /**
+   * 章冒頭に出す「この章で使う数学」。第2部の章に付ける。
+   * 第1部を読んでいない人でも、どこへ戻ればよいかが分かるようにする。
+   */
+  mathRecall?: { slug: string; note: string }[];
   blocks: Block[];
   quiz: QuizQuestion[];
 }

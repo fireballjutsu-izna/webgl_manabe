@@ -1,9 +1,9 @@
 /** 章の描画。本文・数式・デモ・コード片・クイズを 1 つのデータから組み立てる。 */
 
-import { chapters, chapterBySlug } from '../../content/index.ts';
+import { chapterBySlug, chapterLabel, chapters, partInfo } from '../../content/index.ts';
+import { docsUrl } from '../../content/three-docs.ts';
 import type { Block, Chapter } from '../../content/types.ts';
 import { demos } from '../../demos/registry.ts';
-import type { DemoInstance } from '../../demos/registry.ts';
 import { el } from '../../ui/dom.ts';
 import { createCodeBlock } from '../../ui/code.ts';
 import { renderMarkup, renderTex } from '../../ui/markup.ts';
@@ -45,6 +45,41 @@ function calloutBlock(tone: string, title: string, text: string): HTMLElement {
   );
 }
 
+/** 第2部の章の冒頭に出す「この章で使う数学」。第1部のどこへ戻ればよいかを示す。 */
+function mathRecallCard(chapter: Chapter): HTMLElement | null {
+  if (!chapter.mathRecall || chapter.mathRecall.length === 0) return null;
+
+  const list = el('ul', { class: 'recall__list' });
+  for (const item of chapter.mathRecall) {
+    const target = chapterBySlug(item.slug);
+    if (!target) continue;
+    list.appendChild(
+      el(
+        'li',
+        null,
+        el(
+          'a',
+          { href: `#/ch/${target.slug}` },
+          `${chapterLabel(target)} ${target.title}`,
+        ),
+        el('span', { class: 'recall__note' }, `― ${item.note}`),
+      ),
+    );
+  }
+
+  return el(
+    'aside',
+    { class: 'recall' },
+    el('div', { class: 'recall__head' }, 'この章で使う数学'),
+    list,
+    el(
+      'p',
+      { class: 'recall__foot' },
+      'いま思い出せなくても大丈夫です。詰まったら戻ってきてください。',
+    ),
+  );
+}
+
 function chapterNav(chapter: Chapter): HTMLElement {
   const index = chapters.findIndex((c) => c.slug === chapter.slug);
   const prev = chapters[index - 1];
@@ -56,7 +91,7 @@ function chapterNav(chapter: Chapter): HTMLElement {
       el(
         'a',
         { class: 'prev', href: `#/ch/${prev.slug}` },
-        el('span', null, '← 前の章'),
+        el('span', null, `← 前の章　${chapterLabel(prev)}`),
         prev.title,
       ),
     );
@@ -66,7 +101,7 @@ function chapterNav(chapter: Chapter): HTMLElement {
       el(
         'a',
         { class: 'next', href: `#/ch/${next.slug}` },
-        el('span', null, '次の章 →'),
+        el('span', null, `次の章　${chapterLabel(next)} →`),
         next.title,
       ),
     );
@@ -98,7 +133,11 @@ export const renderChapterPage: PageRenderer = (root, ctx) => {
     el(
       'header',
       { class: 'chapter-head' },
-      el('div', { class: 'chapter-head__num' }, `CH.${String(chapter.number).padStart(2, '0')}`),
+      el(
+        'div',
+        { class: 'chapter-head__num' },
+        `${partInfo(chapter.part).title.replace(/　.*$/, '')}　${chapterLabel(chapter)}`,
+      ),
       el('h1', { class: 'chapter-head__title' }, chapter.title),
       el(
         'div',
@@ -109,10 +148,15 @@ export const renderChapterPage: PageRenderer = (root, ctx) => {
     ),
   );
 
+  const recall = mathRecallCard(chapter);
+  if (recall) article.appendChild(recall);
+
   /* ---- 本文ブロック ---- */
 
-  const instances: DemoInstance[] = [];
+  // デモとサンドボックスはどちらも WebGL を掴むので、離脱時にまとめて解放する
+  const instances: { dispose(): void }[] = [];
   let cancelled = false;
+  let sandboxCount = 0;
   let prose: HTMLElement | null = null;
 
   const intoProse = (node: Node): void => {
@@ -163,6 +207,46 @@ export const renderChapterPage: PageRenderer = (root, ctx) => {
       });
   };
 
+  const mountSandbox = (block: Extract<Block, { kind: 'sandbox' }>): void => {
+    const index = sandboxCount;
+    sandboxCount += 1;
+
+    const placeholder = el(
+      'div',
+      { class: 'sandbox' },
+      el('div', { class: 'sandbox__stage' }, el('p', { class: 'demo__hint' }, '準備しています…')),
+    );
+    article.appendChild(placeholder);
+
+    // three と addons を含むので、第2部の章を開いたときだけ読み込む
+    void import('../../ui/sandbox.ts')
+      .then(({ createSandbox }) => {
+        if (cancelled) return;
+        const sandbox = createSandbox({
+          code: block.code,
+          title: block.title,
+          storageKey: `${chapter.slug}:${index}`,
+        });
+        instances.push(sandbox);
+        placeholder.replaceWith(sandbox.element);
+        if (block.caption) {
+          sandbox.element.insertAdjacentElement(
+            'afterend',
+            el('p', { class: 'demo__caption sandbox__caption' }, block.caption),
+          );
+        }
+      })
+      .catch((error: unknown) => {
+        console.error('サンドボックスの読み込みに失敗しました', error);
+        if (!cancelled) {
+          placeholder.replaceChildren(
+            el('div', { class: 'sandbox__stage' }, el('p', { class: 'demo__hint' }, '実行環境を用意できませんでした')),
+            createCodeBlock(block.code, block.title),
+          );
+        }
+      });
+  };
+
   for (const block of chapter.blocks) {
     switch (block.kind) {
       case 'md': {
@@ -185,6 +269,10 @@ export const renderChapterPage: PageRenderer = (root, ctx) => {
         breakProse();
         article.appendChild(createCodeBlock(block.code, block.title));
         break;
+      case 'sandbox':
+        breakProse();
+        mountSandbox(block);
+        break;
     }
   }
 
@@ -199,7 +287,29 @@ export const renderChapterPage: PageRenderer = (root, ctx) => {
         el(
           'ul',
           { class: 'api-table__list' },
-          ...chapter.threeApis.map((api) => el('li', null, el('code', { class: 'api-chip' }, api))),
+          ...chapter.threeApis.map((api) => {
+            const href = docsUrl(api);
+            // 公式ドキュメントに項目があるものだけリンクにする
+            const chip = href
+              ? el(
+                  'a',
+                  {
+                    class: 'api-chip api-chip--link',
+                    href,
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    title: `${api} の公式ドキュメント（英語）を開く`,
+                  },
+                  api,
+                )
+              : el('code', { class: 'api-chip' }, api);
+            return el('li', null, chip);
+          }),
+        ),
+        el(
+          'p',
+          { class: 'api-table__note' },
+          '下線のあるものは、公式ドキュメント（英語）の該当ページを別のタブで開きます。',
         ),
       ),
     );

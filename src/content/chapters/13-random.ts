@@ -2,6 +2,7 @@ import type { Chapter } from '../types.ts';
 
 export const chapter13: Chapter = {
   slug: '13-random',
+  part: 'math',
   number: 13,
   title: 'ランダムとノイズ',
   goal: 'ただの乱数とノイズの違いを説明できるようになり、地形や自然なゆらぎを自分で作れるようになります。',

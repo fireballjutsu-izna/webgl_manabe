@@ -2,6 +2,7 @@ import type { Chapter } from '../types.ts';
 
 export const chapter06: Chapter = {
   slug: '06-matrix',
+  part: 'math',
   number: 6,
   title: '行列と変換',
   goal: '移動・回転・拡大が1つの表にまとまることを理解し、「適用する順番で結果が変わる」理由を説明できるようになります。',

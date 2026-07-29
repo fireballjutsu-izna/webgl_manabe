@@ -2,6 +2,7 @@ import type { Chapter } from '../types.ts';
 
 export const chapter04: Chapter = {
   slug: '04-cross',
+  part: 'math',
   number: 4,
   title: '外積 ― 直交する向きを作る',
   goal: '2本のベクトルから「その両方に垂直な向き」を作れるようになり、面の法線や、左右の判定を自力で求められるようになります。',
