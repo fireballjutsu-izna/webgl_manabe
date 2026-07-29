@@ -37,6 +37,7 @@ export const demos: Record<string, () => Promise<DemoModule>> = {
   // 第2部（比較が効く章にだけ置く）
   'material-compare': () => import('./material-compare.ts'),
   'light-compare': () => import('./light-compare.ts'),
+  'instancing-compare': () => import('./instancing-compare.ts'),
 };
 
 export const demoIds: string[] = Object.keys(demos);

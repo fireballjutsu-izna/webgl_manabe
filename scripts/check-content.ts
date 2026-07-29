@@ -130,6 +130,10 @@ for (const chapter of chapters) {
   for (const question of chapter.quiz) texts.push(question.q, question.explain);
 
   for (const text of texts) {
+    // 軽量マークアップはフェンス付きコードに対応していない。code / sandbox ブロックを使うこと
+    if (text.includes('```')) {
+      errors.push(`${where}: 本文に \`\`\` があります（code か sandbox ブロックを使ってください）`);
+    }
     for (const match of text.matchAll(/\{\{([^}]+)\}\}/g)) {
       const body = match[1] ?? '';
       const key = (body.includes('|') ? body.split('|', 2)[1] : body)?.trim() ?? '';
