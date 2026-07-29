@@ -1,0 +1,219 @@
+import type { Chapter } from '../types.ts';
+
+export const chapter05: Chapter = {
+  slug: '05-trig',
+  number: 5,
+  title: '角度・弧度法と三角関数',
+  goal: '角度の単位を自在に変換できるようになり、sin と cos で円運動や波を自分の手で作れるようになります。',
+  requires: ['01-space'],
+  threeApis: ['MathUtils.degToRad', 'MathUtils.radToDeg', 'Math.sin', 'Math.cos', 'Object3D.rotation'],
+  blocks: [
+    {
+      kind: 'md',
+      text: `
+## まず、どこで困るか
+
+\`mesh.rotation.y = 90\` と書いて、90 度どころか物体が何周もして訳が分からなくなる——
+Three.js を触りはじめた誰もが通る道です。
+
+原因は単位です。Three.js の角度は「度」ではありません。この章で、その正体と、
+そこから生まれる sin・cos という 2 つの道具（まとめて{{三角関数}}と呼びます）を手に入れます。
+`,
+    },
+    {
+      kind: 'md',
+      text: `
+## 弧度法 ― 角度を「長さ」で測る
+
+角度の測り方は 1 つではありません。ふだん使う「度」は、1 周を 360 等分したものです。
+360 という数に深い理由はなく、歴史的な都合です。
+
+いっぽう{{弧度法}}は、**半径 1 の円をその角度ぶん進んだときの、弧の長さ**を角度とみなします。
+単位は{{ラジアン}}です。
+`,
+    },
+    {
+      kind: 'callout',
+      tone: 'analogy',
+      title: '「何度回った」ではなく「何メートル歩いた」',
+      text: `
+半径 1 m の円形のトラックを歩くところを想像してください。1 周すると、歩いた距離は円周ぶん、
+つまり $2\\pi$ ≒ 6.28 m です。弧度法は「何度回ったか」ではなく「何 m 歩いたか」で角度を言う流儀です。
+だから 1 周は 360 ではなく 6.28…になります。
+`,
+    },
+    {
+      kind: 'formula',
+      tex: '180^\\circ = \\pi \\;\\text{rad} \\qquad 1^\\circ = \\dfrac{\\pi}{180}\\;\\text{rad}',
+      readAloud:
+        '半周（180 度）が、ちょうど π（パイ、約 3.14）ラジアンに当たります。ここさえ押さえれば、度からラジアンにするには 180 分の π を掛ければよい、と出てきます。',
+    },
+    {
+      kind: 'md',
+      text: `
+覚えておくと便利な対応は、この 4 つだけです。
+
+- $90^\\circ = \\pi/2$ （直角）
+- $180^\\circ = \\pi$ （半周）
+- $270^\\circ = 3\\pi/2$
+- $360^\\circ = 2\\pi$ （1周）
+
+実際のコードでは暗算しません。Three.js の変換関数を使います。
+`,
+    },
+    {
+      kind: 'code',
+      title: '度とラジアンを行き来する',
+      code: `import * as THREE from 'three';
+
+// 度 → ラジアン。rotation に渡すのは必ずこちら
+mesh.rotation.y = THREE.MathUtils.degToRad(90);
+
+// ラジアン → 度。デバッグ表示のときに使う
+console.log(THREE.MathUtils.radToDeg(mesh.rotation.y)); // 90
+
+// 直接書くならこう。Math.PI が半周ぶん
+mesh.rotation.y = Math.PI / 2;   // 90度
+mesh.rotation.y = Math.PI;       // 180度
+mesh.rotation.y = Math.PI * 2;   // 360度（＝回っていないのと同じ）`,
+    },
+    {
+      kind: 'callout',
+      tone: 'warn',
+      title: '90 と書くと 5156 度回ります',
+      text: `
+\`rotation.y = 90\` は「90 ラジアン」と解釈されます。度に直すとおよそ 5156 度、
+つまり 14 周ちょっとです。物体が妙な向きで止まっていたら、まずここを疑ってください。
+`,
+    },
+    {
+      kind: 'md',
+      text: `
+## 単位円と、サイン・コサイン
+
+半径 1 の円（{{単位円}}）を、原点から角度 θ だけ回ったところに点 P を置きます。
+このとき、
+
+- **P の横の位置** が $\\cos\\theta$（コサイン）
+- **P の縦の位置** が $\\sin\\theta$（サイン）
+
+です。それだけです。「三角形の辺の比」という定義から入ると身構えてしまいますが、
+3D で使うぶんには **円周上の点の x 座標と y 座標**だと思っておけば足ります。
+`,
+    },
+    {
+      kind: 'formula',
+      tex: 'P = (\\cos\\theta,\\; \\sin\\theta)',
+      readAloud:
+        '半径 1 の円の上で、角度 θ の位置にある点の座標は、横が cos θ、縦が sin θ になります。角度を入れると座標が返ってくる装置、と考えてください。',
+    },
+    {
+      kind: 'demo',
+      id: 'unit-circle',
+      caption:
+        '角度を動かすと、点 P が円をまわり、その縦位置がそのまま左側の波になります。円運動と波が同じものだった、というのがこのデモの要点です。',
+    },
+    {
+      kind: 'md',
+      text: `
+## ここから分かる、便利な性質
+
+- **どちらも必ず −1 から 1 のあいだ**に収まります。半径 1 の円から出られないからです。
+- **cos は 1 から始まり、sin は 0 から始まります**（θ = 0 のとき、点は右端にいます）。
+- **1 周すると同じ値に戻ります**。だから繰り返す動きに向いています。
+- sin と cos は、同じ波を 90°ずらしただけの関係です。
+
+3D でこれが効いてくるのは、こういう場面です。
+
+- **円運動** … x に $\\cos$、z に $\\sin$ を入れると、物体が原点のまわりを回ります
+- **上下のゆらぎ** … y に $\\sin$ を入れると、ふわふわ浮きます
+- **波** … 位置によって位相をずらした $\\sin$ を高さにすると、水面になります
+`,
+    },
+    {
+      kind: 'code',
+      title: '円運動とゆらぎ',
+      code: `const clock = new THREE.Clock();
+
+function animate() {
+  const t = clock.getElapsedTime();
+
+  // 原点のまわりを半径 3 でまわる（xz 平面）
+  const radius = 3;
+  planet.position.x = Math.cos(t) * radius;
+  planet.position.z = Math.sin(t) * radius;
+
+  // ふわふわ浮く。0.5 は速さ、0.3 は揺れ幅
+  float.position.y = 1 + Math.sin(t * 0.5) * 0.3;
+
+  // 進む向きに機首を向ける（円運動の接線は 90 度ずれている）
+  planet.rotation.y = -t + Math.PI / 2;
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}`,
+    },
+    {
+      kind: 'demo',
+      id: 'wave-grid',
+      caption:
+        '格子の各頂点の高さを sin で決めているだけです。「波のかたち」を切り替えると、sin に何を渡すか（x だけか、中心からの距離か）で見た目が大きく変わることが分かります。',
+    },
+    {
+      kind: 'md',
+      text: `
+## 振幅・周期・位相 ― 波を操る3つのつまみ
+
+デモのスライダーが、そのまま波を操る 3 つのつまみでした。
+`,
+    },
+    {
+      kind: 'formula',
+      tex: 'y = A\\,\\sin(k\\,x + \\varphi)',
+      readAloud:
+        'A（振幅）は波の高さ、k は波の細かさ、φ（ファイ、位相）は波を横にずらす量です。中身に足すと横にずれ、中身に掛けると細かくなり、外から掛けると高くなる、と覚えてください。',
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: '時間を足せば、波は動きます',
+      text: `
+$\\sin(k x + t)$ のように、中身に経過時間を足すだけで波は横に流れます。
+「中に足すと横にずれる」を利用しているだけです。時間の係数を変えれば流れる速さが変わります。
+`,
+    },
+  ],
+  quiz: [
+    {
+      q: '`mesh.rotation.y` に 180 度ぶんの回転を入れたいとき、正しいのはどれですか。',
+      choices: [
+        '`mesh.rotation.y = Math.PI`',
+        '`mesh.rotation.y = 180`',
+        '`mesh.rotation.y = 360`',
+        '`mesh.rotation.y = Math.PI * 180`',
+      ],
+      answer: 0,
+      explain:
+        'rotation はラジアンで、半周がちょうど π です。`THREE.MathUtils.degToRad(180)` と書いても同じ結果になります。',
+    },
+    {
+      q: '$\\sin\\theta$ が取りうる値の範囲はどれですか。',
+      choices: ['−1 以上 1 以下', '0 以上 1 以下', '0 以上 360 以下', '制限はない'],
+      answer: 0,
+      explain:
+        'sin は半径 1 の円の上にある点の縦位置なので、円の外には出られません。cos も同じく −1 から 1 のあいだです。',
+    },
+    {
+      q: '物体を xz 平面で原点のまわりに回したいとき、位置の作り方として正しいのはどれですか。',
+      choices: [
+        'x に `Math.cos(t) * r`、z に `Math.sin(t) * r`',
+        'x に `Math.sin(t) * r`、y に `Math.sin(t) * r`',
+        'x にも z にも `Math.cos(t) * r`',
+        'x に `t * r`、z に `t * r`',
+      ],
+      answer: 0,
+      explain:
+        '2 つの座標に、90 度ずれた波（cos と sin）を入れると円になります。両方 cos にすると斜めの直線を往復するだけになります。',
+    },
+  ],
+};

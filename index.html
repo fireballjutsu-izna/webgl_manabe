@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ja" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>(アイン、ソフ、オウル) — Three.js のための数学</title>
+    <meta
+      name="description"
+      content="数学の知識がゼロでも大丈夫。Three.js を書くために必要な数学だけを、3D デモを触りながら順番に学べる全14章の学習サイトです。"
+    />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script>
+      // 描画前にテーマを確定させ、リロード時の白い一瞬（FOUC）を防ぐ。
+      // このサイトはダークを既定の見た目とし、明示的に切り替えたときだけライトにする。
+      (function () {
+        try {
+          var saved = localStorage.getItem('webgl-manabe:theme');
+          document.documentElement.dataset.theme = saved === 'light' ? 'light' : 'dark';
+        } catch (_) {
+          document.documentElement.dataset.theme = 'dark';
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>
+      <p style="padding: 2rem; font-family: sans-serif">
+        このサイトは 3D デモを動かすために JavaScript を使います。有効にしてから開き直してください。
+      </p>
+    </noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

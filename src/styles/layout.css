@@ -1,0 +1,240 @@
+/* ヘッダー・目次サイドバー・本文カラムの骨格 */
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- ヘッダー ---- */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 1rem;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.1rem;
+  text-decoration: none;
+  color: var(--text);
+  min-width: 0;
+}
+
+.brand__name {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand__sub {
+  font-size: 0.68rem;
+  line-height: 1.2;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.header-tools {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.icon-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.icon-btn:hover {
+  color: var(--neon-cyan);
+  border-color: var(--border-lit);
+}
+
+.nav-toggle {
+  display: none;
+}
+
+/* ---- レイアウト本体 ---- */
+
+.layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--toc-w) minmax(0, 1fr);
+  align-items: start;
+}
+
+.toc {
+  position: sticky;
+  top: var(--header-h);
+  height: calc(100vh - var(--header-h));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1.25rem 0.75rem 3rem;
+  background: var(--bg-sunken);
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin;
+}
+
+.main {
+  min-width: 0;
+  padding: 2.5rem 2rem 6rem;
+}
+
+.main:focus {
+  outline: none;
+}
+
+/* 本文は読みやすい行長で中央に置く。デモカードだけこの幅いっぱいを使う */
+.prose {
+  max-width: var(--measure);
+  margin-inline: auto;
+}
+
+/* ---- 目次 ---- */
+
+.toc__section {
+  padding: 0 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.toc__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.toc__link {
+  display: grid;
+  grid-template-columns: 2.6rem 1fr 1.1rem;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  border-left: 2px solid transparent;
+}
+
+.toc__link:hover {
+  background: var(--bg-elev);
+}
+
+.toc__link[aria-current='page'] {
+  background: var(--tint-cyan);
+  border-left-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+
+.toc__num {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 0;
+}
+
+.toc__link[aria-current='page'] .toc__num {
+  color: var(--neon-cyan);
+}
+
+.toc__check {
+  font-size: 0.8rem;
+  color: var(--neon-lime);
+  text-align: right;
+}
+
+.toc__divider {
+  margin: 1rem 0.5rem;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+/* ---- 狭い画面 ---- */
+
+@media (width < 900px) {
+  .nav-toggle {
+    display: grid;
+  }
+
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toc {
+    position: fixed;
+    inset: var(--header-h) auto 0 0;
+    width: min(var(--toc-w), 82vw);
+    z-index: 25;
+    transform: translateX(-102%);
+    transition: transform 0.2s ease;
+  }
+
+  .toc[data-open='true'] {
+    transform: translateX(0);
+    box-shadow: 0 0 40px rgb(0 0 0 / 55%);
+  }
+
+  .toc-backdrop {
+    position: fixed;
+    inset: var(--header-h) 0 0 0;
+    z-index: 24;
+    background: rgb(0 0 0 / 45%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .toc-backdrop[data-open='true'] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .main {
+    padding: 1.75rem 1.1rem 5rem;
+  }
+
+  .brand__sub {
+    display: none;
+  }
+}
+
+@media (width >= 900px) {
+  .toc-backdrop {
+    display: none;
+  }
+}
