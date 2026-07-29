@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.vite/
+*.local
+
+# 検証用スクリーンショットの出力先
+artifacts/
+
+.DS_Store
+Thumbs.db
