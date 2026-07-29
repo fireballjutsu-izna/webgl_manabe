@@ -1,0 +1,254 @@
+/*
+ * 設計方針（崩さないこと）
+ *   ネオンは「光る線」にだけ使い、「読む文字」には一切かけない。
+ *   - 本文にグロー・グラデーション・高彩度色を使わない
+ *   - 本文 7:1 / 補助テキスト 4.5:1 以上のコントラスト比を保つ
+ *   - ネオン色は面ではなく線・枠・アイコンに乗せる
+ *   - 背景は無地。装飾の格子は opacity 0.04 以下
+ *   - 色を唯一の情報チャネルにしない（ラベル・線種・文言でも区別する）
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* 面と文字 */
+  --bg: #0a0a12;
+  --bg-elev: #12121f;
+  --bg-sunken: #07070e;
+  --bg-inset: #0d0d18;
+  --text: #e8e8f2; /* bg に対し約 16:1 */
+  --text-muted: #9a9ab0; /* bg に対し約 7.2:1 */
+  --border: #26263c;
+  --border-lit: #3a3a5c;
+
+  /* ネオン（線・発光専用） */
+  --neon-cyan: #4fd6ff;
+  --neon-violet: #b57bff;
+  --neon-lime: #7cf5a0;
+  --neon-amber: #ffd166;
+  --neon-rose: #ff6b8a;
+
+  /* ネオンを面に敷くときの、彩度を殺した控えめな下地 */
+  --tint-cyan: rgb(79 214 255 / 9%);
+  --tint-violet: rgb(181 123 255 / 9%);
+  --tint-lime: rgb(124 245 160 / 9%);
+  --tint-amber: rgb(255 209 102 / 9%);
+  --tint-rose: rgb(255 107 138 / 9%);
+
+  /* 3D デモのベクトル配色（全14章で意味を固定する） */
+  --vec-a: #4fd6ff; /* 入力ベクトル a */
+  --vec-b: #ff7ad9; /* 入力ベクトル b */
+  --vec-result: #ffd166; /* 計算結果 */
+  --vec-normal: #f5f5ff; /* 法線・光 */
+  --vec-guide: #5a5a78; /* 補助線（破線で描く） */
+  --vec-negative: #8b6bff; /* 逆向き */
+
+  /* タイポグラフィ */
+  --font-sans: 'M PLUS 2 Variable', system-ui, -apple-system, 'Hiragino Kaku Gothic ProN',
+    'Yu Gothic', 'Noto Sans JP', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* 寸法 */
+  --measure: 34em; /* 本文の行長 */
+  --header-h: 3.75rem;
+  --toc-w: 17.5rem;
+  --radius: 10px;
+
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 3%) inset, 0 8px 24px -18px rgb(0 0 0 / 90%);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #f7f7fb;
+  --bg-elev: #ffffff;
+  --bg-sunken: #eeeef5;
+  --bg-inset: #f1f1f7;
+  --text: #16161f; /* bg に対し約 17:1 */
+  --text-muted: #4a4a60; /* bg に対し約 8:1 */
+  --border: #d5d5e2;
+  --border-lit: #b6b6cb;
+
+  /* 同じ色相のまま暗く・低彩度にして、白背景でも読める明度に落とす */
+  --neon-cyan: #0b6f96;
+  --neon-violet: #6b3fb8;
+  --neon-lime: #17794a;
+  --neon-amber: #8a6100;
+  --neon-rose: #b32448;
+
+  --tint-cyan: rgb(11 111 150 / 8%);
+  --tint-violet: rgb(107 63 184 / 8%);
+  --tint-lime: rgb(23 121 74 / 8%);
+  --tint-amber: rgb(138 97 0 / 8%);
+  --tint-rose: rgb(179 36 72 / 8%);
+
+  /* 3D は明るい背景でも見えるように、少しだけ濃い側へ寄せる */
+  --vec-a: #0f86b8;
+  --vec-b: #c3268f;
+  --vec-result: #b07c00;
+  --vec-normal: #2a2a3a;
+  --vec-guide: #9a9ab5;
+  --vec-negative: #6b3fb8;
+
+  --shadow-card: 0 1px 2px rgb(20 20 40 / 6%), 0 8px 24px -20px rgb(20 20 40 / 40%);
+}
+
+/* ---- リセット ---- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.95;
+  letter-spacing: 0.02em;
+  font-feature-settings: 'palt' 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  /* M PLUS 2 は太らせると潰れるので 600 止まりにする */
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+p,
+ul,
+ol {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding-left: 1.4em;
+}
+
+img,
+svg,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+a {
+  color: var(--neon-cyan);
+  text-decoration-color: color-mix(in srgb, var(--neon-cyan) 45%, transparent);
+  text-underline-offset: 0.25em;
+}
+
+a:hover {
+  text-decoration-color: currentColor;
+}
+
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 数値・座標・章番号は常に等幅かつ桁揃え。スライダーを動かしても横にガタつかない */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+/* ---- フォーカス ---- */
+
+:focus-visible {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---- 発光ユーティリティ（ここ以外でグローを書かない） ---- */
+
+.glow {
+  box-shadow:
+    0 0 0 1px var(--glow-color, var(--neon-cyan)),
+    0 0 24px -8px var(--glow-color, var(--neon-cyan));
+}
+
+:root[data-theme='light'] .glow {
+  /* 白背景では「にじみ」が汚れて見えるので、実線の枠だけに落とす */
+  box-shadow: 0 0 0 1px var(--glow-color, var(--neon-cyan));
+}
+
+/* ---- 読み上げ専用 ---- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  background: var(--bg-elev);
+  border: 1px solid var(--neon-cyan);
+  border-radius: var(--radius);
+  transition: top 0.15s;
+}
+
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+/* ---- モーション ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
