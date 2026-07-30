@@ -5,6 +5,7 @@
 
 import { chapterLabel, chapters } from '../content/index.ts';
 import { glossary } from '../content/glossary.ts';
+import { symptoms } from '../content/symptoms.ts';
 import { toPlainText } from '../ui/markup.ts';
 import { escapeHtml } from '../ui/dom.ts';
 
@@ -96,6 +97,22 @@ export function search(query: string, limit = 8): Hit[] {
       title: `用語集：${entry.term}`,
       snippet: makeSnippet(hay, at, needle.length),
       score: (entry.term.toLowerCase().includes(needle) ? 800 : 0) - at,
+    });
+  }
+
+  // 逆引きも引く。「真っ黒」で検索したら、症状のほうへ飛べるようにする
+  for (const symptom of symptoms) {
+    const hay = [symptom.title, ...(symptom.aliases ?? []), ...symptom.checks.map((c) => c.text)]
+      .join(' ');
+    const at = hay.toLowerCase().indexOf(needle);
+    if (at < 0) continue;
+    hits.push({
+      href: `#/help/${symptom.id}`,
+      label: 'HELP',
+      title: `逆引き：${symptom.title}`,
+      snippet: makeSnippet(hay, at, needle.length),
+      // 症状そのものに当たったときは、章の本文より先に出す
+      score: (symptom.title.toLowerCase().includes(needle) ? 1200 : 200) - at,
     });
   }
 

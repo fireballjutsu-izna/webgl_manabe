@@ -47,6 +47,7 @@ export function createShell(app: HTMLElement): Shell {
   const extraLinks: [string, string][] = [
     ['map', '前提知識マップ'],
     ['glossary', '用語集'],
+    ['help', '逆引き（症状から）'],
   ];
   const extras = el('ul', { class: 'toc__list' });
   for (const [path, label] of extraLinks) {

@@ -1439,3 +1439,89 @@
   text-align: center;
   padding-top: 4rem;
 }
+
+/* ---- 逆引き（症状から） ---- */
+
+/* 一覧を並べるページでは、見出しもカード列と同じ幅に揃える */
+.page-title--wide,
+.lede--wide {
+  max-width: min(52rem, 100%);
+}
+
+.sx-head {
+  max-width: min(52rem, 100%);
+  margin: 1.4rem auto 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+}
+
+.sx-filter {
+  flex: 1 1 18rem;
+  min-width: 0;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-inset);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.sx-filter:focus-visible {
+  border-color: var(--neon-cyan);
+}
+
+.sx-count {
+  flex: 0 1 auto;
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.sx-list {
+  max-width: min(52rem, 100%);
+  margin-inline: auto;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.sx {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  padding: 1rem 1.1rem 1.1rem;
+  scroll-margin-top: calc(var(--header-h) + 1rem);
+}
+
+.sx__title {
+  margin: 0 0 0.7rem;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
+/* 上から順に確かめる並びなので、番号を見せる */
+.sx__checks {
+  margin: 0;
+  padding-left: 1.4rem;
+  display: grid;
+  gap: 0.7rem;
+  font-size: 0.88rem;
+  line-height: 1.8;
+}
+
+.sx__checks li::marker {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.sx__to {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.sx__to:hover {
+  color: var(--neon-cyan);
+}
