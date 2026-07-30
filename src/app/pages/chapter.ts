@@ -2,7 +2,7 @@
 
 import { chapterBySlug, chapterLabel, chapters, partInfo } from '../../content/index.ts';
 import { docsUrl } from '../../content/three-docs.ts';
-import type { Block, Chapter } from '../../content/types.ts';
+import type { Block, Chapter, WorkedExample } from '../../content/types.ts';
 import { demos } from '../../demos/registry.ts';
 import { el } from '../../ui/dom.ts';
 import { createCodeBlock } from '../../ui/code.ts';
@@ -12,17 +12,45 @@ import { createQuiz } from '../../ui/quiz.ts';
 import { getProgress, setRead } from '../progress.ts';
 import type { PageRenderer } from '../router.ts';
 
-function formulaBlock(tex: string, readAloud: string): HTMLElement {
+/**
+ * 「実際に計算してみる」。折りたたまない ―
+ * これがいちばん必要な人は、開いて見ようとは思わないため。
+ */
+function workedBlock(worked: WorkedExample): HTMLElement {
+  const steps = el('ol', { class: 'worked__steps' });
+  for (const step of worked.steps) {
+    steps.appendChild(
+      el(
+        'li',
+        null,
+        el('code', { class: 'worked__calc' }, step.calc),
+        step.note ? el('span', { class: 'worked__note' }, step.note) : null,
+      ),
+    );
+  }
+
+  return el(
+    'div',
+    { class: 'worked' },
+    el('div', { class: 'worked__head' }, '実際に計算してみる'),
+    el('p', { class: 'worked__given', html: renderMarkup(worked.given) }),
+    steps,
+    el('p', { class: 'worked__result', html: renderMarkup(worked.result) }),
+  );
+}
+
+function formulaBlock(block: Extract<Block, { kind: 'formula' }>): HTMLElement {
   return el(
     'div',
     { class: 'formula' },
-    el('div', { class: 'formula__tex', html: renderTex(tex, true) }),
+    el('div', { class: 'formula__tex', html: renderTex(block.tex, true) }),
     el(
       'p',
       { class: 'formula__read' },
       el('b', null, '日本語で言うと'),
-      readAloud,
+      block.readAloud,
     ),
+    block.worked ? workedBlock(block.worked) : null,
   );
 }
 
@@ -264,7 +292,7 @@ export const renderChapterPage: PageRenderer = (root, ctx) => {
         break;
       }
       case 'formula':
-        intoProse(formulaBlock(block.tex, block.readAloud));
+        intoProse(formulaBlock(block));
         break;
       case 'callout':
         intoProse(calloutBlock(block.tone, block.title, block.text));

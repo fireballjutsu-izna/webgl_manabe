@@ -191,6 +191,85 @@
   margin-right: 0.5em;
 }
 
+/* ---- 実際に計算してみる ---- */
+
+.worked {
+  margin-top: 0.9rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--border);
+}
+
+.worked__head {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  color: var(--neon-lime);
+  margin-bottom: 0.5rem;
+}
+
+.worked__given {
+  font-size: 0.86rem;
+  line-height: 1.8;
+  margin-bottom: 0.6rem;
+}
+
+.worked__steps {
+  margin: 0;
+  padding-left: 1.5rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+/* 長い式が枠を押し広げないよう、項目のほうを縮められるようにする */
+.worked__steps li {
+  min-width: 0;
+}
+
+.worked__steps li::marker {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/*
+ * 式は等幅・数字は桁を揃える。1 行が長くても、枠ではなく中を横に流す。
+ * .prose code の枠は打ち消す ― 5 行並ぶと箱だらけになって、式より枠が目立つ。
+ */
+.prose code.worked__calc {
+  display: block;
+  min-width: 0;
+  overflow-x: auto;
+  border: 0;
+  border-left: 2px solid var(--border-lit);
+  border-radius: 0;
+  padding: 0.1rem 0 0.1rem 0.6rem;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre;
+}
+
+.worked__note {
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+.worked__result {
+  margin-top: 0.7rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--tint-lime);
+  font-size: 0.86rem;
+  line-height: 1.8;
+}
+
 /* KaTeX がテーマ色を継承するようにする */
 .katex {
   color: inherit;

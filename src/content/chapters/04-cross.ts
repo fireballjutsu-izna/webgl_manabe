@@ -51,6 +51,15 @@ $\\mathbf{a} \\times \\mathbf{b}$ には 3 つの性質があります。
       tex: '\\mathbf{a} \\times \\mathbf{b} = (a_y b_z - a_z b_y,\\; a_z b_x - a_x b_z,\\; a_x b_y - a_y b_x)',
       readAloud:
         'バツ印が外積の記号で、「a クロス b」と読みます。式は覚えなくて構いません。x 成分を作るのに y と z を使い、y 成分を作るのに z と x を使う、というたすきがけの形になっている、とだけ眺めておいてください。実際に手で書くことはまずありません。',
+      worked: {
+        given: '$\\mathbf{a} = (1,\\; 0,\\; 0)$（x 軸）、$\\mathbf{b} = (0,\\; 1,\\; 0)$（y 軸）のとき。',
+        steps: [
+          { calc: 'x 成分 :  0 x 0 - 0 x 1 = 0', note: 'a の y,z と b の y,z だけを使う' },
+          { calc: 'y 成分 :  0 x 0 - 1 x 0 = 0' },
+          { calc: 'z 成分 :  1 x 1 - 0 x 0 = 1' },
+        ],
+        result: '$\\mathbf{a} \\times \\mathbf{b} = (0,\\; 0,\\; 1)$ ― **z 軸そのもの**が出てきました。x 軸と y 軸に両方とも垂直な向きは z 軸しかないので、当然そうなります。順番を逆にして $\\mathbf{b} \\times \\mathbf{a}$ を計算すると $(0, 0, -1)$ になります。手で 1 度やってみてください。',
+      },
     },
     {
       kind: 'demo',

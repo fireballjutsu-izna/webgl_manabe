@@ -11,8 +11,8 @@ export type Block =
    *   **強調** / `コード` / $数式$ / {{用語}}
    */
   | { kind: 'md'; text: string }
-  /** 数式。readAloud（日本語での読み方）を必ず添える。 */
-  | { kind: 'formula'; tex: string; readAloud: string }
+  /** 数式。readAloud（日本語での読み方）と worked（実際の数字での計算）を必ず添える。 */
+  | { kind: 'formula'; tex: string; readAloud: string; worked?: WorkedExample }
   /** 3D デモの埋め込み。id は demos/registry.ts のキー。 */
   | { kind: 'demo'; id: string; caption?: string }
   /** Three.js のコード片。表示とコピーのみ。 */
@@ -23,6 +23,25 @@ export type Block =
   | { kind: 'callout'; tone: CalloutTone; title: string; text: string };
 
 export type CalloutTone = 'tip' | 'warn' | 'analogy';
+
+/**
+ * 数式に添える「実際に計算してみる」。
+ *
+ * 式の意味が分かることと、自分で回せることは別。
+ * 読んで頷けても、一度も数字を入れたことがなければ、次の章で止まる。
+ * だから数式には必ずこれを付ける（`npm run check` が強制する）。
+ *
+ * 数値は小さい整数で、割り切れて、**答えが意味を持つ**ものを選ぶ。
+ * 途中の行は飛ばさない ― 飛ばした行が、その人の詰まっているところかもしれない。
+ */
+export interface WorkedExample {
+  /** 前提。「a = (2, 0, 0)、b = (0, 3, 0) のとき」 */
+  given: string;
+  /** 1 行ずつの計算。calc は等幅で出る。note は「この行で何をしたか」。 */
+  steps: { calc: string; note?: string }[];
+  /** 答えと、その意味。「0 になった。つまり直角」 */
+  result: string;
+}
 
 /**
  * 章末の演習。読むだけで終わらせないための課題。
