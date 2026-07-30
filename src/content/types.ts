@@ -35,8 +35,8 @@ export interface QuizQuestion {
   explain: string;
 }
 
-/** 部。第1部が数学編、第2部が Three.js 編、第3部が実践編。 */
-export type Part = 'math' | 'threejs' | 'project';
+/** 部。第1部が数学編、第2部が Three.js 編、第3部が実践編、第4部が仕上げ編。 */
+export type Part = 'math' | 'threejs' | 'project' | 'polish';
 
 export interface PartInfo {
   id: Part;
@@ -64,6 +64,12 @@ export const PARTS: PartInfo[] = [
     index: 3,
     title: '第3部　実践編',
     lead: '作品を 2 つ、最初から最後まで作ります。素材は 1 つも用意せず、すべてコードで生み出します。',
+  },
+  {
+    id: 'polish',
+    index: 4,
+    title: '第4部　仕上げ編',
+    lead: '作ったものを「見せられるもの」にします。映り込み、色の通り道、画面全体への効果、そして公開。',
   },
 ];
 

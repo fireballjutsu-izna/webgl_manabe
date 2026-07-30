@@ -41,6 +41,10 @@ export const demos: Record<string, () => Promise<DemoModule>> = {
 
   // 第3部
   'fbm-octaves': () => import('./fbm-octaves.ts'),
+
+  // 第4部
+  'envmap-compare': () => import('./envmap-compare.ts'),
+  'tonemap-compare': () => import('./tonemap-compare.ts'),
 };
 
 export const demoIds: string[] = Object.keys(demos);
