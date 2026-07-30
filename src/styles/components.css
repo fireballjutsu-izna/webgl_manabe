@@ -191,6 +191,85 @@
   margin-right: 0.5em;
 }
 
+/* ---- 実際に計算してみる ---- */
+
+.worked {
+  margin-top: 0.9rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--border);
+}
+
+.worked__head {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  color: var(--neon-lime);
+  margin-bottom: 0.5rem;
+}
+
+.worked__given {
+  font-size: 0.86rem;
+  line-height: 1.8;
+  margin-bottom: 0.6rem;
+}
+
+.worked__steps {
+  margin: 0;
+  padding-left: 1.5rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+/* 長い式が枠を押し広げないよう、項目のほうを縮められるようにする */
+.worked__steps li {
+  min-width: 0;
+}
+
+.worked__steps li::marker {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/*
+ * 式は等幅・数字は桁を揃える。1 行が長くても、枠ではなく中を横に流す。
+ * .prose code の枠は打ち消す ― 5 行並ぶと箱だらけになって、式より枠が目立つ。
+ */
+.prose code.worked__calc {
+  display: block;
+  min-width: 0;
+  overflow-x: auto;
+  border: 0;
+  border-left: 2px solid var(--border-lit);
+  border-radius: 0;
+  padding: 0.1rem 0 0.1rem 0.6rem;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre;
+}
+
+.worked__note {
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+.worked__result {
+  margin-top: 0.7rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--tint-lime);
+  font-size: 0.86rem;
+  line-height: 1.8;
+}
+
 /* KaTeX がテーマ色を継承するようにする */
 .katex {
   color: inherit;
@@ -814,7 +893,13 @@
 }
 
 .ex__prompt {
+  min-width: 0;
   font-size: 0.95rem;
+}
+
+/* 問題文の中のコードは、狭い画面では折り返してよい */
+.ex__prompt code {
+  overflow-wrap: anywhere;
 }
 
 .ex__prompt > * + * {
@@ -1524,4 +1609,209 @@
 
 .sx__to:hover {
   color: var(--neon-cyan);
+}
+
+/* ---- 演習ページ ---- */
+
+/* 部の絞り込みや「一覧へ」に使う小さなボタン。押した状態は枠と色で示す */
+.chip {
+  display: inline-block;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-inset);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.chip:hover {
+  border-color: var(--border-lit);
+  color: var(--text);
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+
+.drill-head {
+  max-width: min(52rem, 100%);
+  margin: 1.4rem auto 1.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+}
+
+.drill-parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.drill-count {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 一覧では、章ごとに区切って見出しを出す */
+.drill-list {
+  max-width: min(52rem, 100%);
+  margin-inline: auto;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.drill-ch {
+  /* 中の長いコード片にグリッドの幅を決めさせない（枠のほうを縮められるようにする） */
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  padding: 0.9rem 1.1rem 1.2rem;
+}
+
+.drill-ch__title {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.drill-ch__title a {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0;
+}
+
+/* 通しモードは 1 問だけを大きく出す */
+.drill-run__card {
+  min-height: 12rem;
+}
+
+.drill-run__pos {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.drill-run__nav {
+  max-width: min(52rem, 100%);
+  margin: 1rem auto 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.drill-run__nav .btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 出どころの章。通しモードでは、いまどの章の問題かが分からないと困る */
+.ex__source {
+  margin-bottom: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0;
+}
+
+/* 「解いた」は点数ではなく、しおり。控えめに置く */
+.ex__done {
+  margin-left: auto;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.ex__done:hover {
+  border-color: var(--border-lit);
+  color: var(--text);
+}
+
+.ex__done--on {
+  border-color: var(--neon-lime);
+  color: var(--neon-lime);
+}
+
+.ex--done .ex__num {
+  border-color: var(--neon-lime);
+  color: var(--neon-lime);
+}
+
+/* ---- 続きから ---- */
+
+/*
+ * ホームの最上部に 1 枚だけ出すカード。
+ * 選択肢は並べない ― 独学が止まるのは、次の一手が決まらないときなので。
+ */
+.resume {
+  display: block;
+  max-width: min(52rem, 100%);
+  margin: 1.75rem auto 0;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--border-lit);
+  border-left: 2px solid var(--neon-cyan);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--bg-elev);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+
+.resume:hover {
+  border-color: var(--neon-cyan);
+}
+
+.resume__head {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  color: var(--neon-cyan);
+}
+
+.resume__label {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.resume__note {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+/* 部の出口。42 章の先が見えないと走れない */
+.part-head__payoff {
+  margin-top: 0.3rem;
+  font-size: 0.84rem;
+  color: var(--neon-lime);
+}
+
+/* 間違えたときだけ出る戻り先 */
+.qz__back {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--border);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.qz__back a {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0;
 }

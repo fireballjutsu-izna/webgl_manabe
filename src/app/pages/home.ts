@@ -3,8 +3,51 @@
 import { chapterLabel, chapters, chaptersOfPart, PARTS } from '../../content/index.ts';
 import { el } from '../../ui/dom.ts';
 import { renderMarkup } from '../../ui/markup.ts';
+import { exerciseTotals } from './drill.ts';
 import { getProgress } from '../progress.ts';
 import type { PageRenderer } from '../router.ts';
+
+/**
+ * 「続きから」。カードは**必ず 1 枚だけ**出す。
+ *
+ * 独学が止まるのは知識が足りないときではなく、次の一手が決まらないとき。
+ * だからここでは選択肢を並べない ― 選ばせると、そこで止まる。
+ * 状態は新しく持たず、読了と演習の記録から毎回導く。
+ */
+function resumeCard(): HTMLElement {
+  const unread = chapters.find((chapter) => !getProgress(chapter.slug).read);
+  const { done, total } = exerciseTotals();
+
+  let label: string;
+  let note: string;
+  let href: string;
+
+  if (unread && unread === chapters[0]) {
+    label = '1-01 から始める';
+    note = '数学の予備知識は要りません。上から順に読むのがいちばん近道です。';
+    href = `#/ch/${unread.slug}`;
+  } else if (unread) {
+    label = `${chapterLabel(unread)} ${unread.title}`;
+    note = 'まだ読んでいないいちばん最初の章です。ここから続けてください。';
+    href = `#/ch/${unread.slug}`;
+  } else if (done < total) {
+    label = `演習の続きへ（残り ${total - done} 問）`;
+    note = '全章を読み終えています。手を動かすほうへ進みましょう。';
+    href = '#/drill/run/all';
+  } else {
+    label = '4-06 アプリにする';
+    note = '全章と全演習を終えています。作ったものを公開するところまで行きましょう。';
+    href = '#/ch/q05-ship-it';
+  }
+
+  return el(
+    'a',
+    { class: 'resume', href },
+    el('span', { class: 'resume__head' }, '続きから'),
+    el('span', { class: 'resume__label' }, label),
+    el('span', { class: 'resume__note' }, note),
+  );
+}
 
 const LEAD = `
 Three.js は、箱を 1 つ画面に出すところまでは驚くほど簡単です。ところがその先——
@@ -62,6 +105,8 @@ export const renderHomePage: PageRenderer = (root) => {
     ),
   );
 
+  root.appendChild(resumeCard());
+
   root.appendChild(el('div', { class: 'prose', html: renderMarkup(HOWTO) }));
 
   for (const part of PARTS) {
@@ -74,6 +119,7 @@ export const renderHomePage: PageRenderer = (root) => {
         { class: 'part-head' },
         el('h2', { class: 'part-head__title' }, part.title),
         el('p', { class: 'part-head__lead' }, part.lead),
+        el('p', { class: 'part-head__payoff' }, part.payoff),
       ),
     );
 

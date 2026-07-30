@@ -8,6 +8,7 @@ import '@fontsource/jetbrains-mono/latin-700.css';
 import { createShell } from './app/shell.ts';
 import { startRouter } from './app/router.ts';
 import { renderChapterPage } from './app/pages/chapter.ts';
+import { renderDrillPage } from './app/pages/drill.ts';
 import { renderGlossaryPage } from './app/pages/glossary.ts';
 import { renderHelpPage } from './app/pages/help.ts';
 import { renderHomePage } from './app/pages/home.ts';
@@ -29,6 +30,7 @@ startRouter({
     glossary: renderGlossaryPage,
     map: renderMapPage,
     help: renderHelpPage,
+    drill: renderDrillPage,
   },
   notFound: (root) => {
     document.title = 'ページが見つかりません｜(アイン、ソフ、オウル)';

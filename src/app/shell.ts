@@ -46,6 +46,7 @@ export function createShell(app: HTMLElement): Shell {
 
   const extraLinks: [string, string][] = [
     ['map', '前提知識マップ'],
+    ['drill', '演習（全105問）'],
     ['glossary', '用語集'],
     ['help', '逆引き（症状から）'],
   ];

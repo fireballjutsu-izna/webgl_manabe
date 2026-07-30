@@ -1,13 +1,43 @@
 /** 章末の確認クイズ。その場で正誤と解説を出す。 */
 
-import type { QuizQuestion } from '../content/types.ts';
+import { chapterBySlug, chapterLabel } from '../content/index.ts';
+import type { Chapter, QuizQuestion } from '../content/types.ts';
 import { setQuizPassed } from '../app/progress.ts';
 import { el } from './dom.ts';
 import { renderMarkup } from './markup.ts';
 
 const MARKS = ['A', 'B', 'C', 'D', 'E'];
 
+/**
+ * 間違えたときだけ出す戻り先。
+ *
+ * 解説は「なぜそうなるか」までは書いてあるが、それでも腑に落ちない人に必要なのは
+ * **前提の章**で、それは画面のいちばん上にある。ここまで読み下してきた人に
+ * 戻ってスクロールしろとは言えないので、その場に出す。
+ *
+ * 設問ごとにリンクを書き分けないのは、設問の大半がその章自身の内容だから ―
+ * いま開いている章へのリンクは、何の助けにもならない。
+ */
+function backLinks(chapter: Chapter): HTMLElement | null {
+  const slugs = (chapter.mathRecall?.map((r) => r.slug) ?? chapter.requires).filter(
+    (slug) => chapterBySlug(slug) !== undefined,
+  );
+  if (slugs.length === 0) return null;
+
+  const line = el('div', { class: 'qz__back' }, el('span', null, '腑に落ちなければ '));
+  for (const [index, slug] of slugs.entries()) {
+    const target = chapterBySlug(slug)!;
+    if (index > 0) line.appendChild(el('span', null, '・'));
+    line.appendChild(
+      el('a', { href: `#/ch/${target.slug}` }, `${chapterLabel(target)} ${target.title}`),
+    );
+  }
+  line.appendChild(el('span', null, ' へ戻ってみてください。'));
+  return line;
+}
+
 export function createQuiz(slug: string, questions: QuizQuestion[]): HTMLElement {
+  const chapter = chapterBySlug(slug);
   const root = el(
     'section',
     { class: 'quiz', 'aria-label': '確認クイズ' },
@@ -47,14 +77,19 @@ export function createQuiz(slug: string, questions: QuizQuestion[]): HTMLElement
         }
 
         // 色だけでなく、記号と文言の両方で正誤を伝える
-        explain.replaceChildren(
+        const parts: Node[] = [
           el(
             'span',
             { class: 'qz__verdict', 'data-ok': String(correct) },
             correct ? '○ 正解' : '× 不正解',
           ),
           el('span', { html: renderMarkup(question.explain).replace(/^<p>|<\/p>$/g, '') }),
-        );
+        ];
+        // 正解した人に「戻れ」とは言わない
+        const back = correct || !chapter ? null : backLinks(chapter);
+        if (back) parts.push(back);
+
+        explain.replaceChildren(...parts);
         explain.hidden = false;
 
         if (results.every((r) => r === true)) setQuizPassed(slug, true);

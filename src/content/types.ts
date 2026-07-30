@@ -11,8 +11,8 @@ export type Block =
    *   **強調** / `コード` / $数式$ / {{用語}}
    */
   | { kind: 'md'; text: string }
-  /** 数式。readAloud（日本語での読み方）を必ず添える。 */
-  | { kind: 'formula'; tex: string; readAloud: string }
+  /** 数式。readAloud（日本語での読み方）と worked（実際の数字での計算）を必ず添える。 */
+  | { kind: 'formula'; tex: string; readAloud: string; worked?: WorkedExample }
   /** 3D デモの埋め込み。id は demos/registry.ts のキー。 */
   | { kind: 'demo'; id: string; caption?: string }
   /** Three.js のコード片。表示とコピーのみ。 */
@@ -23,6 +23,25 @@ export type Block =
   | { kind: 'callout'; tone: CalloutTone; title: string; text: string };
 
 export type CalloutTone = 'tip' | 'warn' | 'analogy';
+
+/**
+ * 数式に添える「実際に計算してみる」。
+ *
+ * 式の意味が分かることと、自分で回せることは別。
+ * 読んで頷けても、一度も数字を入れたことがなければ、次の章で止まる。
+ * だから数式には必ずこれを付ける（`npm run check` が強制する）。
+ *
+ * 数値は小さい整数で、割り切れて、**答えが意味を持つ**ものを選ぶ。
+ * 途中の行は飛ばさない ― 飛ばした行が、その人の詰まっているところかもしれない。
+ */
+export interface WorkedExample {
+  /** 前提。「a = (2, 0, 0)、b = (0, 3, 0) のとき」 */
+  given: string;
+  /** 1 行ずつの計算。calc は等幅で出る。note は「この行で何をしたか」。 */
+  steps: { calc: string; note?: string }[];
+  /** 答えと、その意味。「0 になった。つまり直角」 */
+  result: string;
+}
 
 /**
  * 章末の演習。読むだけで終わらせないための課題。
@@ -59,6 +78,11 @@ export interface PartInfo {
   index: number;
   title: string;
   lead: string;
+  /**
+   * この部を終えると何ができるようになるか。ホームの部見出しに 1 行で出る。
+   * 42 章の先が見えないと走れないので、各部の出口を先に見せる。
+   */
+  payoff: string;
 }
 
 export const PARTS: PartInfo[] = [
@@ -67,24 +91,28 @@ export const PARTS: PartInfo[] = [
     index: 1,
     title: '第1部　数学編',
     lead: 'Three.js を書くために必要な数学だけを、3D デモを触りながら順番に身につけます。',
+    payoff: 'ここまでで ― 箱を思った場所に置き、思った向きに回し、光の当たり方まで説明できるようになります。',
   },
   {
     id: 'threejs',
     index: 2,
     title: '第2部　Three.js 編',
     lead: '手に入れた数学を実際のコードにします。各章のコードはその場で書き換えて動かせます。',
+    payoff: 'ここまでで ― 何も見ずに Three.js のシーンを 1 つ書き上げ、シェーダにも手を入れられるようになります。',
   },
   {
     id: 'project',
     index: 3,
     title: '第3部　実践編',
     lead: '作品を 2 つ、最初から最後まで作ります。素材は 1 つも用意せず、すべてコードで生み出します。',
+    payoff: 'ここまでで ― 画像もモデルも使わずに、惑星ひとつと街ひとつを最初から最後まで作れるようになります。',
   },
   {
     id: 'polish',
     index: 4,
     title: '第4部　仕上げ編',
     lead: '作ったものを「見せられるもの」にします。映り込み、色の通り道、画面全体への効果、そして公開。',
+    payoff: 'ここまでで ― 作ったものを人に見せられる形に仕上げ、URL ひとつで公開できるようになります。',
   },
 ];
 

@@ -65,7 +65,60 @@ export function countRead(slugs: string[]): number {
 
 export function resetProgress(): void {
   cache = {};
+  exerciseCache = {};
+  saveExercises();
   save();
+}
+
+/* ---- 演習の「解いた」印 ---- */
+
+/*
+ * 章の読了とは別の入れ物にする。ヘッダーの「3/42」は「読んだ章の数」で、
+ * そこに演習を混ぜると、その数字が何を表しているのか分からなくなる。
+ * こちらは通しで解くときの**しおり**であって、点数ではない。
+ */
+
+const EX_KEY = 'webgl-manabe:exercises:v1';
+
+type ExerciseMap = Record<string, true>;
+
+let exerciseCache: ExerciseMap | null = null;
+
+const exerciseKey = (slug: string, index: number): string => `${slug}:${index}`;
+
+function loadExercises(): ExerciseMap {
+  if (exerciseCache) return exerciseCache;
+  try {
+    const raw = localStorage.getItem(EX_KEY);
+    exerciseCache = raw ? (JSON.parse(raw) as ExerciseMap) : {};
+  } catch {
+    exerciseCache = {};
+  }
+  return exerciseCache;
+}
+
+function saveExercises(): void {
+  try {
+    localStorage.setItem(EX_KEY, JSON.stringify(loadExercises()));
+  } catch {
+    /* 保存できなくても学習の妨げにはしない */
+  }
+  for (const fn of listeners) fn();
+}
+
+export function isExerciseDone(slug: string, index: number): boolean {
+  return loadExercises()[exerciseKey(slug, index)] === true;
+}
+
+export function setExerciseDone(slug: string, index: number, done: boolean): void {
+  const map = loadExercises();
+  if (done) map[exerciseKey(slug, index)] = true;
+  else delete map[exerciseKey(slug, index)];
+  saveExercises();
+}
+
+export function countExercisesDone(): number {
+  return Object.keys(loadExercises()).length;
 }
 
 /* ---- テーマ ---- */
