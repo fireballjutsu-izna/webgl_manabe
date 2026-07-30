@@ -1800,3 +1800,18 @@
   font-size: 0.84rem;
   color: var(--neon-lime);
 }
+
+/* 間違えたときだけ出る戻り先 */
+.qz__back {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--border);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.qz__back a {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0;
+}

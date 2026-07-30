@@ -174,6 +174,8 @@ async function main(): Promise<void> {
       ['#/', 'home'],
       ['#/glossary', 'glossary'],
       ['#/map', 'map'],
+      ['#/help', 'help'],
+      ['#/drill', 'drill'],
     ] as const) {
       recorder.reset();
       await page.goto(`${BASE}${path}`);
@@ -183,6 +185,47 @@ async function main(): Promise<void> {
       if (recorder.errors.length > 0) fail(`${name}: ${recorder.errors.join(' / ')}`);
       else ok(`${name} を表示`);
     }
+
+    /* ---- ホームの「続きから」は必ず 1 枚 ---- */
+
+    // 0 枚だと次の一手が示せず、2 枚だと選ばせることになる。どちらも困る
+    await page.goto(`${BASE}#/`);
+    await settle(page);
+    const resumeCards = await page.locator('.resume').count();
+    if (resumeCards === 1) ok('ホームの「続きから」が 1 枚だけ出ている');
+    else fail(`ホームの「続きから」が ${resumeCards} 枚あります（1 枚であるべき）`);
+
+    /* ---- 演習ページ ---- */
+
+    await page.goto(`${BASE}#/drill`);
+    await settle(page);
+    const drillItems = await page.locator('.ex').count();
+    const expectedExercises = chapters.reduce((sum, c) => sum + (c.exercises?.length ?? 0), 0);
+    if (drillItems === expectedExercises) ok(`演習ページに ${drillItems} 問すべて出ている`);
+    else fail(`演習ページの問題が ${drillItems} 問（期待 ${expectedExercises} 問）`);
+
+    // 通しモードは「次へ」で進むこと
+    await page.goto(`${BASE}#/drill/run/math`);
+    await settle(page);
+    const posBefore = await page.locator('.drill-run__pos').textContent();
+    await page.locator('.drill-run__nav .btn').last().click();
+    await page.waitForTimeout(200);
+    const posAfter = await page.locator('.drill-run__pos').textContent();
+    if (posBefore !== posAfter) ok(`演習を通しで解ける（${posBefore} → ${posAfter}）`);
+    else fail(`「次へ」を押しても問題が進みません（${posBefore} のまま）`);
+
+    // 「解いた」印がリロードをまたいで残ること。
+    // 通しモードはリロードで 1 問目に戻るので、印は一覧のほうで数える
+    await page.locator('.ex__done').first().click();
+    await page.waitForTimeout(150);
+    await page.reload();
+    await settle(page);
+    await page.goto(`${BASE}#/drill`);
+    await settle(page);
+    const kept = await page.locator('.ex__done--on').count();
+    if (kept === 1) ok('演習の「解いた」印がリロード後も残る');
+    else fail(`演習の「解いた」印が ${kept} 個（1 個であるべき）`);
+    await page.evaluate(() => localStorage.removeItem('webgl-manabe:exercises:v1'));
 
     /* ---- 全章を連続で訪問（同一セッションのまま） ---- */
 
@@ -220,6 +263,15 @@ async function main(): Promise<void> {
         await page.evaluate(() => window.scrollTo({ top: 0 }));
         // 最初の 1 フレームだけ描いて落ちる書き方を見逃さないよう、少し様子を見る
         await page.waitForTimeout(700);
+      }
+
+      // 数式には必ず計算例が付いている（check-content が強制しているが、描画も確かめる）
+      const formulaCount = chapter.blocks.filter((block) => block.kind === 'formula').length;
+      if (formulaCount > 0) {
+        const workedCount = await page.locator('.worked').count();
+        if (workedCount !== formulaCount) {
+          fail(`${label} ${chapter.slug}: 計算例 ${workedCount} 個（数式 ${formulaCount} 個）`);
+        }
       }
 
       const canvasCount = await page.locator('.demo__stage canvas').count();

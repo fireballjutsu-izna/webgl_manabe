@@ -96,8 +96,24 @@ for (const chapter of chapters) {
     }
     if (block.kind === 'md') texts.push(block.text);
     if (block.kind === 'callout') texts.push(block.text, block.title);
-    if (block.kind === 'formula' && block.readAloud.trim().length === 0) {
-      errors.push(`${where}: 数式 "${block.tex}" に readAloud（日本語での読み方）がありません`);
+    if (block.kind === 'formula') {
+      if (block.readAloud.trim().length === 0) {
+        errors.push(`${where}: 数式 "${block.tex}" に readAloud（日本語での読み方）がありません`);
+      }
+      texts.push(block.readAloud);
+      // 式の意味が分かることと、自分で回せることは別。数式には計算例を必ず付ける
+      if (!block.worked) {
+        errors.push(`${where}: 数式 "${block.tex}" に worked（実際に計算してみる）がありません`);
+      } else {
+        const { given, steps, result } = block.worked;
+        if (given.trim().length === 0) errors.push(`${where}: 計算例の given が空です`);
+        if (result.trim().length === 0) errors.push(`${where}: 計算例の result が空です`);
+        if (steps.length === 0) errors.push(`${where}: 計算例に手順が 1 つもありません`);
+        for (const step of steps) {
+          if (step.calc.trim().length === 0) errors.push(`${where}: 計算例に空の行があります`);
+        }
+        texts.push(given, result, ...steps.map((step) => step.note ?? ''));
+      }
     }
     if (block.kind === 'code' && block.code.trim().length === 0) {
       errors.push(`${where}: 空のコードブロックがあります`);
@@ -190,6 +206,14 @@ for (const entry of glossary) {
   }
 }
 
+/* ---- 部 ---- */
+
+for (const part of PARTS) {
+  if (part.payoff.trim().length === 0) {
+    errors.push(`${part.title}: payoff（この部を終えると何ができるか）が空です`);
+  }
+}
+
 /* ---- 逆引き ---- */
 
 const symptomIds = new Set<string>();
@@ -239,6 +263,10 @@ for (const term of terms) {
   }
 }
 
+const formulaCount = chapters.reduce(
+  (sum, c) => sum + c.blocks.filter((b) => b.kind === 'formula').length,
+  0,
+);
 const exerciseCount = chapters.reduce((sum, c) => sum + (c.exercises?.length ?? 0), 0);
 const withoutExercises = chapters.filter((c) => (c.exercises?.length ?? 0) === 0);
 for (const chapter of withoutExercises) {
@@ -246,7 +274,7 @@ for (const chapter of withoutExercises) {
 }
 
 console.log(
-  `章: ${chapters.length}　デモ: ${demoIds.size}　用語: ${terms.size}` +
+  `章: ${chapters.length}　デモ: ${demoIds.size}　用語: ${terms.size}　数式: ${formulaCount}` +
     `　演習: ${exerciseCount}　逆引き: ${symptoms.length}`,
 );
 
