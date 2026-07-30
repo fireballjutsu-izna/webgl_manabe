@@ -272,6 +272,29 @@ controls.dispose();`,
 `,
     },
   ],
+  exercises: [
+    {
+      prompt: '\`fleet\` の中の**すべての車のボディ**を、まとめて同じ色に変えてください。1 台ずつ名前で取り出すのではなく、たどって探します。',
+      hint: 'traverse は、自分と子孫を全部たどってくれます。',
+      answer: `\`traverse\` で全部たどり、名前が \`body\` のものだけを処理します。
+\`getObjectByName\` は**最初に見つかった 1 つ**しか返さないので、同じ名前が複数あるときはたどるほうを使います。
+なお、マテリアルは 3 台で共有しているので、\`material.color\` を書き換えると 1 行で全部変わります。
+**それが困る場合だけ**、\`clone()\` して個別に持たせてください。`,
+      answerCode: `fleet.traverse((object) => {
+  if (object.name === 'body') {
+    object.material = new THREE.MeshStandardMaterial({ color: 0xffd166 });
+  }
+});`,
+    },
+    {
+      prompt: `車を 1 台、\`scene.remove(car)\` で消しました。これで後片付けは足りていますか。足りないなら何を足しますか。`,
+      hint: 'シーンから外れても、GPU が持っているものは残ります。',
+      answer: `足りません。\`remove\` は**シーンのつながりから外すだけ**で、GPU 上のジオメトリ・テクスチャは解放されません。
+\`traverse\` して \`geometry.dispose()\` と \`material.dispose()\`（テクスチャがあればそれも）を呼びます。
+ただし**共有しているものを捨ててはいけません**。この例では 3 台が同じジオメトリとマテリアルを使っているので、
+1 台ぶんだけ捨てると残りの 2 台が壊れます。共有しているうちは捨てない、が原則です。`,
+    },
+  ],
   quiz: [
     {
       q: '`scene.remove(mesh)` を呼んだあと、GPU 側のメモリはどうなりますか。',
