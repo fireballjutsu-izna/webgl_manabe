@@ -30,6 +30,15 @@ import { chapterT12 } from './chapters/t12-shader-intro.ts';
 import { chapterT13 } from './chapters/t13-vertex-shader.ts';
 import { chapterT14 } from './chapters/t14-fragment-shader.ts';
 
+import { chapterP01 } from './chapters/p01-planet-setup.ts';
+import { chapterP02 } from './chapters/p02-planet-surface.ts';
+import { chapterP03 } from './chapters/p03-planet-atmosphere.ts';
+import { chapterP04 } from './chapters/p04-planet-orbits.ts';
+import { chapterP05 } from './chapters/p05-city-layout.ts';
+import { chapterP06 } from './chapters/p06-city-buildings.ts';
+import { chapterP07 } from './chapters/p07-city-light.ts';
+import { chapterP08 } from './chapters/p08-city-motion.ts';
+
 /** 学ぶ順に並べた全章。目次・前提知識マップ・検索索引はここから作られる。 */
 export const chapters: Chapter[] = [
   chapter01,
@@ -61,6 +70,15 @@ export const chapters: Chapter[] = [
   chapterT12,
   chapterT13,
   chapterT14,
+
+  chapterP01,
+  chapterP02,
+  chapterP03,
+  chapterP04,
+  chapterP05,
+  chapterP06,
+  chapterP07,
+  chapterP08,
 ];
 
 const bySlug = new Map(chapters.map((chapter) => [chapter.slug, chapter]));

@@ -35,8 +35,8 @@ export interface QuizQuestion {
   explain: string;
 }
 
-/** 部。第1部が数学編、第2部が Three.js 編。 */
-export type Part = 'math' | 'threejs';
+/** 部。第1部が数学編、第2部が Three.js 編、第3部が実践編。 */
+export type Part = 'math' | 'threejs' | 'project';
 
 export interface PartInfo {
   id: Part;
@@ -59,6 +59,12 @@ export const PARTS: PartInfo[] = [
     title: '第2部　Three.js 編',
     lead: '手に入れた数学を実際のコードにします。各章のコードはその場で書き換えて動かせます。',
   },
+  {
+    id: 'project',
+    index: 3,
+    title: '第3部　実践編',
+    lead: '作品を 2 つ、最初から最後まで作ります。素材は 1 つも用意せず、すべてコードで生み出します。',
+  },
 ];
 
 export interface Chapter {
@@ -76,8 +82,8 @@ export interface Chapter {
   /** 対応する Three.js の API。章末に一覧で出る。 */
   threeApis: string[];
   /**
-   * 章冒頭に出す「この章で使う数学」。第2部の章に付ける。
-   * 第1部を読んでいない人でも、どこへ戻ればよいかが分かるようにする。
+   * 章冒頭に出す呼び戻し。第2部では「この章で使う数学」、第3部では「この章で使う道具」として出る。
+   * 前の部を読んでいない人でも、どこへ戻ればよいかが分かるようにする。
    */
   mathRecall?: { slug: string; note: string }[];
   blocks: Block[];

@@ -45,7 +45,10 @@ function calloutBlock(tone: string, title: string, text: string): HTMLElement {
   );
 }
 
-/** 第2部の章の冒頭に出す「この章で使う数学」。第1部のどこへ戻ればよいかを示す。 */
+/**
+ * 章の冒頭に出す呼び戻し。前の部のどこへ戻ればよいかを示す。
+ * 第2部は数学だけを呼び戻すが、第3部は第2部の実装も混ざるので見出しを変える。
+ */
 function mathRecallCard(chapter: Chapter): HTMLElement | null {
   if (!chapter.mathRecall || chapter.mathRecall.length === 0) return null;
 
@@ -70,7 +73,11 @@ function mathRecallCard(chapter: Chapter): HTMLElement | null {
   return el(
     'aside',
     { class: 'recall' },
-    el('div', { class: 'recall__head' }, 'この章で使う数学'),
+    el(
+      'div',
+      { class: 'recall__head' },
+      chapter.part === 'project' ? 'この章で使う道具' : 'この章で使う数学',
+    ),
     list,
     el(
       'p',
