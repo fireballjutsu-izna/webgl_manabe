@@ -179,6 +179,17 @@ for (const chapter of chapters) {
     }
     // 用語と章リンクは、インラインコードの外にあるものだけを見る（描画側と同じ扱い）
     const text = withoutInlineCode(raw);
+
+    /*
+     * 章番号を本文に直接書かない。番号は部の中の位置で決まるので、
+     * 章を割ったり並べ替えたりするたびに全文を直して回ることになり、必ず取りこぼす。
+     * `[](#/ch/03-dot)` と書けば「1-03 内積 ― 角度を測る」が自動で入る。
+     */
+    for (const match of text.matchAll(/(?<![[\w/-])([1-9]-\d{2})(?![\w-])/g)) {
+      warnings.push(
+        `${where}: 本文に章番号 "${match[1]}" が直接書かれています（[](#/ch/slug) を使ってください）`,
+      );
+    }
     for (const match of text.matchAll(/\{\{([^}]+)\}\}/g)) {
       const body = match[1] ?? '';
       const key = (body.includes('|') ? body.split('|', 2)[1] : body)?.trim() ?? '';
