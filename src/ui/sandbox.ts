@@ -217,8 +217,11 @@ export function createSandbox(options: SandboxOptions): SandboxInstance {
       return;
     }
 
-    // addons は動的 import なので、最初の実行だけ少し待つ
-    const importMap = await getImportMap();
+    const code = textarea.value;
+
+    // このコードが実際に import しているものだけを動的 import で読む。
+    // 全部を先読みすると、ブルームを使わない章の読者にも postprocessing が降ってくる
+    const importMap = await getImportMap(code);
     if (disposed) return;
     if (!importMap) {
       showMessages([
@@ -227,7 +230,6 @@ export function createSandbox(options: SandboxOptions): SandboxInstance {
       return;
     }
 
-    const code = textarea.value;
     const runaway = findRunawayLoop(code);
     if (runaway) pending.push({ tone: 'warn', text: runaway });
 

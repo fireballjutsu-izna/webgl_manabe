@@ -71,6 +71,7 @@ const CORE: Record<string, string> = {
   // renderers
   WebGLRenderer: 'renderers', WebGLRenderTarget: 'renderers',
   WebGLCubeRenderTarget: 'renderers', WebGLProgram: 'renderers/webgl',
+  PMREMGenerator: 'extras', ColorManagement: 'math',
 
   // textures
   Texture: 'textures', CanvasTexture: 'textures', CubeTexture: 'textures',
@@ -131,7 +132,10 @@ const ADDONS: Record<string, string> = {
   RenderPass: 'postprocessing',
   UnrealBloomPass: 'postprocessing',
   OutputPass: 'postprocessing',
+  ShaderPass: 'postprocessing',
+  SMAAPass: 'postprocessing',
   BufferGeometryUtils: 'utils',
+  RoomEnvironment: 'environments',
 };
 
 /**

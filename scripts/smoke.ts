@@ -152,7 +152,7 @@ async function main(): Promise<void> {
       else ok(`${name} を表示`);
     }
 
-    /* ---- 全14章を連続で訪問（同一セッションのまま） ---- */
+    /* ---- 全章を連続で訪問（同一セッションのまま） ---- */
 
     for (const chapter of chapters) {
       const label = chapterLabel(chapter);
