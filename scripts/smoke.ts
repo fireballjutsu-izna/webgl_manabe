@@ -49,6 +49,37 @@ function findChromium(): string | undefined {
   return undefined;
 }
 
+/**
+ * ページが落ち着くのを待つ。
+ *
+ * networkidle は使わない。サンドボックスの iframe は blob: のモジュールを読みに行くが、
+ * 章を移るとその途中で iframe ごと外される。外された要求は「進行中」のまま残るので、
+ * ネットワークが静かになる瞬間が二度と来ない章がある（CI で 30 秒待って落ちた）。
+ * 代わりに、出ているべきものが出たかどうかで判断する。
+ */
+async function settle(page: Page): Promise<void> {
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForFunction(() => (document.querySelector('#main')?.childElementCount ?? 0) > 0);
+}
+
+/**
+ * 条件が満たされるまで待つ。満たされなければ待った分だけ諦める（失敗にはしない ―
+ * そのあとの検査が本当の判定をする）。CI の実行機は手元よりずっと遅いので、
+ * 固定の待ち時間では足りないことがある。
+ */
+async function waitUntil(
+  page: Page,
+  condition: () => Promise<boolean>,
+  timeoutMs: number,
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    if (await condition()) return true;
+    if (Date.now() >= deadline) return false;
+    await page.waitForTimeout(250);
+  }
+}
+
 async function waitForServer(url: string, timeoutMs = 30_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -146,7 +177,8 @@ async function main(): Promise<void> {
     ] as const) {
       recorder.reset();
       await page.goto(`${BASE}${path}`);
-      await page.waitForLoadState('networkidle');
+      await settle(page);
+      await page.waitForTimeout(400);
       await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true });
       if (recorder.errors.length > 0) fail(`${name}: ${recorder.errors.join(' / ')}`);
       else ok(`${name} を表示`);
@@ -158,21 +190,36 @@ async function main(): Promise<void> {
       const label = chapterLabel(chapter);
       recorder.reset();
       await page.goto(`${BASE}#/ch/${chapter.slug}`);
-      await page.waitForLoadState('networkidle');
-      // デモの動的 import とマウントを待つ
-      await page.waitForTimeout(900);
+      await settle(page);
 
       const demoCount = chapter.blocks.filter((block) => block.kind === 'demo').length;
       const sandboxCount = chapter.blocks.filter((block) => block.kind === 'sandbox').length;
+
+      // デモは動的 import のあとにマウントされる。出そろうまで待つ
+      if (demoCount > 0) {
+        await waitUntil(page, async () => (await page.locator('.demo__stage canvas').count()) >= demoCount, 20_000);
+      }
+      await page.waitForTimeout(600);
 
       // サンドボックスは画面に入ったときに自動実行されるので、順に送ってやる
       if (sandboxCount > 0) {
         const cards = page.locator('.sandbox');
         for (let i = 0; i < sandboxCount; i += 1) {
           await cards.nth(i).scrollIntoViewIfNeeded();
-          await page.waitForTimeout(2200);
+          // iframe の中でキャンバスができるまで。CI では数秒かかることがある
+          await waitUntil(
+            page,
+            async () => {
+              const handle = await page.locator('.sandbox__frame').nth(i).elementHandle();
+              const inner = await handle?.contentFrame();
+              return inner ? (await inner.locator('canvas').count()) > 0 : false;
+            },
+            20_000,
+          );
         }
         await page.evaluate(() => window.scrollTo({ top: 0 }));
+        // 最初の 1 フレームだけ描いて落ちる書き方を見逃さないよう、少し様子を見る
+        await page.waitForTimeout(700);
       }
 
       const canvasCount = await page.locator('.demo__stage canvas').count();
@@ -232,8 +279,9 @@ async function main(): Promise<void> {
 
     // ここまで全章を同じタブで開いた。デモのある章に戻って、まだ描けるなら破棄は効いている
     await page.goto(`${BASE}#/ch/14-capstone`);
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1200);
+    await settle(page);
+    await waitUntil(page, async () => (await page.locator('.demo__stage canvas').count()) > 0, 20_000);
+    await page.waitForTimeout(600);
     const lastCanvas = page.locator('.demo__stage canvas').first();
     const alive = await lastCanvas.evaluate((node) => {
       const canvas = node as HTMLCanvasElement;
@@ -245,7 +293,7 @@ async function main(): Promise<void> {
     /* ---- API チップが公式ドキュメントへのリンクになっているか ---- */
 
     await page.goto(`${BASE}#/ch/03-dot`);
-    await page.waitForLoadState('networkidle');
+    await settle(page);
     const apiLinks = await page.locator('.api-chip--link[href*="threejs.org"]').count();
     if (apiLinks > 0) ok(`API チップが公式ドキュメントへのリンクになっている（${apiLinks} 件）`);
     else fail('API チップが公式ドキュメントへのリンクになっていません');
@@ -304,7 +352,7 @@ async function main(): Promise<void> {
     const reducedPage = await reduced.newPage();
     const reducedRecorder = watch(reducedPage);
     await reducedPage.goto(`${BASE}#/ch/14-capstone`);
-    await reducedPage.waitForLoadState('networkidle');
+    await settle(reducedPage);
     await reducedPage.waitForTimeout(900);
     if (reducedRecorder.errors.length > 0) {
       fail(`prefers-reduced-motion: ${reducedRecorder.errors.join(' / ')}`);
@@ -320,7 +368,7 @@ async function main(): Promise<void> {
     const mobilePage = await mobile.newPage();
     const mobileRecorder = watch(mobilePage);
     await mobilePage.goto(`${BASE}#/ch/03-dot`);
-    await mobilePage.waitForLoadState('networkidle');
+    await settle(mobilePage);
     await mobilePage.waitForTimeout(900);
     const overflow = await mobilePage.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
