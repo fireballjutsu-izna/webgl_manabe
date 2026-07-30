@@ -176,6 +176,32 @@ matrix.decompose(p, q, s);`,
 `,
     },
   ],
+  exercises: [
+    {
+      prompt: `デモで「順番を入れ替えた箱も表示」を入れ、移動 x を 3、y 軸まわりの回転を 90 度にしてください。
+2 つの箱はどこにいますか。**なぜ違う場所になるのか**を、原点との関係で説明してください。`,
+      hint: '回転はいつでも原点を中心に起きます。',
+      answer: `Three.js の順（拡大 → 回転 → 移動）の箱は、原点で 90 度回ってから x に 3 動くので、**x = 3 の場所で向きだけが変わって**います。
+入れ替えたほう（移動 → 回転）は、x = 3 に動いてから原点を中心に 90 度回るので、**振り回されて**別の場所に行きます。
+回転はつねに原点を中心に起きるので、「先に動かすと、その距離がそのまま回転の半径になる」わけです。`,
+    },
+    {
+      prompt: '\`mesh.position\` \`mesh.rotation\` \`mesh.scale\` を設定したとき、Three.js はそれをいつ 1 つの行列にまとめていますか。自分で今すぐ反映させたいときはどうしますか。',
+      hint: '毎フレームの描画の直前に、シーン全体をたどって計算されています。',
+      answer: `描画のたびに \`Scene\` を上からたどって \`updateMatrixWorld()\` が呼ばれ、そこで 3 つが 1 つの行列に合成されます。
+つまり**設定した直後の \`matrixWorld\` は、まだ 1 フレーム前のまま**ということです。
+描画を待たずにワールド座標を知りたいときは、自分で \`updateMatrixWorld()\` を呼びます
+（第9章で、親子関係があるときにこれが効いてきます）。`,
+      answerCode: `mesh.position.set(3, 0, 0);
+mesh.rotation.y = Math.PI / 2;
+
+// この時点の matrixWorld はまだ更新されていない
+mesh.updateMatrixWorld(true);
+
+const world = new THREE.Vector3();
+mesh.getWorldPosition(world); // 中で matrixWorld を読んでいる`,
+    },
+  ],
   quiz: [
     {
       q: '3D の変換行列が 3x3 ではなく 4x4 になっているのはなぜですか。',

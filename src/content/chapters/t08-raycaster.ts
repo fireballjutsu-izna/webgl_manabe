@@ -314,6 +314,37 @@ window.addEventListener('resize', () => {
 `,
     },
   ],
+  exercises: [
+    {
+      prompt: `\`updatePointer\` の中の \`getBoundingClientRect()\` を使うのをやめて、
+\`window.innerWidth\` / \`window.innerHeight\` で正規化するように書き換えてください。
+このサンドボックスでは動いてしまいます。**それでも実際のページでは壊れる**のはなぜでしょう。`,
+      hint: 'このサンドボックスの iframe は、たまたまキャンバスが画面いっぱいです。',
+      answer: `**キャンバスが画面いっぱいとは限らない**からです。
+ページの一部に埋め込んだキャンバスだと、キャンバスの左上と画面の左上がずれるので、
+クリックの位置が実際より右下（あるいは左上）にずれ、「少し外したところが選ばれる」ようになります。
+\`getBoundingClientRect()\` は**キャンバス自身の位置と大きさ**を返すので、どんな置き方でも正しく合います。`,
+      answerCode: `const rect = renderer.domElement.getBoundingClientRect();
+pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;`,
+    },
+    {
+      prompt: '\`raycaster.intersectObjects(targets, false)\` の第 2 引数を \`true\` にすると何が変わりますか。どちらを使うべきでしょう。',
+      hint: '第 2 引数は「子孫までたどるか」です。',
+      answer: `\`true\` にすると、渡した物体の**子孫まで**当たり判定の対象になります。
+車を \`Group\` で組んだような場合、当たるのは中の Mesh なので \`true\` が要ります。
+ただし \`hits[0].object\` は**タイヤの Mesh** であって車そのものではないので、
+「どの車が選ばれたか」を知るには \`object.parent\` をたどるか、\`userData\` に印を付けておきます。`,
+    },
+    {
+      prompt: 'ドラッグのサンドボックスで、\`new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.5)\` の \`-0.5\` を \`0\` にしてください。球の動きはどう変わりますか。',
+      hint: 'Plane の第 2 引数は、原点からの符号付き距離です（法線の向きを正とする）。',
+      answer: `球が**床にめり込んだ高さ**（中心が y = 0）で滑るようになります。
+この平面は「球の中心が乗る面」なので、半径 0.5 のぶんだけ持ち上げて y = 0.5 にしてありました。
+符号が逆なのは、Plane の定数が「法線方向にどれだけずらすか」ではなく $n \\cdot p + d = 0$ の $d$ だからです。
+**上向きの法線で y = 0.5 の面なら d は −0.5** になります。`,
+    },
+  ],
   quiz: [
     {
       q: 'Raycaster に渡すマウス位置は、どんな座標に直しますか。',

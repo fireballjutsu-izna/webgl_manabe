@@ -343,6 +343,37 @@ const textureLoader = new THREE.TextureLoader(manager);`,
 `,
     },
   ],
+  exercises: [
+    {
+      prompt: `読み込んだモデルが**画面いっぱいを埋めるほど巨大**だったとします。
+「どんな大きさで来ても、高さが 2 になるように揃える」コードを書いてください。`,
+      hint: 'まず現在の大きさを測る必要があります。Box3 が使えます。',
+      answer: `\`Box3.setFromObject()\` で外接する箱を測り、望む高さとの比を \`scale\` に入れます。
+モデルの単位はミリメートルだったりインチだったりと作った人しだいなので、
+**読み込んだあとに測って揃える**のがいちばん確実です。
+足元を床に合わせたいなら、測った箱の最小 y のぶんだけ下げます。`,
+      answerCode: `const box = new THREE.Box3().setFromObject(model);
+const size = box.getSize(new THREE.Vector3());
+
+model.scale.multiplyScalar(2 / size.y);
+
+// 足元を y = 0 に揃える（scale のあとにもう一度測る）
+const fitted = new THREE.Box3().setFromObject(model);
+model.position.y -= fitted.min.y;`,
+    },
+    {
+      prompt: 'モデルが横倒しで出てきました。「Z-up で作られたものを Y-up に直す」には、どの軸をどれだけ回しますか。',
+      hint: 'Z が上を向いているものを、Y が上になるように倒します。',
+      answer: `x 軸まわりに **−90 度**（$-\\pi/2$）回します。
+Blender など Z-up の道具から書き出したモデルでよく起きます。
+なお、モデル自身の \`rotation\` を書き換えると**あとでアニメーションを付けたときに困る**ので、
+親の \`Group\` を 1 枚かぶせてそちらを回すほうが安全です。`,
+      answerCode: `const holder = new THREE.Group();
+holder.rotation.x = -Math.PI / 2; // Z-up を Y-up に
+holder.add(model);
+scene.add(holder);`,
+    },
+  ],
   quiz: [
     {
       q: '`loader.load()` で読み込んだモデルをシーンに追加するとき、正しいのはどれですか。',

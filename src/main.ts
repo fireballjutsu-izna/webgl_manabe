@@ -9,6 +9,7 @@ import { createShell } from './app/shell.ts';
 import { startRouter } from './app/router.ts';
 import { renderChapterPage } from './app/pages/chapter.ts';
 import { renderGlossaryPage } from './app/pages/glossary.ts';
+import { renderHelpPage } from './app/pages/help.ts';
 import { renderHomePage } from './app/pages/home.ts';
 import { renderMapPage } from './app/pages/map.ts';
 import { installTermPopovers } from './ui/term.ts';
@@ -27,6 +28,7 @@ startRouter({
     ch: renderChapterPage,
     glossary: renderGlossaryPage,
     map: renderMapPage,
+    help: renderHelpPage,
   },
   notFound: (root) => {
     document.title = 'ページが見つかりません｜(アイン、ソフ、オウル)';

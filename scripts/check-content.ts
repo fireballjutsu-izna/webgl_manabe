@@ -8,6 +8,7 @@
 
 import { chapters, chaptersOfPart, PARTS } from '../src/content/index.ts';
 import { glossary } from '../src/content/glossary.ts';
+import { symptoms } from '../src/content/symptoms.ts';
 import { docsUrl, isKnownUnlinked } from '../src/content/three-docs.ts';
 import { demos } from '../src/demos/registry.ts';
 
@@ -23,6 +24,16 @@ const terms = new Set(glossary.map((entry) => entry.term));
 
 const usedDemos = new Set<string>();
 const usedTerms = new Set<string>();
+
+/**
+ * 記法を調べる前に、インラインコードを外す。
+ * renderMarkup は `...` の中身を先に退避してから {{用語}} を処理するので、
+ * コードの中の `{{ ... }}` は用語ではない。ここも同じ扱いにしないと、
+ * 実際には正しく描画されるものを誤って落としてしまう。
+ */
+function withoutInlineCode(text: string): string {
+  return text.replace(/`[^`]*`/g, ' ');
+}
 
 // 章番号は部の中で 1 から連番になっていること
 for (const part of PARTS) {
@@ -129,11 +140,29 @@ for (const chapter of chapters) {
   }
   for (const question of chapter.quiz) texts.push(question.q, question.explain);
 
-  for (const text of texts) {
+  // 章末の演習。本文と同じ検証（用語・章リンク）にかける
+  for (const exercise of chapter.exercises ?? []) {
+    if (exercise.prompt.trim().length === 0) {
+      errors.push(`${where}: 課題文が空の演習があります`);
+    }
+    if (exercise.answer.trim().length === 0) {
+      errors.push(`${where}: 解答例が空の演習があります`);
+    }
+    texts.push(exercise.prompt, exercise.answer);
+    if (exercise.hint) texts.push(exercise.hint);
+    // answerCode はコードなので、``` や {{ }} の検査には回さない
+    if (exercise.answerCode !== undefined && exercise.answerCode.trim().length === 0) {
+      errors.push(`${where}: 解答例のコードが空です（不要なら省いてください）`);
+    }
+  }
+
+  for (const raw of texts) {
     // 軽量マークアップはフェンス付きコードに対応していない。code / sandbox ブロックを使うこと
-    if (text.includes('```')) {
+    if (raw.includes('```')) {
       errors.push(`${where}: 本文に \`\`\` があります（code か sandbox ブロックを使ってください）`);
     }
+    // 用語と章リンクは、インラインコードの外にあるものだけを見る（描画側と同じ扱い）
+    const text = withoutInlineCode(raw);
     for (const match of text.matchAll(/\{\{([^}]+)\}\}/g)) {
       const body = match[1] ?? '';
       const key = (body.includes('|') ? body.split('|', 2)[1] : body)?.trim() ?? '';
@@ -161,6 +190,43 @@ for (const entry of glossary) {
   }
 }
 
+/* ---- 逆引き ---- */
+
+const symptomIds = new Set<string>();
+
+for (const symptom of symptoms) {
+  const where = `symptom "${symptom.id}"`;
+  if (symptomIds.has(symptom.id)) {
+    errors.push(`${where}: id が重複しています`);
+  }
+  symptomIds.add(symptom.id);
+
+  if (symptom.title.trim().length === 0) {
+    errors.push(`${where}: title が空です`);
+  }
+  if (symptom.checks.length === 0) {
+    errors.push(`${where}: 確認することが 1 つも書かれていません`);
+  }
+
+  for (const check of symptom.checks) {
+    if (check.text.trim().length === 0) {
+      errors.push(`${where}: 空の項目があります`);
+    }
+    if (check.chapter && !slugs.has(check.chapter)) {
+      errors.push(`${where}: 存在しない章 "${check.chapter}" を参照しています`);
+    }
+    const text = withoutInlineCode(check.text);
+    for (const match of text.matchAll(/\{\{([^}]+)\}\}/g)) {
+      const body = match[1] ?? '';
+      const key = (body.includes('|') ? body.split('|', 2)[1] : body)?.trim() ?? '';
+      usedTerms.add(key);
+      if (!terms.has(key)) {
+        errors.push(`${where}: 用語 "${key}" が glossary.ts にありません`);
+      }
+    }
+  }
+}
+
 for (const id of demoIds) {
   if (!usedDemos.has(id)) {
     warnings.push(`デモ "${id}" はどの章からも参照されていません`);
@@ -173,7 +239,16 @@ for (const term of terms) {
   }
 }
 
-console.log(`章: ${chapters.length}　デモ: ${demoIds.size}　用語: ${terms.size}`);
+const exerciseCount = chapters.reduce((sum, c) => sum + (c.exercises?.length ?? 0), 0);
+const withoutExercises = chapters.filter((c) => (c.exercises?.length ?? 0) === 0);
+for (const chapter of withoutExercises) {
+  warnings.push(`${chapter.slug}: 演習が 1 問もありません`);
+}
+
+console.log(
+  `章: ${chapters.length}　デモ: ${demoIds.size}　用語: ${terms.size}` +
+    `　演習: ${exerciseCount}　逆引き: ${symptoms.length}`,
+);
 
 for (const warning of warnings) console.warn(`  warn  ${warning}`);
 

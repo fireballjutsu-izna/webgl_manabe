@@ -6,6 +6,7 @@ import type { Block, Chapter } from '../../content/types.ts';
 import { demos } from '../../demos/registry.ts';
 import { el } from '../../ui/dom.ts';
 import { createCodeBlock } from '../../ui/code.ts';
+import { createExercises } from '../../ui/exercise.ts';
 import { renderMarkup, renderTex } from '../../ui/markup.ts';
 import { createQuiz } from '../../ui/quiz.ts';
 import { getProgress, setRead } from '../progress.ts';
@@ -320,6 +321,11 @@ export const renderChapterPage: PageRenderer = (root, ctx) => {
         ),
       ),
     );
+  }
+
+  // 手を動かしてから、理解を確かめる順にする
+  if (chapter.exercises && chapter.exercises.length > 0) {
+    article.appendChild(createExercises(chapter.exercises));
   }
 
   if (chapter.quiz.length > 0) {

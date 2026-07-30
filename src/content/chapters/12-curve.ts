@@ -165,6 +165,33 @@ function animate(dt) {
 `,
     },
   ],
+  exercises: [
+    {
+      prompt: `デモで制御点をドラッグして、**間隔の広いところと狭いところ**を作ってください。
+そのうえで「自動で走らせる」を入れ、球の速さを見てください。何が起きますか。`,
+      hint: 't は「道のりの割合」ではなく「何番目の区間のどのあたりか」を表しています。',
+      answer: `間隔の広い区間では**速く**、狭い区間では**遅く**なります。
+\`getPoint(t)\` の $t$ は道のりではなく曲線のパラメータなので、区間の長さが違うと速さも変わってしまいます。
+**一定の速さで走らせたいときは \`getPointAt(t)\` を使います**。こちらは道のりで測り直してくれます（弧長パラメータ化）。`,
+      answerCode: `// 速さがばらつく
+const p = curve.getPoint(t);
+
+// 道のりで測るので、速さが一定になる
+const p = curve.getPointAt(t);`,
+    },
+    {
+      prompt: '曲線に沿って走る物体を、**進行方向に向かせて**ください。',
+      hint: 'その点での曲線の向きを返してくれるものがあります。',
+      answer: `\`getTangentAt(t)\` で進行方向を取り、いま居る点にそれを足した先を \`lookAt\` します。
+気をつけるのは、**\`lookAt\` はカメラ以外では +Z をその方向に向ける**ことです（カメラだけが −Z）。
+モデルの正面が +Z でないなら、あらかじめ回しておくか、親の Group を挟んで補正します。`,
+      answerCode: `const p = curve.getPointAt(t);
+const tangent = curve.getTangentAt(t);
+
+mesh.position.copy(p);
+mesh.lookAt(p.clone().add(tangent));`,
+    },
+  ],
   quiz: [
     {
       q: '置いた制御点を**すべて通る**曲線はどれですか。',
