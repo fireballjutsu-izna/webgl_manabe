@@ -26,6 +26,9 @@ import { chapterT08 } from './chapters/t08-raycaster.ts';
 import { chapterT09 } from './chapters/t09-loader.ts';
 import { chapterT10 } from './chapters/t10-scene-graph.ts';
 import { chapterT11 } from './chapters/t11-performance.ts';
+import { chapterT12 } from './chapters/t12-shader-intro.ts';
+import { chapterT13 } from './chapters/t13-vertex-shader.ts';
+import { chapterT14 } from './chapters/t14-fragment-shader.ts';
 
 /** 学ぶ順に並べた全章。目次・前提知識マップ・検索索引はここから作られる。 */
 export const chapters: Chapter[] = [
@@ -55,6 +58,9 @@ export const chapters: Chapter[] = [
   chapterT09,
   chapterT10,
   chapterT11,
+  chapterT12,
+  chapterT13,
+  chapterT14,
 ];
 
 const bySlug = new Map(chapters.map((chapter) => [chapter.slug, chapter]));
