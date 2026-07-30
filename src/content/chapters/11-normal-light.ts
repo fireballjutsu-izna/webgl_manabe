@@ -167,6 +167,29 @@ geometry.computeVertexNormals();`,
 `,
     },
   ],
+  exercises: [
+    {
+      prompt: 'デモで「なめらかにせず面ごとに塗る（flatShading）」を入れたり外したりしてください。**形（頂点）は 1 つも変わっていない**のに見た目が変わるのはなぜですか。',
+      hint: '変わっているのは法線の配り方です。',
+      answer: `法線を**頂点ごとに 1 本ずつ持たせて面の中で混ぜる**か、**面ごとに 1 本にする**かの違いです。
+形はどちらもカクカクした多面体のままですが、法線がなめらかに変化すると、
+明るさもなめらかに変わるので、丸く見えます。
+**ローポリのモデルが丸く見えるのは、頂点を増やしたからではなく、法線を混ぜているから**です。`,
+    },
+    {
+      prompt: '頂点の位置をコードで動かしたあと、陰影が動く前のままになってしまいました。何をすればよいですか。',
+      hint: '法線は位置から自動で付いてきません。',
+      answer: `\`geometry.computeVertexNormals()\` を呼んで法線を計算し直します。
+位置を書き換えても、法線の属性は前の形のまま残っているので、光の当たり方が古い形のものになります。
+あわせて \`position.needsUpdate = true\` も必要です。`,
+      answerCode: `const pos = geometry.attributes.position;
+for (let i = 0; i < pos.count; i += 1) {
+  pos.setY(i, Math.sin(pos.getX(i)) * 0.5);
+}
+pos.needsUpdate = true;
+geometry.computeVertexNormals(); // これを忘れると陰影が前の形のまま`,
+    },
+  ],
   quiz: [
     {
       q: '面の明るさを決めるいちばん基本の計算はどれですか。',

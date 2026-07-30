@@ -24,6 +24,21 @@ export type Block =
 
 export type CalloutTone = 'tip' | 'warn' | 'analogy';
 
+/**
+ * 章末の演習。読むだけで終わらせないための課題。
+ * 正誤の判定はしない（自己申告になるので、進捗にも絡めない）。
+ */
+export interface Exercise {
+  /** 課題文。md と同じ軽量マークアップが使える。 */
+  prompt: string;
+  /** 詰まったときの手がかり。答えそのものは書かない。 */
+  hint?: string;
+  /** 解答例の説明。「なぜそうなるか」まで書く。 */
+  answer: string;
+  /** 解答例のコード。書き換えたあとの断片を置く（差分の目印は本文側で示す）。 */
+  answerCode?: string;
+}
+
 export interface QuizQuestion {
   /** 設問文。md と同じ軽量マークアップが使える。 */
   q: string;
@@ -93,6 +108,8 @@ export interface Chapter {
    */
   mathRecall?: { slug: string; note: string }[];
   blocks: Block[];
+  /** 章末の演習。クイズの直前に出る。 */
+  exercises?: Exercise[];
   quiz: QuizQuestion[];
 }
 
