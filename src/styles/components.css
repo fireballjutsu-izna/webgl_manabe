@@ -893,7 +893,13 @@
 }
 
 .ex__prompt {
+  min-width: 0;
   font-size: 0.95rem;
+}
+
+/* 問題文の中のコードは、狭い画面では折り返してよい */
+.ex__prompt code {
+  overflow-wrap: anywhere;
 }
 
 .ex__prompt > * + * {
@@ -1603,4 +1609,141 @@
 
 .sx__to:hover {
   color: var(--neon-cyan);
+}
+
+/* ---- 演習ページ ---- */
+
+/* 部の絞り込みや「一覧へ」に使う小さなボタン。押した状態は枠と色で示す */
+.chip {
+  display: inline-block;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-inset);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.chip:hover {
+  border-color: var(--border-lit);
+  color: var(--text);
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+
+.drill-head {
+  max-width: min(52rem, 100%);
+  margin: 1.4rem auto 1.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+}
+
+.drill-parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.drill-count {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 一覧では、章ごとに区切って見出しを出す */
+.drill-list {
+  max-width: min(52rem, 100%);
+  margin-inline: auto;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.drill-ch {
+  /* 中の長いコード片にグリッドの幅を決めさせない（枠のほうを縮められるようにする） */
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  padding: 0.9rem 1.1rem 1.2rem;
+}
+
+.drill-ch__title {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.drill-ch__title a {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0;
+}
+
+/* 通しモードは 1 問だけを大きく出す */
+.drill-run__card {
+  min-height: 12rem;
+}
+
+.drill-run__pos {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.drill-run__nav {
+  max-width: min(52rem, 100%);
+  margin: 1rem auto 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.drill-run__nav .btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 出どころの章。通しモードでは、いまどの章の問題かが分からないと困る */
+.ex__source {
+  margin-bottom: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0;
+}
+
+/* 「解いた」は点数ではなく、しおり。控えめに置く */
+.ex__done {
+  margin-left: auto;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.ex__done:hover {
+  border-color: var(--border-lit);
+  color: var(--text);
+}
+
+.ex__done--on {
+  border-color: var(--neon-lime);
+  color: var(--neon-lime);
+}
+
+.ex--done .ex__num {
+  border-color: var(--neon-lime);
+  color: var(--neon-lime);
 }
