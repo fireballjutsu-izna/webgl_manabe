@@ -79,7 +79,7 @@ JavaScript は 1 つずつ順番に処理します。GPU はそうではあり�
   途中の画素では、3 頂点の値が混ぜられて届きます
 
 3 つ目が大事です。頂点は数百個しかないのに画素は数百万個ある——
-そのすき間を埋めているのが補間です。[1-08 補間](#/ch/08-interp)の lerp が、
+そのすき間を埋めているのが補間です。[](#/ch/08-interp)の lerp が、
 ここでも働いています。
 `,
     },
@@ -138,8 +138,8 @@ GLSL は型に厳しく、\`float x = 1;\` は**エラー**です。\`1.0\` と�
 \`ShaderMaterial\` を使うと、Three.js が**よく使う uniform と attribute を自動で足してくれます**。
 自分で宣言する必要はありません。
 
-- \`projectionMatrix\` … カメラの投影行列（[1-10](#/ch/10-camera)）
-- \`modelViewMatrix\` … 物体の配置とカメラの位置をまとめた行列（[1-09](#/ch/09-hierarchy)）
+- \`projectionMatrix\` … カメラの投影行列（[](#/ch/10-camera)）
+- \`modelViewMatrix\` … 物体の配置とカメラの位置をまとめた行列（[](#/ch/09-hierarchy)）
 - \`position\` \`normal\` \`uv\` … その頂点の位置・法線・UV
 
 だから頂点シェーダの最小形は、いつもこの 1 行になります。
@@ -271,7 +271,7 @@ window.addEventListener('resize', () => {
 ## 自分で attribute を足す
 
 ジオメトリに独自の値を持たせて、シェーダから読むこともできます。
-[2-02 形を作る](#/ch/t02-geometry)でやった \`setAttribute\` と同じ要領です。
+[](#/ch/t02-geometry)でやった \`setAttribute\` と同じ要領です。
 
 たとえば頂点ごとに「揺れ始めるタイミング」を持たせておけば、
 草がばらばらに揺れる表現が、**JavaScript 側では何もせずに**作れます。
@@ -380,7 +380,7 @@ window.addEventListener('resize', () => {
 
 \`ShaderMaterial\` は便利ですが、**ライトや影は自動では効きません**。
 \`MeshStandardMaterial\` のような陰影が欲しいなら、自分で書くか
-（[2-14](#/ch/t14-fragment-shader)でやります）、
+（[](#/ch/t14-fragment-shader)でやります）、
 既存のマテリアルに割り込む \`onBeforeCompile\` を使います。
 `,
     },

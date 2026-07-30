@@ -339,7 +339,7 @@ const textureLoader = new THREE.TextureLoader(manager);`,
 \`scene.remove(model)\` だけでは、ジオメトリもテクスチャも GPU に残ったままです。
 \`traverse\` で回って \`geometry.dispose()\` と \`material.dispose()\`、
 そしてマテリアルが持つテクスチャも \`dispose()\` してください。
-詳しくは[2-10 シーンを組み立てる](#/ch/t10-scene-graph)で扱います。
+詳しくは[](#/ch/t10-scene-graph)で扱います。
 `,
     },
   ],

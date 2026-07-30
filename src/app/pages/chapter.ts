@@ -243,7 +243,9 @@ export const renderChapterPage: PageRenderer = (root, ctx) => {
         loading.remove();
         instances.push(module.mount(card));
         if (block.caption) {
-          card.appendChild(el('p', { class: 'demo__caption' }, block.caption));
+          card.appendChild(
+            el('p', { class: 'demo__caption', html: renderMarkup(block.caption) }),
+          );
         }
       })
       .catch((error: unknown) => {
@@ -281,7 +283,10 @@ export const renderChapterPage: PageRenderer = (root, ctx) => {
         if (block.caption) {
           sandbox.element.insertAdjacentElement(
             'afterend',
-            el('p', { class: 'demo__caption sandbox__caption' }, block.caption),
+            el('p', {
+              class: 'demo__caption sandbox__caption',
+              html: renderMarkup(block.caption),
+            }),
           );
         }
       })

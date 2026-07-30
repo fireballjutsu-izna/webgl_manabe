@@ -33,8 +33,8 @@ export const chapterQ02: Chapter = {
 
 原因はほぼ 3 つのどれかです。
 
-- **テクスチャの \`colorSpace\` 指定を忘れている**（[2-04](#/ch/t04-texture)でやりました）
-- **トーンマッピングがかかっている**（[3-07](#/ch/p07-city-light)で 1 行入れました）
+- **テクスチャの \`colorSpace\` 指定を忘れている**（[](#/ch/t04-texture)でやりました）
+- **トーンマッピングがかかっている**（[](#/ch/p07-city-light)で 1 行入れました）
 - **そもそも「色の通り道」を知らない**
 
 3 つめをここで潰します。**指定した色が画面に出るまでに何が起きているか**を、順番に見ます。
@@ -206,7 +206,7 @@ window.addEventListener('resize', () => {
       tone: 'warn',
       title: '色ではない数値に、色の変換をかけない',
       text: `
-[2-04](#/ch/t04-texture)と[3-02](#/ch/p02-planet-surface)で繰り返した話が、ここに効いてきます。
+[](#/ch/t04-texture)と[](#/ch/p02-planet-surface)で繰り返した話が、ここに効いてきます。
 
 - **色として見せるもの**（\`map\`、\`emissiveMap\`、環境マップ）… \`colorSpace = THREE.SRGBColorSpace\`
 - **数値として使うもの**（\`normalMap\`、\`roughnessMap\`、\`metalnessMap\`、\`bumpMap\`、\`alphaMap\`、\`aoMap\`）… **指定しない**
@@ -223,7 +223,7 @@ window.addEventListener('resize', () => {
 
 色管理とは別に、もう 1 つの関門があります。
 
-環境マップを入れたり（[4-01](#/ch/q01-environment)）、強いライトを置いたりすると、
+環境マップを入れたり（[](#/ch/q01-environment)）、強いライトを置いたりすると、
 計算の結果が**平気で 1 を超えます。** ところが画面が出せる最大は 1（＝真っ白）です。
 
 何もしなければ、1 を超えた部分は**まとめて真っ白に切り捨てられます。**

@@ -144,7 +144,7 @@ window.addEventListener('resize', () => {
 
 向き先を変えたいときは \`controls.target\` を動かしてください。
 なめらかに移したいなら \`controls.target.lerp(次の目標, k)\` を毎フレーム呼びます
-（[2-06 動かす](#/ch/t06-loop-clock)の追従と同じ形です）。
+（[](#/ch/t06-loop-clock)の追従と同じ形です）。
 `,
     },
     {
