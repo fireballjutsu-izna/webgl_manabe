@@ -1,6 +1,6 @@
-/** トップページ。学び方の案内と、全14章の一覧。 */
+/** トップページ。学び方の案内と、全章の一覧。 */
 
-import { chapterLabel, chaptersOfPart, PARTS } from '../../content/index.ts';
+import { chapterLabel, chapters, chaptersOfPart, PARTS } from '../../content/index.ts';
 import { el } from '../../ui/dom.ts';
 import { renderMarkup } from '../../ui/markup.ts';
 import { getProgress } from '../progress.ts';
@@ -18,8 +18,9 @@ Three.js は、箱を 1 つ画面に出すところまでは驚くほど簡単�
 各章は、Three.js で何ができなくて困るか → 直感 → 図とデモ → はじめて数式 → 実際のコード、
 の順に進みます。数式から始まる章はひとつもありません。
 
-**第1部**で数学の土台を作り、**第2部**でそれを Three.js のコードにします。
-第2部のコードはすべて、このページの中で書き換えて動かせます。
+**第1部**で数学の土台を作り、**第2部**でそれを Three.js のコードにし、
+**第3部**で作品を 2 つ、最初から最後まで組み上げます。
+第2部と第3部のコードはすべて、このページの中で書き換えて動かせます。
 `;
 
 const HOWTO = `
@@ -49,7 +50,11 @@ export const renderHomePage: PageRenderer = (root) => {
       'section',
       { class: 'hero' },
       el('h1', { class: 'hero__title' }, '(アイン、ソフ、オウル)'),
-      el('p', { class: 'hero__sub' }, 'Three.js のための数学 — 全14章'),
+      el(
+        'p',
+        { class: 'hero__sub' },
+        `Three.js のための数学と実装 — 全${chapters.length}章`,
+      ),
       el('div', { class: 'hero__lead prose', html: renderMarkup(LEAD) }),
     ),
   );

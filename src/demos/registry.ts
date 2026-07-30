@@ -38,6 +38,9 @@ export const demos: Record<string, () => Promise<DemoModule>> = {
   'material-compare': () => import('./material-compare.ts'),
   'light-compare': () => import('./light-compare.ts'),
   'instancing-compare': () => import('./instancing-compare.ts'),
+
+  // 第3部
+  'fbm-octaves': () => import('./fbm-octaves.ts'),
 };
 
 export const demoIds: string[] = Object.keys(demos);

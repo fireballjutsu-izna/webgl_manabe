@@ -23,6 +23,9 @@ const ADDON_LOADERS: Record<string, () => Promise<Record<string, unknown>>> = {
     import('three/addons/loaders/GLTFLoader.js') as Promise<Record<string, unknown>>,
   'three/addons/utils/BufferGeometryUtils.js': () =>
     import('three/addons/utils/BufferGeometryUtils.js') as Promise<Record<string, unknown>>,
+  // Stage が既に静的 import しているので、これを足してもバンドルは増えない
+  'three/addons/renderers/CSS2DRenderer.js': () =>
+    import('three/addons/renderers/CSS2DRenderer.js') as Promise<Record<string, unknown>>,
 };
 
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
