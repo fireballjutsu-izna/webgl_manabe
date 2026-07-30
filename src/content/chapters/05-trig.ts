@@ -2,8 +2,8 @@ import type { Chapter } from '../types.ts';
 
 export const chapter05: Chapter = {
   slug: '05-trig',
-  part: 'math',
-  number: 5,
+  part: 'basics',
+  number: 3,
   title: '角度・弧度法と三角関数',
   goal: '角度の単位を自在に変換できるようになり、sin と cos で円運動や波を自分の手で作れるようになります。',
   requires: ['01-space'],

@@ -11,8 +11,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # 型・コンテンツ・ビルドは全体で 1 回だけ見ればよい。
   check:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Check content integrity
+        run: npm run check
+
+      - name: Build
+        run: npm run build
+
+  # smoke は部ごとに分けて並列に走らせる。
+  # 全章を 1 つのジョブで踏むと、章が増えるほど直線的に伸びて CI が待てなくなる。
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [basics, math3d, threejs, project, polish]
     steps:
       - uses: actions/checkout@v4
 
@@ -25,12 +56,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Type check
-        run: npx tsc --noEmit
-
-      - name: Check content integrity
-        run: npm run check
-
       - name: Build
         run: npm run build
 
@@ -39,13 +64,13 @@ jobs:
 
       # 3D は SwiftShader のソフトウェア描画で走る（smoke.ts が起動時に指定している）。
       - name: Smoke
-        run: npm run smoke
+        run: npm run smoke -- --part=${{ matrix.part }}
 
       # 失敗したときだけ、目で見るためのスクリーンショットを残す。
       - name: Upload screenshots
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: smoke-screenshots
+          name: smoke-screenshots-${{ matrix.part }}
           path: artifacts/
           retention-days: 7

@@ -2,7 +2,7 @@ import type { Chapter } from '../types.ts';
 
 export const chapter02: Chapter = {
   slug: '02-vector',
-  part: 'math',
+  part: 'basics',
   number: 2,
   title: 'ベクトル ― 位置と向き',
   goal: '「位置」と「向き」を同じ道具で扱えるようになり、足し算・引き算・正規化が何をしているのかを図で説明できるようになります。',

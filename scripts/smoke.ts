@@ -25,6 +25,19 @@ const OUT = 'artifacts';
 
 const problems: string[] = [];
 
+/*
+ * 章の数が増えると、全章を 1 回で踏むのは CI では長すぎる。
+ * `npm run smoke -- --part=basics` のように部を指定して分割できるようにし、
+ * CI では部ごとに並列で走らせる。指定が無ければ、これまでどおり全章を踏む。
+ */
+const partArg = process.argv.find((a) => a.startsWith('--part='))?.slice('--part='.length);
+const targetChapters = partArg ? chapters.filter((c) => c.part === partArg) : chapters;
+
+if (partArg && targetChapters.length === 0) {
+  console.error(`--part=${partArg} に当てはまる章がありません`);
+  process.exit(1);
+}
+
 function fail(message: string): void {
   problems.push(message);
   console.error(`  NG  ${message}`);
@@ -205,7 +218,9 @@ async function main(): Promise<void> {
     else fail(`演習ページの問題が ${drillItems} 問（期待 ${expectedExercises} 問）`);
 
     // 通しモードは「次へ」で進むこと
-    await page.goto(`${BASE}#/drill/run/math`);
+    // 部の id は決め打ちにしない（部の構成が変わると、ここだけ黙って壊れる）
+    const runPart = chapters[0]?.part ?? 'all';
+    await page.goto(`${BASE}#/drill/run/${runPart}`);
     await settle(page);
     const posBefore = await page.locator('.drill-run__pos').textContent();
     await page.locator('.drill-run__nav .btn').last().click();
@@ -229,7 +244,7 @@ async function main(): Promise<void> {
 
     /* ---- 全章を連続で訪問（同一セッションのまま） ---- */
 
-    for (const chapter of chapters) {
+    for (const chapter of targetChapters) {
       const label = chapterLabel(chapter);
       recorder.reset();
       await page.goto(`${BASE}#/ch/${chapter.slug}`);
@@ -339,7 +354,7 @@ async function main(): Promise<void> {
       const canvas = node as HTMLCanvasElement;
       return canvas.width > 0 && canvas.height > 0;
     });
-    if (alive) ok(`${chapters.length}章を連続で開いても WebGL コンテキストが生きている`);
+    if (alive) ok(`${targetChapters.length}章を連続で開いても WebGL コンテキストが生きている`);
     else fail('最後の章のキャンバスが失われています（破棄漏れの疑い）');
 
     /* ---- API チップが公式ドキュメントへのリンクになっているか ---- */

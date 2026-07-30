@@ -2,8 +2,8 @@ import type { Chapter } from '../types.ts';
 
 export const chapter09: Chapter = {
   slug: '09-hierarchy',
-  part: 'math',
-  number: 9,
+  part: 'math3d',
+  number: 3,
   title: '座標空間の階層 ― ローカルとワールド',
   goal: '親子関係のある物体の位置を正しく読み解けるようになり、「ローカルでは動いていないのに世界では動く」状況を自分で説明できるようになります。',
   requires: ['06-matrix'],

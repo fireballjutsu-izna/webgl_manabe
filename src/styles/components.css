@@ -1815,3 +1815,33 @@
   font-size: 0.78rem;
   letter-spacing: 0;
 }
+
+/* ---- 目次の折りたたみ（部ごと） ---- */
+
+.toc__section {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.toc__caret {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  transition: transform 0.15s;
+}
+
+/* 畳んでいるあいだは三角を横向きにする */
+.toc__section[aria-expanded='false'] .toc__caret {
+  transform: rotate(-90deg);
+}
+
+.toc__section:hover .toc__caret {
+  color: var(--neon-cyan);
+}
