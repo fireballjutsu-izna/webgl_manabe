@@ -114,6 +114,11 @@ npm run dev        # 開発サーバ（http://localhost:5173/webgl_manabe/）
 
 スクリーンショットは `artifacts/` に出力されます（Git 管理外）。
 
+この 4 つ（`typecheck` → `check` → `build` → `smoke`）は、pull request と `main` への push で
+GitHub Actions でも同じ順に走ります（`.github/workflows/ci.yml`）。
+3D は SwiftShader のソフトウェア描画で動かしています。失敗したときだけ、
+スクリーンショットが実行結果の artifact として残ります。
+
 ## 作りの要点
 
 コードを読むときの地図です。
