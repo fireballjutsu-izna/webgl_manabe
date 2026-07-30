@@ -74,15 +74,30 @@ function calloutBlock(tone: string, title: string, text: string): HTMLElement {
   );
 }
 
+const RECALL_HEAD: Record<string, string> = {
+  math: 'この章の前に読んでおく章',
+  threejs: 'この章で使う数学',
+  project: 'この章で使う道具',
+  polish: 'この章で使う道具',
+};
+
 /**
- * 章の冒頭に出す呼び戻し。前の部のどこへ戻ればよいかを示す。
- * 第2部は数学だけを呼び戻すが、第3部は第2部の実装も混ざるので見出しを変える。
+ * 章の冒頭に出す呼び戻し。詰まったときにどこへ戻ればよいかを示す。
+ *
+ * 第2部より後は `mathRecall` に「何のために戻るのか」まで書いてある。
+ * 第1部にはそれが無いが、`requires` は持っているので、そこから作る ―
+ * **戻り先が画面に出ていない章を 1 つも残さない**ほうが、独学では効く。
  */
 function mathRecallCard(chapter: Chapter): HTMLElement | null {
-  if (!chapter.mathRecall || chapter.mathRecall.length === 0) return null;
+  const items =
+    chapter.mathRecall && chapter.mathRecall.length > 0
+      ? chapter.mathRecall
+      : chapter.requires.map((slug) => ({ slug, note: '' }));
+
+  if (items.length === 0) return null;
 
   const list = el('ul', { class: 'recall__list' });
-  for (const item of chapter.mathRecall) {
+  for (const item of items) {
     const target = chapterBySlug(item.slug);
     if (!target) continue;
     list.appendChild(
@@ -94,19 +109,17 @@ function mathRecallCard(chapter: Chapter): HTMLElement | null {
           { href: `#/ch/${target.slug}` },
           `${chapterLabel(target)} ${target.title}`,
         ),
-        el('span', { class: 'recall__note' }, `― ${item.note}`),
+        item.note ? el('span', { class: 'recall__note' }, `― ${item.note}`) : null,
       ),
     );
   }
 
+  if (list.childElementCount === 0) return null;
+
   return el(
     'aside',
     { class: 'recall' },
-    el(
-      'div',
-      { class: 'recall__head' },
-      chapter.part === 'project' ? 'この章で使う道具' : 'この章で使う数学',
-    ),
+    el('div', { class: 'recall__head' }, RECALL_HEAD[chapter.part] ?? 'この章で使う道具'),
     list,
     el(
       'p',
@@ -373,11 +386,21 @@ export const renderChapterPage: PageRenderer = (root, ctx) => {
   });
   syncReadButton();
 
+  const exerciseCount = chapter.exercises?.length ?? 0;
+
   article.appendChild(
     el(
       'div',
       { class: 'done-bar' },
       readButton,
+      // 読んだあと、何をすればよいかを 1 つだけ示す
+      exerciseCount > 0
+        ? el(
+            'a',
+            { class: 'btn', href: `#/drill/ch/${chapter.slug}` },
+            `この章の演習へ（${exerciseCount}問）`,
+          )
+        : null,
       el('span', { class: 'lede' }, '進捗はこの端末のブラウザにだけ保存されます。'),
     ),
   );

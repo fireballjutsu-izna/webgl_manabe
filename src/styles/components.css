@@ -1747,3 +1747,56 @@
   border-color: var(--neon-lime);
   color: var(--neon-lime);
 }
+
+/* ---- 続きから ---- */
+
+/*
+ * ホームの最上部に 1 枚だけ出すカード。
+ * 選択肢は並べない ― 独学が止まるのは、次の一手が決まらないときなので。
+ */
+.resume {
+  display: block;
+  max-width: min(52rem, 100%);
+  margin: 1.75rem auto 0;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--border-lit);
+  border-left: 2px solid var(--neon-cyan);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--bg-elev);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+
+.resume:hover {
+  border-color: var(--neon-cyan);
+}
+
+.resume__head {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  color: var(--neon-cyan);
+}
+
+.resume__label {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.resume__note {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+/* 部の出口。42 章の先が見えないと走れない */
+.part-head__payoff {
+  margin-top: 0.3rem;
+  font-size: 0.84rem;
+  color: var(--neon-lime);
+}
