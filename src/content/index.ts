@@ -43,7 +43,8 @@ import { chapterQ01 } from './chapters/q01-environment.ts';
 import { chapterQ02 } from './chapters/q02-color.ts';
 import { chapterQ03 } from './chapters/q03-postprocess.ts';
 import { chapterQ04 } from './chapters/q04-custom-pass.ts';
-import { chapterQ05 } from './chapters/q05-ship-it.ts';
+import { chapterQ05R3F } from './chapters/q05-r3f.ts';
+import { chapterQ06 } from './chapters/q05-ship-it.ts';
 
 /** 学ぶ順に並べた全章。目次・前提知識マップ・検索索引はここから作られる。 */
 export const chapters: Chapter[] = [
@@ -90,7 +91,8 @@ export const chapters: Chapter[] = [
   chapterQ02,
   chapterQ03,
   chapterQ04,
-  chapterQ05,
+  chapterQ05R3F,
+  chapterQ06,
 ];
 
 const bySlug = new Map(chapters.map((chapter) => [chapter.slug, chapter]));

@@ -327,7 +327,7 @@ three のライトを使いたいなら、\`onBeforeCompile\` で既存のマテ
       text: `
 - **ポストプロセス**（\`EffectComposer\`）… 描き上がった画面全体に効果をかける。ブルームなど
 - **物理エンジン**（Rapier、cannon-es）… 落下・衝突・積み重なり
-- **React Three Fiber** … React の書き方で Three.js を組み立てる
+- **React Three Fiber** … React の書き方で Three.js を組み立てる（[4-05](#/ch/q05-r3f)）
 - **ノイズと距離場** … シェーダで地形や雲、レイマーチングの世界へ
 
 どれも入口は違いますが、**土台は同じ**です。ここまでで作った土台は、そのまま使えます。
