@@ -42,6 +42,81 @@
   margin-bottom: 0.15rem;
 }
 
+/* ---- 章冒頭の「この章で使う数学」 ---- */
+
+.recall {
+  max-width: var(--measure);
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--neon-lime);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--tint-lime);
+  padding: 0.85rem 1.1rem;
+}
+
+.recall__head {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--neon-lime);
+  margin-bottom: 0.4rem;
+}
+
+.recall__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.86rem;
+}
+
+.recall__list a {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0;
+}
+
+.recall__note {
+  color: var(--text-muted);
+  margin-left: 0.5em;
+}
+
+.recall__foot {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* ---- 部の見出し（ホーム） ---- */
+
+.part-head {
+  max-width: min(52rem, 100%);
+  margin: 3rem auto 0;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--neon-violet);
+}
+
+.part-head__title {
+  font-size: 1.2rem;
+}
+
+.part-head__lead {
+  margin-top: 0.35rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+/* ---- 前提知識マップの絞り込み ---- */
+
+.map-filter {
+  max-width: min(56rem, 100%);
+  margin: 0 auto 0.75rem;
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
 /* ---- 本文 ---- */
 
 .prose > * + * {
@@ -444,6 +519,175 @@
   border-top-style: dashed;
 }
 
+/* ---- サンドボックス（編集して実行できるコード） ---- */
+
+.sandbox {
+  max-width: min(52rem, 100%);
+  margin-inline: auto;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s;
+}
+
+.sandbox:hover,
+.sandbox:focus-within {
+  border-color: var(--border-lit);
+}
+
+.sandbox__stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.sandbox--tall .sandbox__stage {
+  aspect-ratio: 4 / 3;
+}
+
+.sandbox__stage:fullscreen {
+  aspect-ratio: auto;
+  width: 100%;
+  height: 100%;
+}
+
+.sandbox__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.sandbox__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sandbox__title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-right: auto;
+}
+
+/* 色付きの pre に、透明な textarea を重ねる。行の高さと余白を完全に揃えること */
+.sandbox__editor {
+  /* 表示する行数。1 行の高さは 0.8rem × 1.75 で、上下に 0.8rem ずつの余白が付く */
+  --editor-rows: 18;
+  --editor-height: calc(var(--editor-rows) * 0.8rem * 1.75 + 1.6rem);
+  display: grid;
+  grid-template-columns: 2.9rem minmax(0, 1fr);
+  background: var(--bg-inset);
+}
+
+.sandbox__gutter {
+  height: var(--editor-height);
+  overflow: hidden;
+  padding: 0.8rem 0.5rem 0.8rem 0;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.75;
+  letter-spacing: 0;
+  color: var(--text-muted);
+  white-space: pre;
+  border-right: 1px solid var(--border);
+  user-select: none;
+}
+
+/* overflow:hidden の要素は scrollTop が効かないので、中身をずらして同期させる */
+.sandbox__gutter-inner {
+  will-change: transform;
+}
+
+.sandbox__code {
+  position: relative;
+  height: var(--editor-height);
+}
+
+.sandbox__hl,
+.sandbox__input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0.8rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.75;
+  letter-spacing: 0;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+  border: 0;
+}
+
+.sandbox__hl {
+  pointer-events: none;
+  color: var(--text);
+  background: transparent;
+}
+
+.sandbox__input {
+  color: transparent;
+  background: transparent;
+  caret-color: var(--neon-cyan);
+  resize: none;
+  outline: none;
+}
+
+.sandbox__input:focus-visible {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: -2px;
+  border-radius: 0;
+}
+
+.sandbox__input::selection {
+  background: color-mix(in srgb, var(--neon-cyan) 32%, transparent);
+}
+
+.sandbox__console {
+  border-top: 1px solid var(--border);
+  padding: 0.65rem 0.9rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.sandbox__msg {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.7;
+  letter-spacing: 0;
+}
+
+.sandbox__msg[data-tone='error'] {
+  color: var(--neon-rose);
+}
+
+.sandbox__msg[data-tone='warn'] {
+  color: var(--neon-amber);
+}
+
+.sandbox__msg[data-tone='log'] {
+  color: var(--text-muted);
+}
+
+/* 補足だけは読みやすさ優先で本文フォントにする */
+.sandbox__msg[data-tone='hint'] {
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+}
+
 /* ---- コード片 ---- */
 
 .code {
@@ -671,6 +915,7 @@
 }
 
 .api-chip {
+  display: inline-block;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   padding: 0.15rem 0.5rem;
@@ -679,6 +924,30 @@
   background: var(--bg-inset);
   color: var(--neon-cyan);
   letter-spacing: 0;
+}
+
+/* 公式ドキュメントへ飛べるチップ。行けない語との差を色ではなく下線で示す */
+.api-chip--link {
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, var(--neon-cyan) 50%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.api-chip--link:hover,
+.api-chip--link:focus-visible {
+  border-color: var(--neon-cyan);
+  text-decoration-style: solid;
+}
+
+.api-table__note {
+  padding: 0 1rem 0.7rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.sandbox__caption {
+  max-width: min(52rem, 100%);
+  margin-inline: auto;
 }
 
 .done-bar {

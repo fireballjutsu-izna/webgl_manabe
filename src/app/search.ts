@@ -3,14 +3,14 @@
  * 素の部分一致で十分に速い。日本語なので分かち書きもしない。
  */
 
-import { chapters } from '../content/index.ts';
+import { chapterLabel, chapters } from '../content/index.ts';
 import { glossary } from '../content/glossary.ts';
 import { toPlainText } from '../ui/markup.ts';
 import { escapeHtml } from '../ui/dom.ts';
 
 interface Doc {
   slug: string;
-  number: number;
+  label: string;
   title: string;
   haystack: string;
   lower: string;
@@ -18,7 +18,8 @@ interface Doc {
 
 export interface Hit {
   href: string;
-  number: number;
+  /** '2-05' や 'GLOSSARY' のような、結果の出どころを表す短い札。 */
+  label: string;
   title: string;
   /** 一致箇所を <mark> で囲んだ HTML。 */
   snippet: string;
@@ -36,13 +37,17 @@ function buildIndex(): Doc[] {
       else if (block.kind === 'formula') parts.push(block.readAloud);
       else if (block.kind === 'callout') parts.push(block.title, toPlainText(block.text));
       else if (block.kind === 'demo' && block.caption) parts.push(block.caption);
+      else if (block.kind === 'sandbox') {
+        if (block.title) parts.push(block.title);
+        if (block.caption) parts.push(block.caption);
+      }
     }
     for (const question of chapter.quiz) parts.push(toPlainText(question.q));
 
     const haystack = parts.join(' ');
     return {
       slug: chapter.slug,
-      number: chapter.number,
+      label: chapterLabel(chapter),
       title: chapter.title,
       haystack,
       lower: haystack.toLowerCase(),
@@ -73,7 +78,7 @@ export function search(query: string, limit = 8): Hit[] {
     const inTitle = doc.title.toLowerCase().includes(needle);
     hits.push({
       href: `#/ch/${doc.slug}`,
-      number: doc.number,
+      label: doc.label,
       title: doc.title,
       snippet: makeSnippet(doc.haystack, at, needle.length),
       score: (inTitle ? 1000 : 0) - at,
@@ -87,7 +92,7 @@ export function search(query: string, limit = 8): Hit[] {
     if (at < 0) continue;
     hits.push({
       href: `#/glossary/${encodeURIComponent(entry.term)}`,
-      number: 0,
+      label: 'GLOSSARY',
       title: `用語集：${entry.term}`,
       snippet: makeSnippet(hay, at, needle.length),
       score: (entry.term.toLowerCase().includes(needle) ? 800 : 0) - at,

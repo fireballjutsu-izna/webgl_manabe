@@ -33,6 +33,11 @@ export const demos: Record<string, () => Promise<DemoModule>> = {
   'curve-editor': () => import('./curve-editor.ts'),
   'random-vs-noise': () => import('./random-vs-noise.ts'),
   'capstone-orbit': () => import('./capstone-orbit.ts'),
+
+  // 第2部（比較が効く章にだけ置く）
+  'material-compare': () => import('./material-compare.ts'),
+  'light-compare': () => import('./light-compare.ts'),
+  'instancing-compare': () => import('./instancing-compare.ts'),
 };
 
 export const demoIds: string[] = Object.keys(demos);

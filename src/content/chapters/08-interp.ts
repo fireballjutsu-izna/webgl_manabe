@@ -2,6 +2,7 @@ import type { Chapter } from '../types.ts';
 
 export const chapter08: Chapter = {
   slug: '08-interp',
+  part: 'math',
   number: 8,
   title: '補間とイージング',
   goal: '2つの値のあいだをなめらかに行き来させられるようになり、機械的な動きを自然なアニメーションに変えられるようになります。',

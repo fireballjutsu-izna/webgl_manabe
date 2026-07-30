@@ -1,7 +1,7 @@
 /** 用語集。本文のホバー定義と同じデータを一覧にしたもの。 */
 
 import { glossary } from '../../content/glossary.ts';
-import { chapterBySlug } from '../../content/index.ts';
+import { chapterBySlug, chapterLabel } from '../../content/index.ts';
 import { el } from '../../ui/dom.ts';
 import type { PageRenderer } from '../router.ts';
 
@@ -41,7 +41,7 @@ export const renderGlossaryPage: PageRenderer = (root, ctx) => {
               el(
                 'a',
                 { href: `#/ch/${chapter.slug}` },
-                `CH.${String(chapter.number).padStart(2, '0')} ${chapter.title} →`,
+                `${chapterLabel(chapter)}　${chapter.title} →`,
               ),
             )
           : null,

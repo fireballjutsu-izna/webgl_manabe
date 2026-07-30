@@ -1,6 +1,6 @@
 /** ヘッダー・目次サイドバー・本文の器。ルーターより先に一度だけ組み立てる。 */
 
-import { chapters } from '../content/index.ts';
+import { chapterLabel, chapters, chaptersOfPart, PARTS } from '../content/index.ts';
 import { el } from '../ui/dom.ts';
 import { countRead, getProgress, getTheme, onProgressChange, setTheme } from './progress.ts';
 import type { RouteContext } from './router.ts';
@@ -18,19 +18,30 @@ export function createShell(app: HTMLElement): Shell {
   const tocLinks = new Map<string, HTMLAnchorElement>();
   const tocChecks = new Map<string, HTMLElement>();
 
-  const list = el('ul', { class: 'toc__list' });
-  for (const chapter of chapters) {
-    const check = el('span', { class: 'toc__check', 'aria-hidden': 'true' }, '');
-    const link = el(
-      'a',
-      { class: 'toc__link', href: `#/ch/${chapter.slug}` },
-      el('span', { class: 'toc__num' }, `CH.${String(chapter.number).padStart(2, '0')}`),
-      el('span', null, chapter.title),
-      check,
+  const partSections: HTMLElement[] = [];
+  for (const part of PARTS) {
+    const list = el('ul', { class: 'toc__list' });
+    const partChapters = chaptersOfPart(part.id);
+    if (partChapters.length === 0) continue;
+
+    for (const chapter of partChapters) {
+      const check = el('span', { class: 'toc__check', 'aria-hidden': 'true' }, '');
+      const link = el(
+        'a',
+        { class: 'toc__link', href: `#/ch/${chapter.slug}` },
+        el('span', { class: 'toc__num' }, chapterLabel(chapter)),
+        el('span', null, chapter.title),
+        check,
+      );
+      tocLinks.set(`ch/${chapter.slug}`, link);
+      tocChecks.set(chapter.slug, check);
+      list.appendChild(el('li', null, link));
+    }
+
+    partSections.push(
+      el('div', { class: 'toc__section' }, `${part.title}　全${partChapters.length}章`),
+      list,
     );
-    tocLinks.set(`ch/${chapter.slug}`, link);
-    tocChecks.set(chapter.slug, check);
-    list.appendChild(el('li', null, link));
   }
 
   const extraLinks: [string, string][] = [
@@ -53,8 +64,7 @@ export function createShell(app: HTMLElement): Shell {
   const toc = el(
     'nav',
     { class: 'toc', id: 'toc', 'aria-label': '目次' },
-    el('div', { class: 'toc__section' }, '全14章'),
-    list,
+    ...partSections,
     el('hr', { class: 'toc__divider' }),
     extras,
   );
@@ -134,11 +144,7 @@ export function createShell(app: HTMLElement): Shell {
           el(
             'a',
             { class: 'search__hit', href: hit.href, role: 'option' },
-            el(
-              'span',
-              { class: 'search__hit-ch' },
-              hit.number > 0 ? `CH.${String(hit.number).padStart(2, '0')}` : 'GLOSSARY',
-            ),
+            el('span', { class: 'search__hit-ch' }, hit.label),
             el('span', { class: 'search__hit-title' }, ` ${hit.title}`),
             el('span', { class: 'search__hit-snip', html: hit.snippet }),
           ),

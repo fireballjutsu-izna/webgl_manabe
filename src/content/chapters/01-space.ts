@@ -2,6 +2,7 @@ import type { Chapter } from '../types.ts';
 
 export const chapter01: Chapter = {
   slug: '01-space',
+  part: 'math',
   number: 1,
   title: '3D空間と座標系',
   goal: '3つの数字の組が空間のどこを指すのかが読めるようになり、Three.js の position を自分の意図どおりに置けるようになります。',
