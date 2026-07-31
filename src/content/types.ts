@@ -69,8 +69,13 @@ export interface QuizQuestion {
   explain: string;
 }
 
-/** 部。第1部が数学編、第2部が Three.js 編、第3部が実践編、第4部が仕上げ編。 */
-export type Part = 'math' | 'threejs' | 'project' | 'polish';
+/**
+ * 部。数学の土台を 2 つに分けている。
+ *
+ * 土台がいちばん薄いと、実践編で概念が理解できないまま手が止まる。
+ * 「数と形の基礎」は 3D 固有でないもの、「3D の数学」はそこから先。
+ */
+export type Part = 'basics' | 'math3d' | 'threejs' | 'project' | 'polish';
 
 export interface PartInfo {
   id: Part;
@@ -87,30 +92,37 @@ export interface PartInfo {
 
 export const PARTS: PartInfo[] = [
   {
-    id: 'math',
+    id: 'basics',
     index: 1,
-    title: '第1部　数学編',
-    lead: 'Three.js を書くために必要な数学だけを、3D デモを触りながら順番に身につけます。',
-    payoff: 'ここまでで ― 箱を思った場所に置き、思った向きに回し、光の当たり方まで説明できるようになります。',
+    title: '第1部　数と形の基礎',
+    lead: '3D に固有でない土台から始めます。座標・ベクトル・角度・内積・外積・乱数を、手で計算しながら身につけます。',
+    payoff: 'ここまでで ― 3 つの数字が空間のどこを指すかが読め、2 本の矢印から角度と垂直な向きを自分で計算できるようになります。',
+  },
+  {
+    id: 'math3d',
+    index: 2,
+    title: '第2部　3D の数学',
+    lead: '土台の上に、3D を動かすための数学を積みます。行列・回転・階層・投影・法線・曲線。',
+    payoff: 'ここまでで ― 箱を思った場所に置き、思った軸で回し、光の当たり方とカメラの写り方まで説明できるようになります。',
   },
   {
     id: 'threejs',
-    index: 2,
-    title: '第2部　Three.js 編',
+    index: 3,
+    title: '第3部　Three.js 編',
     lead: '手に入れた数学を実際のコードにします。各章のコードはその場で書き換えて動かせます。',
     payoff: 'ここまでで ― 何も見ずに Three.js のシーンを 1 つ書き上げ、シェーダにも手を入れられるようになります。',
   },
   {
     id: 'project',
-    index: 3,
-    title: '第3部　実践編',
+    index: 4,
+    title: '第4部　実践編',
     lead: '作品を 2 つ、最初から最後まで作ります。素材は 1 つも用意せず、すべてコードで生み出します。',
     payoff: 'ここまでで ― 画像もモデルも使わずに、惑星ひとつと街ひとつを最初から最後まで作れるようになります。',
   },
   {
     id: 'polish',
-    index: 4,
-    title: '第4部　仕上げ編',
+    index: 5,
+    title: '第5部　仕上げ編',
     lead: '作ったものを「見せられるもの」にします。映り込み、色の通り道、画面全体への効果、そして公開。',
     payoff: 'ここまでで ― 作ったものを人に見せられる形に仕上げ、URL ひとつで公開できるようになります。',
   },

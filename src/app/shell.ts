@@ -1,6 +1,7 @@
 /** ヘッダー・目次サイドバー・本文の器。ルーターより先に一度だけ組み立てる。 */
 
 import { chapterLabel, chapters, chaptersOfPart, PARTS } from '../content/index.ts';
+import type { Part } from '../content/types.ts';
 import { el } from '../ui/dom.ts';
 import { countRead, getProgress, getTheme, onProgressChange, setTheme } from './progress.ts';
 import type { RouteContext } from './router.ts';
@@ -18,7 +19,15 @@ export function createShell(app: HTMLElement): Shell {
   const tocLinks = new Map<string, HTMLAnchorElement>();
   const tocChecks = new Map<string, HTMLElement>();
 
+  /*
+   * 目次は部ごとに畳む。全章を平坦に並べると、章が増えたときに
+   * 「いま自分がどこにいるか」が目次の中で迷子になる。
+   * 開いておくのは、いま読んでいる部だけ。
+   */
   const partSections: HTMLElement[] = [];
+  const partToggles = new Map<Part, { button: HTMLButtonElement; list: HTMLElement }>();
+  const chapterPart = new Map<string, Part>();
+
   for (const part of PARTS) {
     const list = el('ul', { class: 'toc__list' });
     const partChapters = chaptersOfPart(part.id);
@@ -35,13 +44,39 @@ export function createShell(app: HTMLElement): Shell {
       );
       tocLinks.set(`ch/${chapter.slug}`, link);
       tocChecks.set(chapter.slug, check);
+      chapterPart.set(chapter.slug, part.id);
       list.appendChild(el('li', null, link));
     }
 
-    partSections.push(
-      el('div', { class: 'toc__section' }, `${part.title}　全${partChapters.length}章`),
-      list,
+    const button = el(
+      'button',
+      { class: 'toc__section', type: 'button' },
+      el('span', { class: 'toc__caret', 'aria-hidden': 'true' }, '▾'),
+      el('span', null, `${part.title}　全${partChapters.length}章`),
     );
+    button.addEventListener('click', () => setPartOpen(part.id, list.hidden));
+
+    partToggles.set(part.id, { button, list });
+    partSections.push(button, list);
+  }
+
+  function setPartOpen(id: Part, open: boolean): void {
+    const entry = partToggles.get(id);
+    if (!entry) return;
+    entry.list.hidden = !open;
+    entry.button.setAttribute('aria-expanded', String(open));
+  }
+
+  /** いま読んでいる部だけを開く。どの部でもないページでは、畳んだままにしない。 */
+  function openPartFor(slug: string | undefined): void {
+    const current = slug ? chapterPart.get(slug) : undefined;
+    if (!current) {
+      // 章以外のページ（用語集など）では、最初の部だけ開けておく
+      const first = [...partToggles.keys()][0];
+      for (const id of partToggles.keys()) setPartOpen(id, id === first);
+      return;
+    }
+    for (const id of partToggles.keys()) setPartOpen(id, id === current);
   }
 
   const extraLinks: [string, string][] = [
@@ -224,6 +259,7 @@ export function createShell(app: HTMLElement): Shell {
         if (path === key) link.setAttribute('aria-current', 'page');
         else link.removeAttribute('aria-current');
       }
+      openPartFor(ctx.segments[0] === 'ch' ? ctx.segments[1] : undefined);
       setDrawer(false);
       closeSearch();
       refreshProgress();

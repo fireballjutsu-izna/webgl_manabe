@@ -2,11 +2,11 @@ import type { Chapter } from '../types.ts';
 
 export const chapter03: Chapter = {
   slug: '03-dot',
-  part: 'math',
-  number: 3,
+  part: 'basics',
+  number: 4,
   title: '内積 ― 角度を測る',
   goal: '2つの向きがどれくらい揃っているかを1つの数で判定できるようになり、「前にいるか後ろにいるか」や面の明るさを自力で計算できるようになります。',
-  requires: ['02-vector'],
+  requires: ['02-vector', '05-trig'],
   threeApis: ['Vector3.dot', 'Vector3.angleTo', 'Vector3.projectOnVector', 'Object3D.getWorldDirection'],
   blocks: [
     {
@@ -84,9 +84,9 @@ export const chapter03: Chapter = {
     {
       kind: 'md',
       text: `
-コサインがまだ分からなくても、いまは困りません。必要なのは
-「**なす角が 0°のとき 1、90°のとき 0、180°のとき −1 になる、なめらかな値**」という事実だけです。
-三角関数そのものは[第5章](#/ch/05-trig)で正面から扱います。
+コサインは[](#/ch/05-trig)でやったばかりです。ここで効いてくるのは
+「**なす角が 0°のとき 1、90°のとき 0、180°のとき −1 になる、なめらかな値**」という性質で、
+単位円の横位置がそのまま出てきていると思ってください。
 
 ここから、内積の**符号**だけを見れば位置関係が分かる、という強力な道具が手に入ります。
 

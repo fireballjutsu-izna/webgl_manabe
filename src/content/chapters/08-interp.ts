@@ -2,11 +2,11 @@ import type { Chapter } from '../types.ts';
 
 export const chapter08: Chapter = {
   slug: '08-interp',
-  part: 'math',
-  number: 8,
+  part: 'basics',
+  number: 6,
   title: '補間とイージング',
   goal: '2つの値のあいだをなめらかに行き来させられるようになり、機械的な動きを自然なアニメーションに変えられるようになります。',
-  requires: ['02-vector', '07-rotation'],
+  requires: ['02-vector'],
   threeApis: [
     'MathUtils.lerp',
     'Vector3.lerp',
@@ -163,7 +163,7 @@ function follow(dt) {
 補間する対象によって道具が変わります。
 
 - **数・位置・色・大きさ** … \`lerp\`
-- **姿勢（回転）** … \`slerp\`（[第7章](#/ch/07-rotation)で見たとおり）
+- **姿勢（回転）** … \`slerp\`（クォータニオンを扱う[](#/ch/07-rotation)で正面から見ます）
 
 位置を slerp したり、回転を lerp したりしないこと。これだけ守れば事故は起きません。
 `,

@@ -178,5 +178,11 @@ export const renderMapPage: PageRenderer = (root) => {
 
   root.appendChild(bar);
   root.appendChild(wrap);
-  show('all');
+
+  /*
+   * 既定は「全体」ではなく最初の部。
+   * 章数が増えると全体表示はノードが多すぎて、自前レイアウトでは読めなくなる。
+   * 全体を見たい人はボタンで出せるので、既定を狭いほうに置く。
+   */
+  show(PARTS[0]?.id ?? 'all');
 };

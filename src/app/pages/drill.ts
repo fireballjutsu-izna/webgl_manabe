@@ -63,7 +63,8 @@ function renderRun(root: HTMLElement, part: string): void {
   }
 
   // 「まだ解いていない問だけ」に絞れるようにする。復習で効く
-  let onlyUndone = false;
+  // 既定は「解いていない問だけ」。問数が増えるほど、解いた問を毎回めくるのは苦行になる
+  let onlyUndone = true;
   let at = 0;
 
   const stage = el('div', { class: 'drill-run' });
