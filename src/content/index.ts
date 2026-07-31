@@ -19,7 +19,12 @@ import { chapterB16 } from './chapters/b16-vector-length.ts';
 import { chapterB17 } from './chapters/b17-normalize.ts';
 import { chapter03 } from './chapters/03-dot.ts';
 import { chapter04 } from './chapters/04-cross.ts';
+import { chapterB18 } from './chapters/b18-angle.ts';
 import { chapter05 } from './chapters/05-trig.ts';
+import { chapterB20 } from './chapters/b20-sin-cos.ts';
+import { chapterB21 } from './chapters/b21-circular-motion.ts';
+import { chapterB22 } from './chapters/b22-wave.ts';
+import { chapterB23 } from './chapters/b23-atan2.ts';
 import { chapter06 } from './chapters/06-matrix.ts';
 import { chapter07 } from './chapters/07-rotation.ts';
 import { chapter08 } from './chapters/08-interp.ts';
@@ -80,7 +85,12 @@ export const chapters: Chapter[] = [
   chapterB15,
   chapterB16,
   chapterB17,
+  chapterB18,
   chapter05,
+  chapterB20,
+  chapterB21,
+  chapterB22,
+  chapterB23,
   chapter03,
   chapter04,
   chapter08,

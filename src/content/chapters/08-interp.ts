@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapter08: Chapter = {
   slug: '08-interp',
   part: 'basics',
-  number: 21,
+  number: 26,
   title: '補間とイージング',
   goal: '2つの値のあいだをなめらかに行き来させられるようになり、機械的な動きを自然なアニメーションに変えられるようになります。',
   requires: ['b13-vector-add', 'b05-ratio'],

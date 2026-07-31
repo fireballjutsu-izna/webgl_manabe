@@ -3,10 +3,10 @@ import type { Chapter } from '../types.ts';
 export const chapter13: Chapter = {
   slug: '13-random',
   part: 'basics',
-  number: 22,
+  number: 27,
   title: 'ランダムとノイズ',
   goal: 'ただの乱数とノイズの違いを説明できるようになり、地形や自然なゆらぎを自分で作れるようになります。',
-  requires: ['08-interp', '05-trig'],
+  requires: ['08-interp', 'b20-sin-cos'],
   threeApis: ['MathUtils.randFloat', 'MathUtils.randFloatSpread', 'MathUtils.seededRandom', 'InstancedMesh'],
   blocks: [
     {

@@ -3,10 +3,10 @@ import type { Chapter } from '../types.ts';
 export const chapter03: Chapter = {
   slug: '03-dot',
   part: 'basics',
-  number: 19,
+  number: 24,
   title: '内積 ― 角度を測る',
   goal: '2つの向きがどれくらい揃っているかを1つの数で判定できるようになり、「前にいるか後ろにいるか」や面の明るさを自力で計算できるようになります。',
-  requires: ['b17-normalize', '05-trig'],
+  requires: ['b17-normalize', 'b20-sin-cos'],
   threeApis: ['Vector3.dot', 'Vector3.angleTo', 'Vector3.projectOnVector', 'Object3D.getWorldDirection'],
   blocks: [
     {

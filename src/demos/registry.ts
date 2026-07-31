@@ -22,6 +22,7 @@ export const demos: Record<string, () => Promise<DemoModule>> = {
   'pythagoras': () => import('./pythagoras.ts'),
   'vector-between': () => import('./vector-between.ts'),
   'vector-scale': () => import('./vector-scale.ts'),
+  'atan2-angle': () => import('./atan2-angle.ts'),
 
   'axes-explorer': () => import('./axes-explorer.ts'),
   'vector-add': () => import('./vector-add.ts'),
