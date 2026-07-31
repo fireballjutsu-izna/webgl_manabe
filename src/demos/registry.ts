@@ -35,6 +35,9 @@ export const demos: Record<string, () => Promise<DemoModule>> = {
   'pivot-offset': () => import('./pivot-offset.ts'),
   'spherical-coords': () => import('./spherical-coords.ts'),
   'sphere-uniform': () => import('./sphere-uniform.ts'),
+  'perspective-divide': () => import('./perspective-divide.ts'),
+  'reflect-vector': () => import('./reflect-vector.ts'),
+  'fresnel-curve': () => import('./fresnel-curve.ts'),
 
   'axes-explorer': () => import('./axes-explorer.ts'),
   'vector-add': () => import('./vector-add.ts'),

@@ -66,7 +66,15 @@ import { chapterM22 } from './chapters/m22-spherical.ts';
 import { chapterM23 } from './chapters/m23-sphere-uniform.ts';
 import { chapterM24 } from './chapters/m24-orbit.ts';
 import { chapter10 } from './chapters/10-camera.ts';
+import { chapterM26 } from './chapters/m26-perspective.ts';
+import { chapterM27 } from './chapters/m27-frustum.ts';
+import { chapterM28 } from './chapters/m28-ndc.ts';
+import { chapterM29 } from './chapters/m29-ortho.ts';
 import { chapter11 } from './chapters/11-normal-light.ts';
+import { chapterM31 } from './chapters/m31-reflect.ts';
+import { chapterM32 } from './chapters/m32-specular.ts';
+import { chapterM33 } from './chapters/m33-fresnel.ts';
+import { chapterM34 } from './chapters/m34-refract.ts';
 import { chapter12 } from './chapters/12-curve.ts';
 import { chapter13 } from './chapters/13-random.ts';
 import { chapter14 } from './chapters/14-capstone.ts';
@@ -172,7 +180,15 @@ export const chapters: Chapter[] = [
   chapterM23,
   chapterM24,
   chapter10,
+  chapterM26,
+  chapterM27,
+  chapterM28,
+  chapterM29,
   chapter11,
+  chapterM31,
+  chapterM32,
+  chapterM33,
+  chapterM34,
   chapter12,
   chapter14,
 
