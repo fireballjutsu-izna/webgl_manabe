@@ -26,6 +26,10 @@ export const demos: Record<string, () => Promise<DemoModule>> = {
   'triangle-normal': () => import('./triangle-normal.ts'),
   'distribution': () => import('./distribution.ts'),
 
+  // 第2部（3D の数学）
+  'basis-vectors': () => import('./basis-vectors.ts'),
+  'normal-matrix': () => import('./normal-matrix.ts'),
+
   'axes-explorer': () => import('./axes-explorer.ts'),
   'vector-add': () => import('./vector-add.ts'),
   'vector-length': () => import('./vector-length.ts'),

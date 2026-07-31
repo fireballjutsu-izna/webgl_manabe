@@ -33,6 +33,13 @@ import { chapterB21 } from './chapters/b21-circular-motion.ts';
 import { chapterB22 } from './chapters/b22-wave.ts';
 import { chapterB23 } from './chapters/b23-atan2.ts';
 import { chapter06 } from './chapters/06-matrix.ts';
+import { chapterM02 } from './chapters/m02-matrix-vector.ts';
+import { chapterM03 } from './chapters/m03-basis.ts';
+import { chapterM04 } from './chapters/m04-homogeneous.ts';
+import { chapterM05 } from './chapters/m05-matrix-order.ts';
+import { chapterM06 } from './chapters/m06-trs.ts';
+import { chapterM07 } from './chapters/m07-inverse.ts';
+import { chapterM08 } from './chapters/m08-normal-matrix.ts';
 import { chapter07 } from './chapters/07-rotation.ts';
 import { chapter08 } from './chapters/08-interp.ts';
 import { chapterB34 } from './chapters/b34-inverse-lerp.ts';
@@ -127,6 +134,13 @@ export const chapters: Chapter[] = [
   chapterB42,
 
   chapter06,
+  chapterM02,
+  chapterM03,
+  chapterM04,
+  chapterM05,
+  chapterM06,
+  chapterM07,
+  chapterM08,
   chapter07,
   chapter09,
   chapter10,

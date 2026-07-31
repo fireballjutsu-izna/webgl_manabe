@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapter07: Chapter = {
   slug: '07-rotation',
   part: 'math3d',
-  number: 2,
+  number: 9,
   title: '回転の表し方 ― オイラー角とクォータニオン',
   goal: 'なぜ回転に2つの表し方があるのかが分かり、ジンバルロックを避けて姿勢をなめらかに繋げられるようになります。',
   requires: ['05-trig', '06-matrix'],
