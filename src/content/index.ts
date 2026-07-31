@@ -35,6 +35,14 @@ import { chapterB23 } from './chapters/b23-atan2.ts';
 import { chapter06 } from './chapters/06-matrix.ts';
 import { chapter07 } from './chapters/07-rotation.ts';
 import { chapter08 } from './chapters/08-interp.ts';
+import { chapterB34 } from './chapters/b34-inverse-lerp.ts';
+import { chapterB35 } from './chapters/b35-easing.ts';
+import { chapterB36 } from './chapters/b36-smoothstep.ts';
+import { chapterB37 } from './chapters/b37-follow.ts';
+import { chapterB39 } from './chapters/b39-seed.ts';
+import { chapterB40 } from './chapters/b40-distribution.ts';
+import { chapterB41 } from './chapters/b41-noise.ts';
+import { chapterB42 } from './chapters/b42-fbm.ts';
 import { chapter09 } from './chapters/09-hierarchy.ts';
 import { chapter10 } from './chapters/10-camera.ts';
 import { chapter11 } from './chapters/11-normal-light.ts';
@@ -108,7 +116,15 @@ export const chapters: Chapter[] = [
   chapterB31,
   chapterB32,
   chapter08,
+  chapterB34,
+  chapterB35,
+  chapterB36,
+  chapterB37,
   chapter13,
+  chapterB39,
+  chapterB40,
+  chapterB41,
+  chapterB42,
 
   chapter06,
   chapter07,
