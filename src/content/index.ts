@@ -1,6 +1,16 @@
 import { PARTS, type Chapter, type Part, type PartInfo } from './types.ts';
 
+import { chapterB01 } from './chapters/b01-number-line.ts';
+import { chapterB02 } from './chapters/b02-variable.ts';
+import { chapterB03 } from './chapters/b03-function-graph.ts';
+import { chapterB04 } from './chapters/b04-power-root.ts';
+import { chapterB05 } from './chapters/b05-ratio.ts';
+import { chapterB06 } from './chapters/b06-float.ts';
+import { chapterB07 } from './chapters/b07-plane.ts';
 import { chapter01 } from './chapters/01-space.ts';
+import { chapterB09 } from './chapters/b09-handedness.ts';
+import { chapterB10 } from './chapters/b10-pythagoras.ts';
+import { chapterB11 } from './chapters/b11-distance.ts';
 import { chapter02 } from './chapters/02-vector.ts';
 import { chapter03 } from './chapters/03-dot.ts';
 import { chapter04 } from './chapters/04-cross.ts';
@@ -48,7 +58,17 @@ import { chapterQ06 } from './chapters/q05-ship-it.ts';
 
 /** 学ぶ順に並べた全章。目次・前提知識マップ・検索索引はここから作られる。 */
 export const chapters: Chapter[] = [
+  chapterB01,
+  chapterB02,
+  chapterB03,
+  chapterB04,
+  chapterB05,
+  chapterB06,
+  chapterB07,
   chapter01,
+  chapterB09,
+  chapterB10,
+  chapterB11,
   chapter02,
   chapter05,
   chapter03,

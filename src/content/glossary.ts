@@ -6,6 +6,48 @@ import type { GlossaryEntry } from './types.ts';
  */
 export const glossary: GlossaryEntry[] = [
   {
+    term: '数直線',
+    reading: 'すうちょくせん',
+    def: '横に引いた 1 本の線に、0 を基準として右にプラス、左にマイナスの数を並べたもの。数を「線の上の場所」として見られるようになる。',
+    chapter: 'b01-number-line',
+  },
+  {
+    term: '絶対値',
+    reading: 'ぜったいち',
+    def: 'その数が 0 からどれだけ離れているか。符号を落として大きさだけを取り出したもので、|a| と書く。-5 も 5 も絶対値は 5。',
+    chapter: 'b01-number-line',
+  },
+  {
+    term: 'グラフ',
+    reading: 'ぐらふ',
+    def: '横に入力、縦に出力を取り、あり得る入出力の組を全部点として並べた絵。関数の答えを一覧にしたもの。',
+    chapter: 'b03-function-graph',
+  },
+  {
+    term: '一次関数',
+    reading: 'いちじかんすう',
+    def: 'f(x) = a x + b の形をした関数。グラフは必ず直線になり、a が傾き（x が 1 増えたときの増え方）、b が x = 0 のときの値。',
+    chapter: 'b03-function-graph',
+  },
+  {
+    term: '根号',
+    reading: 'こんごう',
+    def: '平方根を表す記号。中の数を「二乗する前の数」に戻す。ルートとも読む。中身が負の数のときは（実数の範囲では）答えが無い。',
+    chapter: 'b04-power-root',
+  },
+  {
+    term: '斜辺',
+    reading: 'しゃへん',
+    def: '直角三角形で、直角の向かい側にある辺。3 辺のうち必ずいちばん長い。',
+    chapter: 'b10-pythagoras',
+  },
+  {
+    term: 'ピタゴラスの定理',
+    reading: 'ぴたごらすのていり',
+    def: '直角三角形で、直角をはさむ 2 辺の二乗の和が、斜辺の二乗に等しいという関係。3 辺に貼った正方形の面積が釣り合う、と見ると分かりやすい。',
+    chapter: 'b10-pythagoras',
+  },
+  {
     term: '座標系',
     reading: 'ざひょうけい',
     def: '空間の中の位置を数字の組で表すための決めごと。どこを原点にして、どの向きを x・y・z と呼ぶかを決めたもの。',

@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapter13: Chapter = {
   slug: '13-random',
   part: 'basics',
-  number: 7,
+  number: 17,
   title: 'ランダムとノイズ',
   goal: 'ただの乱数とノイズの違いを説明できるようになり、地形や自然なゆらぎを自分で作れるようになります。',
   requires: ['02-vector', '05-trig'],

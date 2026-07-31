@@ -15,6 +15,12 @@ export interface DemoModule {
 }
 
 export const demos: Record<string, () => Promise<DemoModule>> = {
+  // 第1部の土台（3D の手前で、数そのものを見る）
+  'number-line': () => import('./number-line.ts'),
+  'graph-plot': () => import('./graph-plot.ts'),
+  'plane-point': () => import('./plane-point.ts'),
+  'pythagoras': () => import('./pythagoras.ts'),
+
   'axes-explorer': () => import('./axes-explorer.ts'),
   'vector-add': () => import('./vector-add.ts'),
   'vector-length': () => import('./vector-length.ts'),
