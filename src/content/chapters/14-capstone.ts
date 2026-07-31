@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapter14: Chapter = {
   slug: '14-capstone',
   part: 'math3d',
-  number: 7,
+  number: 42,
   title: '総合演習 ― 全部を使って作る',
   goal: 'ここまでの13章の道具が、1つの場面の中でどう噛み合うのかが分かり、自分の作りたいものを分解して組み立てられるようになります。',
   requires: ['05-trig', '08-interp', '09-hierarchy', '11-normal-light'],

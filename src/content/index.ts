@@ -1,17 +1,87 @@
 import { PARTS, type Chapter, type Part, type PartInfo } from './types.ts';
 
+import { chapterB01 } from './chapters/b01-number-line.ts';
+import { chapterB02 } from './chapters/b02-variable.ts';
+import { chapterB03 } from './chapters/b03-function-graph.ts';
+import { chapterB04 } from './chapters/b04-power-root.ts';
+import { chapterB05 } from './chapters/b05-ratio.ts';
+import { chapterB06 } from './chapters/b06-float.ts';
+import { chapterB07 } from './chapters/b07-plane.ts';
 import { chapter01 } from './chapters/01-space.ts';
+import { chapterB09 } from './chapters/b09-handedness.ts';
+import { chapterB10 } from './chapters/b10-pythagoras.ts';
+import { chapterB11 } from './chapters/b11-distance.ts';
 import { chapter02 } from './chapters/02-vector.ts';
+import { chapterB13 } from './chapters/b13-vector-add.ts';
+import { chapterB14 } from './chapters/b14-vector-sub.ts';
+import { chapterB15 } from './chapters/b15-vector-scale.ts';
+import { chapterB16 } from './chapters/b16-vector-length.ts';
+import { chapterB17 } from './chapters/b17-normalize.ts';
 import { chapter03 } from './chapters/03-dot.ts';
+import { chapterB25 } from './chapters/b25-dot-angle.ts';
+import { chapterB26 } from './chapters/b26-dot-facing.ts';
+import { chapterB27 } from './chapters/b27-lambert.ts';
+import { chapterB28 } from './chapters/b28-projection.ts';
 import { chapter04 } from './chapters/04-cross.ts';
+import { chapterB30 } from './chapters/b30-cross-area.ts';
+import { chapterB31 } from './chapters/b31-triangle-normal.ts';
+import { chapterB32 } from './chapters/b32-cross-side.ts';
+import { chapterB18 } from './chapters/b18-angle.ts';
 import { chapter05 } from './chapters/05-trig.ts';
+import { chapterB20 } from './chapters/b20-sin-cos.ts';
+import { chapterB21 } from './chapters/b21-circular-motion.ts';
+import { chapterB22 } from './chapters/b22-wave.ts';
+import { chapterB23 } from './chapters/b23-atan2.ts';
 import { chapter06 } from './chapters/06-matrix.ts';
+import { chapterM02 } from './chapters/m02-matrix-vector.ts';
+import { chapterM03 } from './chapters/m03-basis.ts';
+import { chapterM04 } from './chapters/m04-homogeneous.ts';
+import { chapterM05 } from './chapters/m05-matrix-order.ts';
+import { chapterM06 } from './chapters/m06-trs.ts';
+import { chapterM07 } from './chapters/m07-inverse.ts';
+import { chapterM08 } from './chapters/m08-normal-matrix.ts';
 import { chapter07 } from './chapters/07-rotation.ts';
+import { chapterM10 } from './chapters/m10-euler.ts';
+import { chapterM11 } from './chapters/m11-gimbal.ts';
+import { chapterM12 } from './chapters/m12-axis-angle.ts';
+import { chapterM13 } from './chapters/m13-quaternion.ts';
+import { chapterM14 } from './chapters/m14-slerp.ts';
+import { chapterM15 } from './chapters/m15-lookat.ts';
 import { chapter08 } from './chapters/08-interp.ts';
+import { chapterB34 } from './chapters/b34-inverse-lerp.ts';
+import { chapterB35 } from './chapters/b35-easing.ts';
+import { chapterB36 } from './chapters/b36-smoothstep.ts';
+import { chapterB37 } from './chapters/b37-follow.ts';
+import { chapterB39 } from './chapters/b39-seed.ts';
+import { chapterB40 } from './chapters/b40-distribution.ts';
+import { chapterB41 } from './chapters/b41-noise.ts';
+import { chapterB42 } from './chapters/b42-fbm.ts';
 import { chapter09 } from './chapters/09-hierarchy.ts';
+import { chapterM17 } from './chapters/m17-local-world.ts';
+import { chapterM18 } from './chapters/m18-matrix-world.ts';
+import { chapterM19 } from './chapters/m19-pivot.ts';
+import { chapterM20 } from './chapters/m20-attach.ts';
+import { chapterM21 } from './chapters/m21-polar.ts';
+import { chapterM22 } from './chapters/m22-spherical.ts';
+import { chapterM23 } from './chapters/m23-sphere-uniform.ts';
+import { chapterM24 } from './chapters/m24-orbit.ts';
 import { chapter10 } from './chapters/10-camera.ts';
+import { chapterM26 } from './chapters/m26-perspective.ts';
+import { chapterM27 } from './chapters/m27-frustum.ts';
+import { chapterM28 } from './chapters/m28-ndc.ts';
+import { chapterM29 } from './chapters/m29-ortho.ts';
 import { chapter11 } from './chapters/11-normal-light.ts';
+import { chapterM31 } from './chapters/m31-reflect.ts';
+import { chapterM32 } from './chapters/m32-specular.ts';
+import { chapterM33 } from './chapters/m33-fresnel.ts';
+import { chapterM34 } from './chapters/m34-refract.ts';
 import { chapter12 } from './chapters/12-curve.ts';
+import { chapterM36 } from './chapters/m36-catmull.ts';
+import { chapterM37 } from './chapters/m37-arclength.ts';
+import { chapterM38 } from './chapters/m38-frame.ts';
+import { chapterM39 } from './chapters/m39-recursion.ts';
+import { chapterM40 } from './chapters/m40-subdivision.ts';
+import { chapterM41 } from './chapters/m41-fractal.ts';
 import { chapter13 } from './chapters/13-random.ts';
 import { chapter14 } from './chapters/14-capstone.ts';
 
@@ -48,20 +118,90 @@ import { chapterQ06 } from './chapters/q05-ship-it.ts';
 
 /** 学ぶ順に並べた全章。目次・前提知識マップ・検索索引はここから作られる。 */
 export const chapters: Chapter[] = [
+  chapterB01,
+  chapterB02,
+  chapterB03,
+  chapterB04,
+  chapterB05,
+  chapterB06,
+  chapterB07,
   chapter01,
+  chapterB09,
+  chapterB10,
+  chapterB11,
   chapter02,
+  chapterB13,
+  chapterB14,
+  chapterB15,
+  chapterB16,
+  chapterB17,
+  chapterB18,
   chapter05,
+  chapterB20,
+  chapterB21,
+  chapterB22,
+  chapterB23,
   chapter03,
+  chapterB25,
+  chapterB26,
+  chapterB27,
+  chapterB28,
   chapter04,
+  chapterB30,
+  chapterB31,
+  chapterB32,
   chapter08,
+  chapterB34,
+  chapterB35,
+  chapterB36,
+  chapterB37,
   chapter13,
+  chapterB39,
+  chapterB40,
+  chapterB41,
+  chapterB42,
 
   chapter06,
+  chapterM02,
+  chapterM03,
+  chapterM04,
+  chapterM05,
+  chapterM06,
+  chapterM07,
+  chapterM08,
   chapter07,
+  chapterM10,
+  chapterM11,
+  chapterM12,
+  chapterM13,
+  chapterM14,
+  chapterM15,
   chapter09,
+  chapterM17,
+  chapterM18,
+  chapterM19,
+  chapterM20,
+  chapterM21,
+  chapterM22,
+  chapterM23,
+  chapterM24,
   chapter10,
+  chapterM26,
+  chapterM27,
+  chapterM28,
+  chapterM29,
   chapter11,
+  chapterM31,
+  chapterM32,
+  chapterM33,
+  chapterM34,
   chapter12,
+  chapterM36,
+  chapterM37,
+  chapterM38,
+  chapterM39,
+  chapterM40,
+  chapterM41,
   chapter14,
 
   chapterT01,

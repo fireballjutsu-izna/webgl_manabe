@@ -6,6 +6,48 @@ import type { GlossaryEntry } from './types.ts';
  */
 export const glossary: GlossaryEntry[] = [
   {
+    term: '数直線',
+    reading: 'すうちょくせん',
+    def: '横に引いた 1 本の線に、0 を基準として右にプラス、左にマイナスの数を並べたもの。数を「線の上の場所」として見られるようになる。',
+    chapter: 'b01-number-line',
+  },
+  {
+    term: '絶対値',
+    reading: 'ぜったいち',
+    def: 'その数が 0 からどれだけ離れているか。符号を落として大きさだけを取り出したもので、|a| と書く。-5 も 5 も絶対値は 5。',
+    chapter: 'b01-number-line',
+  },
+  {
+    term: 'グラフ',
+    reading: 'ぐらふ',
+    def: '横に入力、縦に出力を取り、あり得る入出力の組を全部点として並べた絵。関数の答えを一覧にしたもの。',
+    chapter: 'b03-function-graph',
+  },
+  {
+    term: '一次関数',
+    reading: 'いちじかんすう',
+    def: 'f(x) = a x + b の形をした関数。グラフは必ず直線になり、a が傾き（x が 1 増えたときの増え方）、b が x = 0 のときの値。',
+    chapter: 'b03-function-graph',
+  },
+  {
+    term: '根号',
+    reading: 'こんごう',
+    def: '平方根を表す記号。中の数を「二乗する前の数」に戻す。ルートとも読む。中身が負の数のときは（実数の範囲では）答えが無い。',
+    chapter: 'b04-power-root',
+  },
+  {
+    term: '斜辺',
+    reading: 'しゃへん',
+    def: '直角三角形で、直角の向かい側にある辺。3 辺のうち必ずいちばん長い。',
+    chapter: 'b10-pythagoras',
+  },
+  {
+    term: 'ピタゴラスの定理',
+    reading: 'ぴたごらすのていり',
+    def: '直角三角形で、直角をはさむ 2 辺の二乗の和が、斜辺の二乗に等しいという関係。3 辺に貼った正方形の面積が釣り合う、と見ると分かりやすい。',
+    chapter: 'b10-pythagoras',
+  },
+  {
     term: '座標系',
     reading: 'ざひょうけい',
     def: '空間の中の位置を数字の組で表すための決めごと。どこを原点にして、どの向きを x・y・z と呼ぶかを決めたもの。',
@@ -111,6 +153,24 @@ export const glossary: GlossaryEntry[] = [
     chapter: '06-matrix',
   },
   {
+    term: '行列式',
+    reading: 'ぎょうれつしき',
+    def: '変換で面積（3D なら体積）が何倍になるかを表す 1 つの数。0 なら潰れていて元に戻せず、マイナスなら裏返る。',
+    chapter: 'm03-basis',
+  },
+  {
+    term: '逆行列',
+    reading: 'ぎゃくぎょうれつ',
+    def: '変換を元に戻す行列。掛けると「何もしない行列」になる。行列式が 0 のときは存在しない。',
+    chapter: 'm07-inverse',
+  },
+  {
+    term: '法線行列',
+    reading: 'ほうせんぎょうれつ',
+    def: '法線を変換するための行列。もとの変換行列の逆行列を転置したもの。軸ごとに倍率が違う拡大でも、面と法線の直交が保たれる。',
+    chapter: 'm08-normal-matrix',
+  },
+  {
     term: '同次座標',
     reading: 'どうじざひょう',
     def: '3D の座標に 4 つ目の数を足して 4 個組にする表し方。これにより平行移動も回転と同じ行列のかけ算で扱えるようになる。',
@@ -168,28 +228,45 @@ export const glossary: GlossaryEntry[] = [
     chapter: '09-hierarchy',
   },
   {
+    term: '球面座標',
+    reading: 'きゅうめんざひょう',
+    def: '緯度・経度・半径の 3 つで場所を指す方法。球の上の点を指すのに向き、どんな角度を入れても必ず球面に乗る。',
+    chapter: 'm22-spherical',
+  },
+  {
     term: '透視投影',
     reading: 'とうしとうえい',
     def: '遠くのものほど小さく写る、人間の目やカメラと同じ写し方。Three.js の PerspectiveCamera がこれ。',
-    chapter: '10-camera',
+    chapter: 'm26-perspective',
+  },
+  {
+    term: 'フレネル',
+    def: '浅い角度から見るほど、面がよく映り込むようになる現象。ガラスは正面では 4% しか反射しないが、真横に近い角度では 90% を超える。',
+    chapter: 'm33-fresnel',
+  },
+  {
+    term: '屈折率',
+    reading: 'くっせつりつ',
+    def: 'その物質の中で光がどれだけ遅くなるかを表す数。水は 1.33、ガラスは 1.5、ダイヤモンドは 2.42。大きいほど光が強く曲がる。',
+    chapter: 'm34-refract',
   },
   {
     term: '正射影',
     reading: 'せいしゃえい',
     def: '遠くのものも近くのものも同じ大きさで写す写し方。設計図や 2D 風の見た目に使う。',
-    chapter: '10-camera',
+    chapter: 'm29-ortho',
   },
   {
     term: '視錐台',
     reading: 'しすいだい',
     def: 'カメラに写る範囲を表す、先を切り落とした四角錐の形をした空間。この中に入ったものだけが画面に出る。',
-    chapter: '10-camera',
+    chapter: 'm27-frustum',
   },
   {
     term: '画角',
     reading: 'がかく',
     def: 'カメラがどれだけ広い範囲を見渡せるかを表す角度。FOV とも呼ぶ。大きいほど広く写り、遠近感が強くなる。',
-    chapter: '10-camera',
+    chapter: 'm26-perspective',
   },
   {
     term: 'ランバート反射',
@@ -201,7 +278,7 @@ export const glossary: GlossaryEntry[] = [
     term: '反射ベクトル',
     reading: 'はんしゃベクトル',
     def: '入ってきた光が面ではね返る向きを表すベクトル。鏡のような光沢を計算するのに使う。',
-    chapter: '11-normal-light',
+    chapter: 'm31-reflect',
   },
   {
     term: '制御点',
@@ -214,6 +291,18 @@ export const glossary: GlossaryEntry[] = [
     reading: 'ベジェきょくせん',
     def: '制御点によって形を決める、なめらかな曲線。始点と終点は必ず通り、途中の制御点には引き寄せられるだけで通らない。',
     chapter: '12-curve',
+  },
+  {
+    term: '弧長',
+    reading: 'こちょう',
+    def: '曲線に沿って測った道のり。曲線のパラメータ t とは別物で、等速で走らせたいときは弧長で測り直す必要がある。',
+    chapter: 'm37-arclength',
+  },
+  {
+    term: '自己相似',
+    reading: 'じこそうじ',
+    def: '一部を拡大すると全体と同じ形が現れる性質。木・海岸線・雲などに見られ、再帰で作れる。こうした形をフラクタルと呼ぶ。',
+    chapter: 'm41-fractal',
   },
   {
     term: 'ノイズ',

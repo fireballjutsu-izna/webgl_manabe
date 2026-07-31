@@ -15,6 +15,33 @@ export interface DemoModule {
 }
 
 export const demos: Record<string, () => Promise<DemoModule>> = {
+  // 第1部の土台（3D の手前で、数そのものを見る）
+  'number-line': () => import('./number-line.ts'),
+  'graph-plot': () => import('./graph-plot.ts'),
+  'plane-point': () => import('./plane-point.ts'),
+  'pythagoras': () => import('./pythagoras.ts'),
+  'vector-between': () => import('./vector-between.ts'),
+  'vector-scale': () => import('./vector-scale.ts'),
+  'atan2-angle': () => import('./atan2-angle.ts'),
+  'triangle-normal': () => import('./triangle-normal.ts'),
+  'distribution': () => import('./distribution.ts'),
+
+  // 第2部（3D の数学）
+  'basis-vectors': () => import('./basis-vectors.ts'),
+  'normal-matrix': () => import('./normal-matrix.ts'),
+  'rotate-2d': () => import('./rotate-2d.ts'),
+  'axis-angle': () => import('./axis-angle.ts'),
+  'look-at': () => import('./look-at.ts'),
+  'pivot-offset': () => import('./pivot-offset.ts'),
+  'spherical-coords': () => import('./spherical-coords.ts'),
+  'sphere-uniform': () => import('./sphere-uniform.ts'),
+  'perspective-divide': () => import('./perspective-divide.ts'),
+  'reflect-vector': () => import('./reflect-vector.ts'),
+  'fresnel-curve': () => import('./fresnel-curve.ts'),
+  'bezier-steps': () => import('./bezier-steps.ts'),
+  'arc-length': () => import('./arc-length.ts'),
+  'subdivision': () => import('./subdivision.ts'),
+
   'axes-explorer': () => import('./axes-explorer.ts'),
   'vector-add': () => import('./vector-add.ts'),
   'vector-length': () => import('./vector-length.ts'),
