@@ -57,6 +57,14 @@ import { chapterB40 } from './chapters/b40-distribution.ts';
 import { chapterB41 } from './chapters/b41-noise.ts';
 import { chapterB42 } from './chapters/b42-fbm.ts';
 import { chapter09 } from './chapters/09-hierarchy.ts';
+import { chapterM17 } from './chapters/m17-local-world.ts';
+import { chapterM18 } from './chapters/m18-matrix-world.ts';
+import { chapterM19 } from './chapters/m19-pivot.ts';
+import { chapterM20 } from './chapters/m20-attach.ts';
+import { chapterM21 } from './chapters/m21-polar.ts';
+import { chapterM22 } from './chapters/m22-spherical.ts';
+import { chapterM23 } from './chapters/m23-sphere-uniform.ts';
+import { chapterM24 } from './chapters/m24-orbit.ts';
 import { chapter10 } from './chapters/10-camera.ts';
 import { chapter11 } from './chapters/11-normal-light.ts';
 import { chapter12 } from './chapters/12-curve.ts';
@@ -155,6 +163,14 @@ export const chapters: Chapter[] = [
   chapterM14,
   chapterM15,
   chapter09,
+  chapterM17,
+  chapterM18,
+  chapterM19,
+  chapterM20,
+  chapterM21,
+  chapterM22,
+  chapterM23,
+  chapterM24,
   chapter10,
   chapter11,
   chapter12,

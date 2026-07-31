@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapter11: Chapter = {
   slug: '11-normal-light',
   part: 'math3d',
-  number: 18,
+  number: 26,
   title: '法線とライティング',
   goal: '面の明るさがどう決まるのかを説明できるようになり、「モデルが真っ黒」「エッジがカクカク」といった不具合の原因を切り分けられるようになります。',
   requires: ['03-dot', '04-cross'],

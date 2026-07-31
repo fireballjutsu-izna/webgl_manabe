@@ -32,6 +32,9 @@ export const demos: Record<string, () => Promise<DemoModule>> = {
   'rotate-2d': () => import('./rotate-2d.ts'),
   'axis-angle': () => import('./axis-angle.ts'),
   'look-at': () => import('./look-at.ts'),
+  'pivot-offset': () => import('./pivot-offset.ts'),
+  'spherical-coords': () => import('./spherical-coords.ts'),
+  'sphere-uniform': () => import('./sphere-uniform.ts'),
 
   'axes-explorer': () => import('./axes-explorer.ts'),
   'vector-add': () => import('./vector-add.ts'),

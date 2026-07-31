@@ -228,6 +228,12 @@ export const glossary: GlossaryEntry[] = [
     chapter: '09-hierarchy',
   },
   {
+    term: '球面座標',
+    reading: 'きゅうめんざひょう',
+    def: '緯度・経度・半径の 3 つで場所を指す方法。球の上の点を指すのに向き、どんな角度を入れても必ず球面に乗る。',
+    chapter: 'm22-spherical',
+  },
+  {
     term: '透視投影',
     reading: 'とうしとうえい',
     def: '遠くのものほど小さく写る、人間の目やカメラと同じ写し方。Three.js の PerspectiveCamera がこれ。',
