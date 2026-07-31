@@ -18,7 +18,14 @@ import { chapterB15 } from './chapters/b15-vector-scale.ts';
 import { chapterB16 } from './chapters/b16-vector-length.ts';
 import { chapterB17 } from './chapters/b17-normalize.ts';
 import { chapter03 } from './chapters/03-dot.ts';
+import { chapterB25 } from './chapters/b25-dot-angle.ts';
+import { chapterB26 } from './chapters/b26-dot-facing.ts';
+import { chapterB27 } from './chapters/b27-lambert.ts';
+import { chapterB28 } from './chapters/b28-projection.ts';
 import { chapter04 } from './chapters/04-cross.ts';
+import { chapterB30 } from './chapters/b30-cross-area.ts';
+import { chapterB31 } from './chapters/b31-triangle-normal.ts';
+import { chapterB32 } from './chapters/b32-cross-side.ts';
 import { chapterB18 } from './chapters/b18-angle.ts';
 import { chapter05 } from './chapters/05-trig.ts';
 import { chapterB20 } from './chapters/b20-sin-cos.ts';
@@ -92,7 +99,14 @@ export const chapters: Chapter[] = [
   chapterB22,
   chapterB23,
   chapter03,
+  chapterB25,
+  chapterB26,
+  chapterB27,
+  chapterB28,
   chapter04,
+  chapterB30,
+  chapterB31,
+  chapterB32,
   chapter08,
   chapter13,
 

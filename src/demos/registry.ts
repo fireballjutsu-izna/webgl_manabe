@@ -23,6 +23,7 @@ export const demos: Record<string, () => Promise<DemoModule>> = {
   'vector-between': () => import('./vector-between.ts'),
   'vector-scale': () => import('./vector-scale.ts'),
   'atan2-angle': () => import('./atan2-angle.ts'),
+  'triangle-normal': () => import('./triangle-normal.ts'),
 
   'axes-explorer': () => import('./axes-explorer.ts'),
   'vector-add': () => import('./vector-add.ts'),
