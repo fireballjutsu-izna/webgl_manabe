@@ -29,6 +29,9 @@ export const demos: Record<string, () => Promise<DemoModule>> = {
   // 第2部（3D の数学）
   'basis-vectors': () => import('./basis-vectors.ts'),
   'normal-matrix': () => import('./normal-matrix.ts'),
+  'rotate-2d': () => import('./rotate-2d.ts'),
+  'axis-angle': () => import('./axis-angle.ts'),
+  'look-at': () => import('./look-at.ts'),
 
   'axes-explorer': () => import('./axes-explorer.ts'),
   'vector-add': () => import('./vector-add.ts'),

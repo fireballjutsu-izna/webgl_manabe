@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapter10: Chapter = {
   slug: '10-camera',
   part: 'math3d',
-  number: 11,
+  number: 17,
   title: 'カメラと投影',
   goal: '「なぜ映らないのか」を自分で切り分けられるようになり、画角や near / far を目的に合わせて選べるようになります。',
   requires: ['05-trig', '06-matrix'],

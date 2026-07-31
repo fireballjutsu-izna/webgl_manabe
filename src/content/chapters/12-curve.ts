@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapter12: Chapter = {
   slug: '12-curve',
   part: 'math3d',
-  number: 13,
+  number: 19,
   title: '曲線とパス',
   goal: '数点を置くだけでなめらかな道を作れるようになり、その上を物体やカメラに走らせられるようになります。',
   requires: ['02-vector', '08-interp'],

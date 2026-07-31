@@ -41,6 +41,12 @@ import { chapterM06 } from './chapters/m06-trs.ts';
 import { chapterM07 } from './chapters/m07-inverse.ts';
 import { chapterM08 } from './chapters/m08-normal-matrix.ts';
 import { chapter07 } from './chapters/07-rotation.ts';
+import { chapterM10 } from './chapters/m10-euler.ts';
+import { chapterM11 } from './chapters/m11-gimbal.ts';
+import { chapterM12 } from './chapters/m12-axis-angle.ts';
+import { chapterM13 } from './chapters/m13-quaternion.ts';
+import { chapterM14 } from './chapters/m14-slerp.ts';
+import { chapterM15 } from './chapters/m15-lookat.ts';
 import { chapter08 } from './chapters/08-interp.ts';
 import { chapterB34 } from './chapters/b34-inverse-lerp.ts';
 import { chapterB35 } from './chapters/b35-easing.ts';
@@ -142,6 +148,12 @@ export const chapters: Chapter[] = [
   chapterM07,
   chapterM08,
   chapter07,
+  chapterM10,
+  chapterM11,
+  chapterM12,
+  chapterM13,
+  chapterM14,
+  chapterM15,
   chapter09,
   chapter10,
   chapter11,
