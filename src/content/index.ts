@@ -76,6 +76,12 @@ import { chapterM32 } from './chapters/m32-specular.ts';
 import { chapterM33 } from './chapters/m33-fresnel.ts';
 import { chapterM34 } from './chapters/m34-refract.ts';
 import { chapter12 } from './chapters/12-curve.ts';
+import { chapterM36 } from './chapters/m36-catmull.ts';
+import { chapterM37 } from './chapters/m37-arclength.ts';
+import { chapterM38 } from './chapters/m38-frame.ts';
+import { chapterM39 } from './chapters/m39-recursion.ts';
+import { chapterM40 } from './chapters/m40-subdivision.ts';
+import { chapterM41 } from './chapters/m41-fractal.ts';
 import { chapter13 } from './chapters/13-random.ts';
 import { chapter14 } from './chapters/14-capstone.ts';
 
@@ -190,6 +196,12 @@ export const chapters: Chapter[] = [
   chapterM33,
   chapterM34,
   chapter12,
+  chapterM36,
+  chapterM37,
+  chapterM38,
+  chapterM39,
+  chapterM40,
+  chapterM41,
   chapter14,
 
   chapterT01,

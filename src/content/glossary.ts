@@ -293,6 +293,18 @@ export const glossary: GlossaryEntry[] = [
     chapter: '12-curve',
   },
   {
+    term: '弧長',
+    reading: 'こちょう',
+    def: '曲線に沿って測った道のり。曲線のパラメータ t とは別物で、等速で走らせたいときは弧長で測り直す必要がある。',
+    chapter: 'm37-arclength',
+  },
+  {
+    term: '自己相似',
+    reading: 'じこそうじ',
+    def: '一部を拡大すると全体と同じ形が現れる性質。木・海岸線・雲などに見られ、再帰で作れる。こうした形をフラクタルと呼ぶ。',
+    chapter: 'm41-fractal',
+  },
+  {
     term: 'ノイズ',
     def: 'でたらめに見えて、近い場所どうしは似た値になる乱数。地形や炎、雲のような「自然なばらつき」を作るのに使う。',
     chapter: '13-random',

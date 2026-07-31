@@ -38,6 +38,9 @@ export const demos: Record<string, () => Promise<DemoModule>> = {
   'perspective-divide': () => import('./perspective-divide.ts'),
   'reflect-vector': () => import('./reflect-vector.ts'),
   'fresnel-curve': () => import('./fresnel-curve.ts'),
+  'bezier-steps': () => import('./bezier-steps.ts'),
+  'arc-length': () => import('./arc-length.ts'),
+  'subdivision': () => import('./subdivision.ts'),
 
   'axes-explorer': () => import('./axes-explorer.ts'),
   'vector-add': () => import('./vector-add.ts'),
