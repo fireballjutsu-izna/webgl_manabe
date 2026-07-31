@@ -20,6 +20,8 @@ export const demos: Record<string, () => Promise<DemoModule>> = {
   'graph-plot': () => import('./graph-plot.ts'),
   'plane-point': () => import('./plane-point.ts'),
   'pythagoras': () => import('./pythagoras.ts'),
+  'vector-between': () => import('./vector-between.ts'),
+  'vector-scale': () => import('./vector-scale.ts'),
 
   'axes-explorer': () => import('./axes-explorer.ts'),
   'vector-add': () => import('./vector-add.ts'),

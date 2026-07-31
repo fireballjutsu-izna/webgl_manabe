@@ -12,6 +12,11 @@ import { chapterB09 } from './chapters/b09-handedness.ts';
 import { chapterB10 } from './chapters/b10-pythagoras.ts';
 import { chapterB11 } from './chapters/b11-distance.ts';
 import { chapter02 } from './chapters/02-vector.ts';
+import { chapterB13 } from './chapters/b13-vector-add.ts';
+import { chapterB14 } from './chapters/b14-vector-sub.ts';
+import { chapterB15 } from './chapters/b15-vector-scale.ts';
+import { chapterB16 } from './chapters/b16-vector-length.ts';
+import { chapterB17 } from './chapters/b17-normalize.ts';
 import { chapter03 } from './chapters/03-dot.ts';
 import { chapter04 } from './chapters/04-cross.ts';
 import { chapter05 } from './chapters/05-trig.ts';
@@ -70,6 +75,11 @@ export const chapters: Chapter[] = [
   chapterB10,
   chapterB11,
   chapter02,
+  chapterB13,
+  chapterB14,
+  chapterB15,
+  chapterB16,
+  chapterB17,
   chapter05,
   chapter03,
   chapter04,
