@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterT14: Chapter = {
   slug: 't14-fragment-shader',
   part: 'threejs',
-  number: 14,
+  number: 21,
   title: 'フラグメントシェーダ ― 色を決める',
   goal: 'UV から模様を作れるようになり、法線と光の内積で陰影を自分の手で書けるようになります。',
   requires: ['t13-vertex-shader', '11-normal-light'],

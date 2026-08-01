@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterT09: Chapter = {
   slug: 't09-loader',
   part: 'threejs',
-  number: 9,
+  number: 16,
   title: 'モデルを読み込む',
   goal: '非同期の読み込みを落ち着いて扱えるようになり、読み込んだモデルの大きさ・向き・材質を自分で整えられるようになります。',
   requires: ['t05-light-shadow', '09-hierarchy'],

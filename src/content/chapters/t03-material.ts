@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterT03: Chapter = {
   slug: 't03-material',
   part: 'threejs',
-  number: 3,
+  number: 10,
   title: '見た目を決める ― マテリアル',
   goal: 'マテリアルを目的に応じて選べるようになり、粗さ・金属度・透明の扱いで迷わなくなります。',
   requires: ['t02-geometry', '11-normal-light'],

@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterT04: Chapter = {
   slug: 't04-texture',
   part: 'threejs',
-  number: 4,
+  number: 11,
   title: 'テクスチャ ― 面に絵を貼る',
   goal: 'UV が何を表しているのかが分かり、繰り返し・向き・色空間で困らずにテクスチャを貼れるようになります。',
   requires: ['t03-material'],

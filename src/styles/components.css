@@ -156,6 +156,44 @@
   padding: 0.1em 0.35em;
 }
 
+/* 表。狭い画面では、本文ではなく表だけを横に流す */
+.tablewrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elev);
+}
+
+.tablewrap table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.94rem;
+  line-height: 1.7;
+}
+
+.tablewrap th,
+.tablewrap td {
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+
+.tablewrap th {
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg-inset);
+  white-space: nowrap;
+}
+
+.tablewrap tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tablewrap td:first-child {
+  color: var(--text);
+}
+
 /* ---- 数式 ---- */
 
 .formula {

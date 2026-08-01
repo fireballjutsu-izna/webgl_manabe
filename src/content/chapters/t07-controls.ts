@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterT07: Chapter = {
   slug: 't07-controls',
   part: 'threejs',
-  number: 7,
+  number: 14,
   title: '視点を操作する',
   goal: 'OrbitControls を思いどおりに設定できるようになり、見せたいものから視点が外れないシーンを作れるようになります。',
   requires: ['t01-first-scene', '07-rotation'],

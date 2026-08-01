@@ -20,6 +20,7 @@ const CORE: Record<string, string> = {
   // core
   Object3D: 'core', BufferGeometry: 'core', BufferAttribute: 'core',
   InstancedBufferAttribute: 'core', InterleavedBuffer: 'core',
+  Float32BufferAttribute: 'core',
   Raycaster: 'core', Clock: 'core', EventDispatcher: 'core',
   Layers: 'core', Uniform: 'core', GLBufferAttribute: 'core',
 

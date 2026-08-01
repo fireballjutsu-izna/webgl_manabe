@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterT05: Chapter = {
   slug: 't05-light-shadow',
   part: 'threejs',
-  number: 5,
+  number: 12,
   title: 'ライトと影',
   goal: '5種類のライトを目的で選べるようになり、影が出ないときの原因を順番に潰せるようになります。',
   requires: ['t03-material', '11-normal-light'],

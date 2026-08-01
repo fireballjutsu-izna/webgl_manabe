@@ -86,7 +86,14 @@ import { chapter13 } from './chapters/13-random.ts';
 import { chapter14 } from './chapters/14-capstone.ts';
 
 import { chapterT01 } from './chapters/t01-first-scene.ts';
+import { chapterW02 } from './chapters/w02-render-loop.ts';
+import { chapterW03 } from './chapters/w03-resize.ts';
+import { chapterW04 } from './chapters/w04-blank-screen.ts';
 import { chapterT02 } from './chapters/t02-geometry.ts';
+import { chapterW06 } from './chapters/w06-buffer-geometry.ts';
+import { chapterW07 } from './chapters/w07-index.ts';
+import { chapterW08 } from './chapters/w08-attributes.ts';
+import { chapterW09 } from './chapters/w09-geometry-edit.ts';
 import { chapterT03 } from './chapters/t03-material.ts';
 import { chapterT04 } from './chapters/t04-texture.ts';
 import { chapterT05 } from './chapters/t05-light-shadow.ts';
@@ -205,7 +212,14 @@ export const chapters: Chapter[] = [
   chapter14,
 
   chapterT01,
+  chapterW02,
+  chapterW03,
+  chapterW04,
   chapterT02,
+  chapterW06,
+  chapterW07,
+  chapterW08,
+  chapterW09,
   chapterT03,
   chapterT04,
   chapterT05,

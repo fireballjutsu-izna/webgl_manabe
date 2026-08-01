@@ -4,8 +4,8 @@ export const chapterT01: Chapter = {
   slug: 't01-first-scene',
   part: 'threejs',
   number: 1,
-  title: '最初のシーン',
-  goal: 'シーン・カメラ・レンダラの役割が分かり、何も映らないときに自分で原因を切り分けられるようになります。',
+  title: '最初のシーン ― 3 つ揃えて、1 枚描く',
+  goal: 'シーン・カメラ・レンダラの分担が分かり、自分の手で 1 枚の絵を出せるようになります。',
   requires: ['01-space', '10-camera'],
   threeApis: [
     'Scene',
@@ -15,26 +15,29 @@ export const chapterT01: Chapter = {
     'BoxGeometry',
     'MeshStandardMaterial',
     'DirectionalLight',
-    'Camera.updateProjectionMatrix',
+    'WebGLRenderer.render',
   ],
   mathRecall: [
-    { slug: '01-space', note: '数字3つが空間のどこを指すか' },
+    { slug: '01-space', note: '数字 3 つが空間のどこを指すか' },
     { slug: '10-camera', note: '視錐台・画角・near と far' },
   ],
   blocks: [
     {
       kind: 'md',
       text: `
-## 3つ揃わないと、何も映らない
+## 3 つ揃わないと、何も映らない
 
 Three.js の絵は、必ずこの 3 つが揃ってはじめて出ます。
 
-- **シーン**（\`Scene\`）… ものを置く世界そのもの。ここに追加しないと存在しないのと同じ
+- **シーン**（\`Scene\`）… ものを置く世界そのもの。ここに追加しないと、存在しないのと同じ
 - **カメラ**（\`PerspectiveCamera\`）… どこから、どれくらいの広さで見るか
-- **{{レンダラ}}**（\`WebGLRenderer\`）… 実際に絵を描いてキャンバスに出す係
+- **{{レンダラ}}**（\`WebGLRenderer\`）… 実際に絵を描いて、キャンバスに出す係
 
-**「シーンに何を置いたか」と「カメラがどこから見ているか」は完全に別の話**です。
+**「シーンに何を置いたか」と「カメラがどこから見ているか」は、完全に別の話です。**
 ここが分かれていることが、最初につまずく一番の理由になります。
+
+置いたのに映らない。映っているのに真っ黒。
+どちらも「3 つのうち、どれの問題か」を切り分けられれば、すぐ終わります。
 `,
     },
     {
@@ -43,8 +46,11 @@ Three.js の絵は、必ずこの 3 つが揃ってはじめて出ます。
       title: '舞台・カメラマン・映写機',
       text: `
 シーンは舞台、カメラはカメラマン、レンダラは映写機です。
+
 舞台に役者を立たせても、カメラマンが客席の外を向いていたら何も写りません。
 逆にカメラマンが正しく構えていても、映写機を回さなければスクリーンは真っ黒のままです。
+
+3 つは互いに独立しています。だから 1 つずつ確かめられます。
 `,
     },
     {
@@ -55,13 +61,15 @@ Three.js の絵は、必ずこの 3 つが揃ってはじめて出ます。
 下のコードは実際に動いています。**書き換えて「実行する」を押せば、その場で結果が変わります。**
 壊しても「最初に戻す」でいつでも元通りになるので、遠慮なくいじってください。
 
+このサイトの第3部は、ずっとこの形で進みます。読むだけの章はありません。
+
 まずは \`camera.position.set(0, 1.2, 4)\` の数字を変えてみるのがおすすめです。
 [](#/ch/01-space)でやったとおり、z のプラスが手前でした。
 `,
     },
     {
       kind: 'sandbox',
-      title: '最初のシーン',
+      title: '最初のシーン ― 静止画を 1 枚',
       code: `import * as THREE from 'three';
 
 // 1. シーン ― ものを置く世界
@@ -76,19 +84,20 @@ const camera = new THREE.PerspectiveCamera(
   100,                                    // far  : これより奥は写らない
 );
 camera.position.set(0, 1.2, 4);
-camera.lookAt(0, 0, 0);
+camera.lookAt(0, 0, 0);                   // 位置を決めたあとに呼ぶ
 
 // 3. レンダラ ― 実際に絵を描く係
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+document.body.appendChild(renderer.domElement);   // これを忘れると画面に出ない
 
 // 箱を1つ置く。scene.add を忘れると存在しないのと同じ
 const box = new THREE.Mesh(
   new THREE.BoxGeometry(1, 1, 1),
   new THREE.MeshStandardMaterial({ color: 0x4fd6ff, roughness: 0.4 }),
 );
+box.rotation.y = 0.6;
 scene.add(box);
 
 // 光がないと MeshStandardMaterial は真っ黒になる
@@ -96,168 +105,178 @@ const light = new THREE.DirectionalLight(0xffffff, 2.5);
 light.position.set(3, 4, 5);
 scene.add(light, new THREE.HemisphereLight(0x8899ff, 0x101020, 0.6));
 
-// 描画ループ ― 毎フレーム呼ばれる
-const clock = new THREE.Clock();
-function animate() {
-  requestAnimationFrame(animate);
-  const dt = clock.getDelta();
-  box.rotation.y += dt * 0.8;
-  renderer.render(scene, camera);
-}
-animate();
-
-// 表示領域の大きさが変わったら、カメラとレンダラの両方を合わせる
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});`,
+// 描く。これは「いまの状態を1枚描く」命令なので、1回で終わり
+renderer.render(scene, camera);`,
       caption:
-        '画角を 20 にすると望遠になって箱が大きく写り、100 にすると広角になって歪みます。near を 5 にすると箱がまるごと消えます。',
+        '画角を 20 にすると望遠になって箱が大きく写り、100 にすると広角になって歪みます。near を 5 にすると箱がまるごと消えます。**この絵は動きません** ― 動かす方法は次の章です。',
     },
     {
       kind: 'md',
       text: `
-## 描画ループ ― 1回描いて終わりではない
+## いま書いた 4 行が、何をしていたか
 
-\`renderer.render(scene, camera)\` は「いまの状態を 1 枚描く」命令です。
-1 回しか呼ばなければ、静止画が 1 枚出るだけで終わります。
+コードの並びは長く見えますが、要は 4 つのことしかしていません。
 
-動かすには、毎フレーム呼び続ける必要があります。それが{{描画ループ}}で、\`requestAnimationFrame\` が担います。
-画面の更新に合わせて呼び戻してくれるので、多くの環境で毎秒 60 回ほど回ります。
+- **世界を作る** … \`new THREE.Scene()\`
+- **見る人を置く** … \`new THREE.PerspectiveCamera(...)\` と \`camera.position.set(...)\`
+- **描く係を用意して、画面に貼る** … \`new THREE.WebGLRenderer()\` と \`appendChild\`
+- **中身を置いて、描く** … \`scene.add(box)\` と \`renderer.render(scene, camera)\`
+
+この 4 つは、どんなに複雑なシーンでも変わりません。
+1000 個のものが動く作品でも、いちばん外側の骨格はこれと同じです。
 `,
     },
     {
       kind: 'callout',
       tone: 'warn',
-      title: 'setInterval で回してはいけません',
+      title: 'lookAt は、位置を決めたあとに呼びます',
       text: `
-\`setInterval\` はブラウザの描画タイミングと無関係に走るので、カクつきや無駄な計算が起きます。
-また、タブが裏に回っても止まりません。**必ず \`requestAnimationFrame\` を使ってください。**
-こちらはタブが非表示になると自動で止まります。
+camera.lookAt は「いまの自分の位置から、そこを向く」計算をします。
+だから position を変えるより先に呼ぶと、古い位置を基準にした向きが残ります。
+
+順番を逆にしても例外は出ません。ただ、狙いから外れた絵が出るだけです。
+「なぜか少しずれている」の原因になりやすいところです。
 `,
     },
     {
       kind: 'md',
       text: `
-## 何も映らないときの確認順
+## カメラは、写す範囲を持っている
 
-真っ黒な画面を前にして途方に暮れないために、**上から順に**確認します。
+\`PerspectiveCamera\` の引数 4 つは、[](#/ch/10-camera)で見た視錐台そのものです。
 
-- **\`scene.add()\` を呼んだか。** 作っただけでは世界に存在しません
-- **ライトを置いたか。** \`MeshStandardMaterial\` は光がないと真っ黒です（切り分けには \`MeshBasicMaterial\` が便利）
-- **カメラは対象のほうを向いているか。** \`camera.lookAt()\` は**位置を決めたあとに**呼びます
-- **near と far の間にいるか。** [](#/ch/10-camera)の視錐台の話です
-- **\`renderer.render()\` を呼んでいるか。** ループを回し忘れていませんか
-- **キャンバスを DOM に追加したか。** \`document.body.appendChild(renderer.domElement)\`
+- **画角**（50）… どれくらいの広さを写すか。**ここだけ度で指定します**
+- **横縦比**（\`innerWidth / innerHeight\`）… 表示領域の形。ずれると絵が伸びます
+- **near**（0.1）… これより手前は写らない
+- **far**（100）… これより奥は写らない
 
-次のコードは**わざと壊してあります**。真っ黒な画面が出るはずです。
-上の並びを上から順にたどって、原因を見つけて直してみてください。
+初学者がいちばん引っかかるのは far です。
+読み込んだモデルが 5000 単位の大きさだったりすると、**far の外に出て丸ごと消えます。**
+「何も映らない」の原因の 3 割くらいはこれです。
 `,
     },
     {
-      kind: 'sandbox',
-      title: '直してみる（わざと壊してあります）',
-      code: `import * as THREE from 'three';
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0a12);
-
-const camera = new THREE.PerspectiveCamera(
-  50,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  100,
-);
-camera.position.set(0, 1, 4);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-const sphere = new THREE.Mesh(
-  new THREE.SphereGeometry(1, 32, 20),
-  new THREE.MeshStandardMaterial({ color: 0xffd166 }),
-);
-
-// ヒント：ここまでで足りないものが 2 つあります。
-//   ひとつは「世界に置く」こと、もうひとつは「光」です。
-
-function animate() {
-  requestAnimationFrame(animate);
-  renderer.render(scene, camera);
-}
-animate();`,
-      caption:
-        '答え：`scene.add(sphere)` と、ライトの追加（たとえば `scene.add(new THREE.DirectionalLight(0xffffff, 2.5))`）の 2 行が抜けています。ライトの代わりに材質を `MeshBasicMaterial` に変えても映ります。',
+      kind: 'formula',
+      tex: '\\text{写る高さ} \\;=\\; 2 \\, z \\, \\tan\\!\\left(\\frac{\\text{fov}}{2}\\right)',
+      readAloud:
+        'カメラから距離 z のところで、画面の上端から下端までに何単位ぶんが写るか、という式です。[](#/ch/m26-perspective) で出した式と同じもので、こんどはカメラの引数を決めるために使います。',
+      worked: {
+        given: '画角 $50°$ のカメラを $z = 4$ に置きました。**大きさ 1 の箱**は、画面の何割を占めるでしょう。',
+        steps: [
+          { calc: 'fov / 2 = 25 度 = 0.4363 ラジアン' },
+          { calc: 'tan(0.4363) = 0.4663' },
+          { calc: '写る高さ = 2 x 4 x 0.4663 = 3.73', note: 'カメラから 4 の距離での縦の視野' },
+          { calc: '1 / 3.73 = 0.268' },
+        ],
+        result:
+          '**画面の高さのおよそ 27%** です。実際に上のサンドボックスを見ると、箱は画面の 4 分の 1 ほどの高さで写っています。**「もう少し大きく写したい」ときは、カメラを近づけるか、画角を小さくするかの 2 通り**があり、どちらを選ぶかで遠近の付き方が変わります（画角を小さくすると望遠レンズのように平べったくなります）。',
+      },
     },
     {
       kind: 'md',
       text: `
-## 大きさの追従 ― 2つセットで直す
+## ライトの話は、ここでは 1 行だけ
 
-画面の大きさが変わったとき、直すものは **2 つ**あります。
+\`MeshStandardMaterial\` は**光を受けて色が決まる**マテリアルです。
+ライトを 1 つも置かなければ、色を指定していても真っ黒になります。
 
-- **レンダラの大きさ**（\`renderer.setSize\`）… 描く絵の解像度
-- **カメラの横縦比**（\`camera.aspect\` と \`updateProjectionMatrix\`）… どう写すか
+ここでは「置かないと黒い」とだけ覚えてください。
+ライトの種類と使い分けは、[](#/ch/t05-light-shadow)からの 5 章でまとめて扱います。
 
-片方だけだと絵が引き伸ばされます。とくに \`updateProjectionMatrix()\` の呼び忘れは頻出です。
-\`aspect\` はあくまで行列を作るための材料で、書き換えただけでは反映されません。
-`,
-    },
-    {
-      kind: 'md',
-      text: `
-## ピクセル比 ― 高精細な画面での注意
-
-スマートフォンや高解像度ディスプレイでは、CSS 上の 1px が実際には 2〜3 ピクセルあります。
-\`renderer.setPixelRatio(window.devicePixelRatio)\` をそのまま使うと、
-描くピクセル数が 4〜9 倍になって一気に重くなります。
-
-{{ピクセル比}}は **2 で頭打ちにするのが定番**です。見た目の差はほとんどありません。
+黒いのがライトのせいかどうかを切り分けたいときは、
+マテリアルを \`MeshBasicMaterial\` に差し替えてください。
+**これは光を一切見ないマテリアル**なので、それで映れば原因はライトです。
 `,
     },
     {
       kind: 'code',
-      title: 'ピクセル比は 2 で頭打ちにする',
-      code: `renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));`,
-    },
-    {
-      kind: 'callout',
-      tone: 'tip',
-      title: '後片付けを忘れずに',
-      text: `
-1 ページの中でシーンを何度も作り直すなら、使い終わったレンダラは \`renderer.dispose()\` で
-片付けてください。ブラウザが同時に持てる WebGL の枠は 8〜16 個ほどしかなく、
-使い切ると古いキャンバスから順に真っ黒になります。詳しくは
-[](#/ch/t10-scene-graph)で扱います。
-`,
+      title: '真っ黒の切り分け ― 光を見ないマテリアルに差し替える',
+      code: `// 光の影響を受けないので、ライトが無くても必ず色が出る
+const box = new THREE.Mesh(
+  new THREE.BoxGeometry(1, 1, 1),
+  new THREE.MeshBasicMaterial({ color: 0x4fd6ff }),
+);
+
+// これで映る  → 原因はライト
+// これでも黒い → 原因はライト以外（scene.add 忘れ、カメラ、near/far …）`,
     },
   ],
   exercises: [
     {
-      prompt: `2 つ目のサンドボックス（わざと壊してあります）を、球が見えるように直してください。
-足りないものは 2 つです。**1 つずつ足して、どちらが何を担っていたか**を確かめてください。`,
-      hint: '片方を足しただけでは、まだ真っ暗のままか、何も出ないままです。両方いります。',
-      answer: `\`scene.add(sphere)\` と、ライトの 2 つです。
-\`add\` を忘れると、Mesh は作られていても**シーンに存在しない**ので描かれません。
-ライトを忘れると、\`MeshStandardMaterial\` は光を受けて初めて色を出すマテリアルなので**真っ黒**になります。
-「何も映らない」ときは、まずこの 2 つを疑ってください。`,
-      answerCode: `scene.add(sphere);
+      prompt: `サンドボックスの \`scene.add(box)\` の行を、コメントアウトして実行してください。
+何が起きますか。**エラーは出ますか。**`,
+      hint: '`box` という変数自体は、ちゃんと作られています。',
+      answer: `**箱が消えます。そしてエラーは出ません。**
 
-const light = new THREE.DirectionalLight(0xffffff, 2.5);
-light.position.set(3, 4, 5);
-scene.add(light, new THREE.HemisphereLight(0x8899ff, 0x101020, 0.6));`,
+ここが最初の関門です。\`new THREE.Mesh(...)\` は、ただ JavaScript のオブジェクトを 1 つ作っただけです。
+**シーンに追加してはじめて「世界に存在するもの」になります。**
+
+three はあなたが作ったものを勝手に探しません。追加されたものだけを描きます。
+だから追加し忘れても、three からすれば「何も置かれていない世界を正しく描いた」だけで、
+エラーを出す理由がありません。
+
+**「エラーが出ないのに映らない」は、Three.js でいちばん多いつまずき方**です。
+つねに「作った」と「置いた」を別々に確かめてください。`,
     },
     {
-      prompt: '1 つ目のサンドボックスで、カメラの 4 番目の引数（far）を \`100\` から \`3\` に変えてください。何が起きますか。なぜでしょう。',
+      prompt: `カメラの 4 番目の引数（far）を \`100\` から \`3\` に変えてください。
+何が起きますか。**なぜ**でしょう。`,
       hint: 'カメラは z = 4 のあたりに立っていて、箱は原点にあります。',
-      answer: `**箱が消えます。** カメラから箱までの距離が約 4 なのに、far を 3 にしたので「これより奥は写さない」の外に出たからです。
-near と far は「写す奥行きの範囲」を決めていて、その外にあるものは存在しないのと同じ扱いになります。
-「モデルを読み込んだのに何も出ない」ときは、**モデルが大きすぎて far の外にある**ことがよくあります。`,
+      answer: `**箱が消えます。**
+
+カメラから箱までの距離は約 4 です。far を 3 にすると「これより奥は写さない」の外に出ます。
+
+near と far は「写す奥行きの範囲」を決めていて、その外にあるものは**存在しないのと同じ扱い**になります。
+[](#/ch/m27-frustum)で見たとおり、この 2 つは深度の精度も決めているので、
+やみくもに広げるのも良くありません。
+
+実務では「モデルを読み込んだのに何も出ない」ときに真っ先に疑います。
+書き出したモデルの単位がセンチメートルだと、**1.7m の人が 170 単位**になり、
+far = 100 のカメラからは丸ごとはみ出します。`,
+    },
+    {
+      prompt: `画角 $60°$ のカメラで、**高さ 2 の物体を画面いっぱい（高さの 100%）に写したい**。
+カメラを距離いくつに置けばよいですか。手で計算してください。`,
+      hint: '写る高さ $= 2z\\tan(\\text{fov}/2)$ を、$z$ について解きます。',
+      answer: `**$z = 1.73$** です。
+
+写る高さが 2 になればよいので、
+
+$2 = 2z\\tan(30°)$
+
+$\\tan(30°) = 0.5774$ なので、
+
+$2 = 2z \\times 0.5774 = 1.1547z$
+
+$z = 2 / 1.1547 = 1.732$
+
+**$\\sqrt{3}$ です。** 画角 60 度は正三角形の角なので、こういうきれいな数になります。
+
+実際には、ぴったり 100% にすると端が切れて見えるので、
+**1 割ほど余裕を持たせて $z = 1.9$ あたり**に置きます。
+読み込んだモデルにカメラを自動で合わせる処理（フレーミング）は、この計算そのものです。`,
+      answerCode: `// 物体の高さ h を、画面いっぱいに収めるカメラ距離
+const h = 2;
+const fov = 60;
+const z = (h / 2) / Math.tan(THREE.MathUtils.degToRad(fov) / 2);
+
+camera.position.set(0, 0, z * 1.1);   // 1割の余裕
+camera.lookAt(0, 0, 0);`,
     },
   ],
   quiz: [
+    {
+      q: '`new THREE.Mesh(...)` で箱を作ったのに、画面に出ません。エラーも出ていません。まず疑うのはどれですか。',
+      choices: [
+        '`scene.add()` を呼び忘れている',
+        'ブラウザが WebGL に対応していない',
+        'ジオメトリの大きさが 0',
+        '`Mesh` の綴りが違う',
+      ],
+      answer: 0,
+      explain:
+        '作ることと、世界に置くことは別です。three は追加されたものだけを描くので、追加し忘れても「空の世界を正しく描いた」だけになり、エラーを出しません。「エラーが出ないのに映らない」の代表格です。',
+    },
     {
       q: '`MeshStandardMaterial` を使った物体が真っ黒に映ります。**まず**確認すべきはどれですか。',
       choices: [
@@ -271,28 +290,16 @@ near と far は「写す奥行きの範囲」を決めていて、その外に�
         '`MeshStandardMaterial` は光を受けて色が決まる材質なので、ライトがないと真っ黒です。切り分けには、光の影響を受けない `MeshBasicMaterial` に一時的に差し替えるのが手早い方法です。',
     },
     {
-      q: '`camera.aspect` を書き換えたのに、絵の歪みが直りません。足りないのはどれですか。',
-      choices: [
-        '`camera.updateProjectionMatrix()` の呼び出し',
-        '`scene.add(camera)`',
-        '`renderer.dispose()`',
-        'カメラの作り直し',
-      ],
-      answer: 0,
-      explain:
-        'aspect や fov は投影行列を作るための材料です。書き換えたあとに行列を組み直さないと描画には反映されません。`renderer.setSize()` とセットで呼ぶのが定石です。',
-    },
-    {
       q: '`renderer.render(scene, camera)` を 1 回だけ呼んだ場合、どうなりますか。',
       choices: [
-        'その瞬間の状態が1枚描かれるだけで、以降は動かない',
+        'その瞬間の状態が 1 枚描かれるだけで、以降は動かない',
         'エラーになる',
         '自動的に毎フレーム描き続ける',
         '何も描かれない',
       ],
       answer: 0,
       explain:
-        'render は「いまの状態を1枚描く」命令です。動かすには `requestAnimationFrame` で呼び続けます。静止画でよければ 1 回で十分で、そのほうが軽くなります。',
+        'render は「いまの状態を 1 枚描く」命令です。静止画でよければ 1 回で十分で、そのほうがずっと軽くなります。動かすには呼び続ける必要があり、その方法が次の章です。',
     },
   ],
 };
