@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterT11: Chapter = {
   slug: 't11-performance',
   part: 'threejs',
-  number: 25,
+  number: 33,
   title: '速くする',
   goal: '重さの原因を数字で切り分けられるようになり、ドローコールとメモリの両方を計画的に減らせるようになります。',
   requires: ['t10-scene-graph', '13-random'],

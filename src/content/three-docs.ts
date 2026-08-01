@@ -150,6 +150,8 @@ const UNLINKED = new Set([
   'NearestFilter', 'LinearFilter', 'LinearMipmapLinearFilter',
   'RepeatWrapping', 'ClampToEdgeWrapping', 'MirroredRepeatWrapping',
   'AdditiveBlending', 'DoubleSide', 'FrontSide', 'BackSide',
+  'PCFSoftShadowMap', 'PCFShadowMap', 'BasicShadowMap', 'VSMShadowMap',
+  'TOUCH', 'MOUSE',
 ]);
 
 /** 'Vector3.dot' や 'THREE.Vector3' から、公式ドキュメントの URL を作る。 */

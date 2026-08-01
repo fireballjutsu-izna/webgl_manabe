@@ -104,8 +104,16 @@ import { chapterW16 } from './chapters/w16-repeat.ts';
 import { chapterW17 } from './chapters/w17-filter.ts';
 import { chapterW18 } from './chapters/w18-normal-map.ts';
 import { chapterT05 } from './chapters/t05-light-shadow.ts';
+import { chapterW20 } from './chapters/w20-shadow.ts';
+import { chapterW21 } from './chapters/w21-shadow-quality.ts';
+import { chapterW22 } from './chapters/w22-light-cost.ts';
+import { chapterW23 } from './chapters/w23-fill-light.ts';
 import { chapterT06 } from './chapters/t06-loop-clock.ts';
+import { chapterW25 } from './chapters/w25-damping.ts';
+import { chapterW26 } from './chapters/w26-sequence.ts';
 import { chapterT07 } from './chapters/t07-controls.ts';
+import { chapterW28 } from './chapters/w28-camera-move.ts';
+import { chapterW29 } from './chapters/w29-controls-ux.ts';
 import { chapterT08 } from './chapters/t08-raycaster.ts';
 import { chapterT09 } from './chapters/t09-loader.ts';
 import { chapterT10 } from './chapters/t10-scene-graph.ts';
@@ -237,8 +245,16 @@ export const chapters: Chapter[] = [
   chapterW17,
   chapterW18,
   chapterT05,
+  chapterW20,
+  chapterW21,
+  chapterW22,
+  chapterW23,
   chapterT06,
+  chapterW25,
+  chapterW26,
   chapterT07,
+  chapterW28,
+  chapterW29,
   chapterT08,
   chapterT09,
   chapterT10,

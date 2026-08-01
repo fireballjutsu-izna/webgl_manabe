@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterT12: Chapter = {
   slug: 't12-shader-intro',
   part: 'threejs',
-  number: 26,
+  number: 34,
   title: 'シェーダの入口',
   goal: 'GPU で何が起きているかが分かり、ShaderMaterial に自分の GLSL を書いて動かせるようになります。',
   requires: ['t11-performance', '02-vector'],

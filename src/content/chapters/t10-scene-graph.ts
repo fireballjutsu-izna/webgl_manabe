@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterT10: Chapter = {
   slug: 't10-scene-graph',
   part: 'threejs',
-  number: 24,
+  number: 32,
   title: 'シーンを組み立てる',
   goal: '大きくなっても迷子にならないシーンの組み方が分かり、要らなくなったものを正しく片付けられるようになります。',
   requires: ['t09-loader', '09-hierarchy'],
