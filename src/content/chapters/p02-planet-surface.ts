@@ -176,6 +176,7 @@ $u = 0$ と $u = 1$ は、方向に直すと**まったく同じベクトル**�
     {
       kind: 'sandbox',
       title: '惑星の地表を作る',
+      guide: { focus: ['3次元の value noise', '3枚のテクスチャを1回のループで作る'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 

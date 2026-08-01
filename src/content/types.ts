@@ -18,7 +18,20 @@ export type Block =
   /** Three.js のコード片。表示とコピーのみ。 */
   | { kind: 'code'; title?: string; code: string }
   /** その場で編集して実行できるコード。第2部で使う。 */
-  | { kind: 'sandbox'; title?: string; code: string; caption?: string }
+  | {
+      kind: 'sandbox';
+      title?: string;
+      code: string;
+      caption?: string;
+      /**
+       * コードの地図。区切りコメント（スラッシュ＋アスタリスクで囲んだ
+       * `---- 見出し ----`）は実行時に走査して並べるので、ここには書かない。
+       * focus に**見出し名**（行番号ではない）を並べると、その区切りだけ
+       * 「この章で新しいところ」として強調される。
+       * 見出し名が実在するかは check-content が検査する。
+       */
+      guide?: { focus?: string[] };
+    }
   /** 補足カード。 */
   | { kind: 'callout'; tone: CalloutTone; title: string; text: string };
 

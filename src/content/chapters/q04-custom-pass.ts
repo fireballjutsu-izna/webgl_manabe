@@ -125,6 +125,7 @@ sRGB への変換は最後の \`OutputPass\` がやります。
     {
       kind: 'sandbox',
       title: '自分の効果を1つ書く',
+      guide: { focus: ['自前のパス'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -285,6 +286,7 @@ window.addEventListener('resize', () => {
     {
       kind: 'sandbox',
       title: '色収差 ― 読む位置を色ごとにずらす',
+      guide: { focus: ['読む位置をずらすパス'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';

@@ -161,6 +161,7 @@ Prefiltered Mipmapped Radiance Environment Map の頭文字です。長いので
     {
       kind: 'sandbox',
       title: '環境マップを自分で作る',
+      guide: { focus: ['(B) 映り込ませるための空を、自分で組む', 'シーンを環境マップに焼く'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';

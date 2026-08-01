@@ -697,6 +697,67 @@
   margin-right: auto;
 }
 
+/* コードの地図。区切りコメントを実行時に走査して並べる（行番号は出さない） */
+
+.sandbox__map {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-sunken);
+}
+
+.sandbox__map-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-right: 0.2rem;
+}
+
+.sandbox__map-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sandbox__map-chip:hover,
+.sandbox__map-chip:focus-visible {
+  border-color: var(--border-lit);
+  color: var(--text);
+}
+
+.sandbox__map-chip[data-focus='yes'] {
+  --c: var(--neon-cyan);
+  border-color: var(--c);
+  color: var(--text);
+  box-shadow: var(--glow);
+}
+
+.sandbox__map-len {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.sandbox__map-note {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
 /* 色付きの pre に、透明な textarea を重ねる。行の高さと余白を完全に揃えること */
 .sandbox__editor {
   /* 表示する行数。1 行の高さは 0.8rem × 1.75 で、上下に 0.8rem ずつの余白が付く */

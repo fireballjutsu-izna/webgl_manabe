@@ -110,6 +110,7 @@ export const chapterP03: Chapter = {
     {
       kind: 'sandbox',
       title: '大気だけを作る',
+      guide: { focus: ['大気'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -296,39 +297,6 @@ const TEX_W = 1024;
 const TEX_H = 512;
 const SEA = 0.5;
 const RADIUS = 1.6;
-
-/* ---- 3次元ノイズ（3-02 と同じもの。短くまとめてあります） ---- */
-
-function hash3(x, y, z, seed) {
-  let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(z, 1274126177);
-  h = Math.imul(h + Math.imul(seed, 2246822519), 2654435761);
-  h ^= h >>> 15;
-  h = Math.imul(h, 2246822519);
-  h ^= h >>> 13;
-  return (h >>> 0) / 4294967295;
-}
-function fade(t) { return t * t * (3 - 2 * t); }
-function mix(a, b, t) { return a + (b - a) * t; }
-
-function noise3(x, y, z, seed) {
-  const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
-  const u = fade(x - xi), v = fade(y - yi), w = fade(z - zi);
-  const x00 = mix(hash3(xi, yi, zi, seed), hash3(xi + 1, yi, zi, seed), u);
-  const x10 = mix(hash3(xi, yi + 1, zi, seed), hash3(xi + 1, yi + 1, zi, seed), u);
-  const x01 = mix(hash3(xi, yi, zi + 1, seed), hash3(xi + 1, yi, zi + 1, seed), u);
-  const x11 = mix(hash3(xi, yi + 1, zi + 1, seed), hash3(xi + 1, yi + 1, zi + 1, seed), u);
-  return mix(mix(x00, x10, v), mix(x01, x11, v), w);
-}
-function fbm(x, y, z, octaves, seed) {
-  let sum = 0, total = 0, amp = 1, freq = 1;
-  for (let i = 0; i < octaves; i++) {
-    sum += noise3(x * freq, y * freq, z * freq, seed + i * 101) * amp;
-    total += amp;
-    amp *= 0.5;
-    freq *= 2;
-  }
-  return sum / total;
-}
 
 /* ---- 地表・雲・街明かりを、1回のループでまとめて作る ---- */
 
@@ -564,7 +532,41 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-});`,
+});
+
+/* ---- 下ごしらえ：3次元ノイズ（3-02 で作ったもの。読み飛ばして可） ---- */
+
+function hash3(x, y, z, seed) {
+  let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(z, 1274126177);
+  h = Math.imul(h + Math.imul(seed, 2246822519), 2654435761);
+  h ^= h >>> 15;
+  h = Math.imul(h, 2246822519);
+  h ^= h >>> 13;
+  return (h >>> 0) / 4294967295;
+}
+function fade(t) { return t * t * (3 - 2 * t); }
+function mix(a, b, t) { return a + (b - a) * t; }
+
+function noise3(x, y, z, seed) {
+  const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
+  const u = fade(x - xi), v = fade(y - yi), w = fade(z - zi);
+  const x00 = mix(hash3(xi, yi, zi, seed), hash3(xi + 1, yi, zi, seed), u);
+  const x10 = mix(hash3(xi, yi + 1, zi, seed), hash3(xi + 1, yi + 1, zi, seed), u);
+  const x01 = mix(hash3(xi, yi, zi + 1, seed), hash3(xi + 1, yi, zi + 1, seed), u);
+  const x11 = mix(hash3(xi, yi + 1, zi + 1, seed), hash3(xi + 1, yi + 1, zi + 1, seed), u);
+  return mix(mix(x00, x10, v), mix(x01, x11, v), w);
+}
+function fbm(x, y, z, octaves, seed) {
+  let sum = 0, total = 0, amp = 1, freq = 1;
+  for (let i = 0; i < octaves; i++) {
+    sum += noise3(x * freq, y * freq, z * freq, seed + i * 101) * amp;
+    total += amp;
+    amp *= 0.5;
+    freq *= 2;
+  }
+  return sum / total;
+}
+`,
       caption:
         '待っていると太陽が回り、夜側に街の明かりが浮かびます。`lights.rotation.y = planet.rotation.y` を消すと、明かりが陸から外れて海の上で光りはじめます ― 層を重ねるときは「どれと一緒に回るか」を必ず決める必要がある、という話です。雲の速度を `dt * 0.3` にすると、風が強すぎて嘘くさくなります。',
     },
