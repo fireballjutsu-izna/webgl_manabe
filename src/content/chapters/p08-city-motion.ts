@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterP08: Chapter = {
   slug: 'p08-city-motion',
   part: 'project',
-  number: 11,
+  number: 15,
   title: 'ローポリの街 ― 車を走らせて仕上げる',
   goal: '曲線に沿って向きまで正しく走る動きを作れるようになり、まとめ描画とカリングを両立させられるようになります。',
   requires: ['p07-city-light', '12-curve', 't11-performance'],
@@ -785,10 +785,10 @@ Vite で作った静的なサイトなら、手順はごく短いです。
 どれも、いま持っている土台の延長で書けます。
 
 - **街に人と信号を足す。** 車と同じ仕組みで、経路と速さを変えるだけ
-- **建物に窓の凹凸を付ける。** [](#/ch/p02-planet-surface) のバンプマップを facade に貼る
+- **建物に窓の凹凸を付ける。** [](#/ch/x09-surface-bake) のバンプマップを facade に貼る
 - **ポストプロセス**（\`EffectComposer\`）。夜景にブルームを乗せると化けます
 - **物理エンジン**（Rapier など）。落ちる・当たる・積み上がる
-- **地形**。[](#/ch/p02-planet-surface) のノイズを平面の頂点の高さに使えば、そのまま山になります
+- **地形**。[](#/ch/x06-value-noise) のノイズを平面の頂点の高さに使えば、そのまま山になります
 
 作りたいものが決まっているなら、**それを 1 行で書いてから始めてください。**
 [](#/ch/p01-planet-setup) でやったとおりです。

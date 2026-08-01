@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterP04: Chapter = {
   slug: 'p04-planet-orbits',
   part: 'project',
-  number: 7,
+  number: 11,
   title: '惑星ビューアー ― 軌道と、寄っていく視点',
   goal: '傾いた自転軸と公転を階層で組み立てられるようになり、クリックした対象へなめらかに寄る視点を作れるようになります。',
   requires: ['p03-planet-atmosphere', 't08-raycaster', '09-hierarchy'],
@@ -235,7 +235,7 @@ window.addEventListener('resize', () => {
 なめらかに動かす部分は、[](#/ch/08-interp)の \`lerp\` そのものです。
 毎フレーム、**いまの位置から目標へ少しだけ近づける**。これだけで自然な減速が付きます。
 
-このあとのコードが**完成品**です。[](#/ch/p02-planet-surface) の地表、[](#/ch/p03-planet-atmosphere) の雲・大気・夜の明かり、
+このあとのコードが**完成品**です。[](#/ch/x09-surface-bake) の地表、[](#/ch/p03-planet-atmosphere) の雲・大気・夜の明かり、
 この章の傾き・公転・ラベル・クリックが全部入っているので長くなっています。
 上から順に読めば、これまでの 3 章がそのまま並んでいるのが分かるはずです。
 `,
@@ -292,7 +292,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 
 /* =========================================================
-   これが完成品です。3-02 の地表、3-03 の雲・大気・夜の明かり、
+   これが完成品です。地表、雲・大気・夜の明かり、
    この章の傾き・公転・ラベル・クリックを 1 つにまとめてあります。
    ========================================================= */
 
@@ -300,7 +300,7 @@ const TEX_W = 1024;
 const TEX_H = 512;
 const SEA = 0.5;
 
-/* ---- 地表・雲・街明かりを、1回のループでまとめて作る（3-02, 3-03） ---- */
+/* ---- 地表・雲・街明かりを、1回のループでまとめて作る ---- */
 
 function createMaps() {
   const make = () => {
@@ -411,7 +411,7 @@ controls.enableDamping = true;
 controls.minDistance = 2.4;
 controls.maxDistance = 60;
 
-/* ---- 星空（3-01） ---- */
+/* ---- 星空 ---- */
 
 function createStars(count, radius) {
   const positions = new Float32Array(count * 3);
@@ -453,7 +453,7 @@ const planet = new THREE.Mesh(
 planet.name = '惑星';
 tilt.add(planet);
 
-// 夜の街明かり（3-03）。地表と一緒に回るので、tilt の中に入れる
+// 夜の街明かり。地表と一緒に回るので、tilt の中に入れる
 const lamps = new THREE.Mesh(
   new THREE.SphereGeometry(RADIUS * 1.003, 96, 64),
   new THREE.ShaderMaterial({
@@ -488,7 +488,7 @@ const lamps = new THREE.Mesh(
 );
 tilt.add(lamps);
 
-// 雲（3-03）。少し速く流す
+// 雲。少し速く流す
 const clouds = new THREE.Mesh(
   new THREE.SphereGeometry(RADIUS * 1.02, 96, 64),
   new THREE.MeshStandardMaterial({
@@ -501,7 +501,7 @@ const clouds = new THREE.Mesh(
 );
 tilt.add(clouds);
 
-// 大気（3-03）
+// 大気
 const atmosphere = new THREE.Mesh(
   new THREE.SphereGeometry(RADIUS * 1.2, 96, 64),
   new THREE.ShaderMaterial({
@@ -661,7 +661,7 @@ window.addEventListener('resize', () => {
   labelRenderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-/* ---- 下ごしらえ：3次元ノイズ（3-02 で作ったもの。読み飛ばして可） ---- */
+/* ---- 下ごしらえ：3次元ノイズ（地表の章で作ったもの。読み飛ばして可） ---- */
 
 function hash3(x, y, z, seed) {
   let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(z, 1274126177);
@@ -721,7 +721,7 @@ function fbm(x, y, z, octaves, seed) {
 4 章かけて作ったものを振り返ります。
 
 - **[](#/ch/p01-planet-setup)** … 骨組みと星空。球面に一様にばらまく方法
-- **[](#/ch/p02-planet-surface)** … 地表をノイズで描く。方向でノイズを引いて継ぎ目を消す
+- **[](#/ch/x09-surface-bake)** … 地表をノイズで描く。方向でノイズを引いて継ぎ目を消す
 - **[](#/ch/p03-planet-atmosphere)** … 大気・雲・夜の明かり。内積で縁と昼夜を切り出す
 - **[](#/ch/p04-planet-orbits)** … 傾いた自転、公転、クリックで寄る視点、ラベル
 

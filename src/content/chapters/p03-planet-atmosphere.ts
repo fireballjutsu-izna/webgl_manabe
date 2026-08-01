@@ -3,10 +3,10 @@ import type { Chapter } from '../types.ts';
 export const chapterP03: Chapter = {
   slug: 'p03-planet-atmosphere',
   part: 'project',
-  number: 6,
+  number: 10,
   title: '惑星ビューアー ― 大気と雲と、夜',
   goal: '縁が光る大気を自分で書けるようになり、昼と夜の境目に応じて見た目を変えられるようになります。',
-  requires: ['p02-planet-surface', 't14-fragment-shader', '03-dot'],
+  requires: ['x09-surface-bake', 't14-fragment-shader', '03-dot'],
   threeApis: [
     'ShaderMaterial',
     'ShaderMaterial.uniforms',
@@ -534,7 +534,7 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-/* ---- 下ごしらえ：3次元ノイズ（3-02 で作ったもの。読み飛ばして可） ---- */
+/* ---- 下ごしらえ：3次元ノイズ（地表の章で作ったもの。読み飛ばして可） ---- */
 
 function hash3(x, y, z, seed) {
   let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(z, 1274126177);

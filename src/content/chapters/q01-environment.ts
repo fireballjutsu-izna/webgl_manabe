@@ -20,7 +20,7 @@ export const chapterQ01: Chapter = {
   mathRecall: [
     { slug: '11-normal-light', note: '反射ベクトル ― 何が映るかを決める向き' },
     { slug: 't03-material', note: '粗さと金属度。ここで宿題になっていた話' },
-    { slug: 'p02-planet-surface', note: '素材は手続きで作れる' },
+    { slug: 'x09-surface-bake', note: '素材は手続きで作れる' },
   ],
   blocks: [
     {

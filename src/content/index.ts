@@ -142,6 +142,10 @@ import { chapterX02 } from './chapters/x02-depth-precision.ts';
 import { chapterX03 } from './chapters/x03-uniform-sphere.ts';
 import { chapterX04 } from './chapters/x04-star-look.ts';
 import { chapterP02 } from './chapters/p02-planet-surface.ts';
+import { chapterX06 } from './chapters/x06-value-noise.ts';
+import { chapterX07 } from './chapters/x07-fbm-terrain.ts';
+import { chapterX08 } from './chapters/x08-sphere-seam.ts';
+import { chapterX09 } from './chapters/x09-surface-bake.ts';
 import { chapterP03 } from './chapters/p03-planet-atmosphere.ts';
 import { chapterP04 } from './chapters/p04-planet-orbits.ts';
 import { chapterP05 } from './chapters/p05-city-layout.ts';
@@ -300,6 +304,10 @@ export const chapters: Chapter[] = [
   chapterX03,
   chapterX04,
   chapterP02,
+  chapterX06,
+  chapterX07,
+  chapterX08,
+  chapterX09,
   chapterP03,
   chapterP04,
   chapterP05,

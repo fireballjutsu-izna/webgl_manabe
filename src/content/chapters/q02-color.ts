@@ -206,7 +206,7 @@ window.addEventListener('resize', () => {
       tone: 'warn',
       title: '色ではない数値に、色の変換をかけない',
       text: `
-[](#/ch/t04-texture)と[](#/ch/p02-planet-surface)で繰り返した話が、ここに効いてきます。
+[](#/ch/t04-texture)と[](#/ch/x09-surface-bake)で繰り返した話が、ここに効いてきます。
 
 - **色として見せるもの**（\`map\`、\`emissiveMap\`、環境マップ）… \`colorSpace = THREE.SRGBColorSpace\`
 - **数値として使うもの**（\`normalMap\`、\`roughnessMap\`、\`metalnessMap\`、\`bumpMap\`、\`alphaMap\`、\`aoMap\`）… **指定しない**

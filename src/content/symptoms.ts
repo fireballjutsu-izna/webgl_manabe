@@ -110,7 +110,7 @@ export const symptoms: Symptom[] = [
     title: 'テクスチャに継ぎ目が出る・極が渦を巻く',
     aliases: ['シーム', 'UV', '球のテクスチャ', '継ぎ目'],
     checks: [
-      { text: '球なら、ノイズを **UV ではなく方向ベクトルで**引いてください。継ぎ目も極の歪みも原理的に消えます。', chapter: 'p02-planet-surface' },
+      { text: '球なら、ノイズを **UV ではなく方向ベクトルで**引いてください。継ぎ目も極の歪みも原理的に消えます。', chapter: 'x08-sphere-seam' },
       { text: '`repeat` を 1 より大きくしたなら、`wrapS` と `wrapT` も設定が要ります。**この 2 つは組です。**', chapter: 't04-texture' },
       { text: '模様が細かすぎてちらつくなら、それはエイリアシングです。測る点より細かい模様は正しく測れません。', chapter: 't14-fragment-shader' },
     ],

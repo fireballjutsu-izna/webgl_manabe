@@ -455,19 +455,29 @@ export const glossary: GlossaryEntry[] = [
     term: '手続き的生成',
     reading: 'procedural generation',
     def: '素材を用意する代わりに、素材を作る手続きをコードで書くこと。数値を変えれば無限に別のものが作れる。',
-    chapter: 'p02-planet-surface',
+    chapter: 'x09-surface-bake',
   },
   {
     term: '正距円筒図法',
     reading: 'せいきょえんとうずほう',
-    def: '球を「横が経度・縦が緯度」の長方形に展開する貼り方。世界地図でおなじみの形で、球のテクスチャの既定の並び。',
-    chapter: 'p02-planet-surface',
+    def: '球を「横が経度・縦が緯度」の長方形に展開する貼り方。世界地図でおなじみの形で、球のテクスチャの既定の並び。極に近い行ほど、1 画素が球の上で受け持つ幅が狭くなる。',
+    chapter: 'x08-sphere-seam',
   },
   {
     term: 'fBm',
     reading: 'エフビーエム',
     def: '細かさを倍に、強さを半分にしながらノイズを足し重ねたもの。「大きな山の上に小さな石」を安く作れる。',
-    chapter: 'p02-planet-surface',
+    chapter: 'x07-fbm-terrain',
+  },
+  {
+    term: 'ハッシュ',
+    def: '入力から、覚えておかずに疑似乱数を作る関数。同じ入力には必ず同じ値を返し、隣の入力とは無関係な値を返す。ノイズの格子点はこれで作るので、配列を持たずに済む。',
+    chapter: 'x06-value-noise',
+  },
+  {
+    term: 'エイリアス',
+    def: '画素より細かい模様を描こうとしたときに出る、意図しないざらつきや縞。もとの模様は失われ、拾いそこねた偽の模様だけが残る。',
+    chapter: 'x07-fbm-terrain',
   },
   {
     term: 'バンプマップ',

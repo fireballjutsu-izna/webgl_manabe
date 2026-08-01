@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterP05: Chapter = {
   slug: 'p05-city-layout',
   part: 'project',
-  number: 8,
+  number: 12,
   title: 'ローポリの街 ― 街路をひく',
   goal: '同じ種から必ず同じ街が出る乱数を書けるようになり、再帰的な分割で街区を切り出せるようになります。',
   requires: ['p04-planet-orbits', '13-random', 't10-scene-graph'],

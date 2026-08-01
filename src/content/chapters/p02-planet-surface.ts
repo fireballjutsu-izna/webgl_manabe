@@ -4,231 +4,143 @@ export const chapterP02: Chapter = {
   slug: 'p02-planet-surface',
   part: 'project',
   number: 5,
-  title: '惑星ビューアー ― 表面をコードで描く',
-  goal: '画像を1枚も用意せずに惑星の地表を作れるようになり、球にテクスチャを貼るときの継ぎ目と極の問題を回避できるようになります。',
-  requires: ['x04-star-look', 't04-texture', '13-random'],
+  title: '地表を描く ― 3 枚の絵を、1 つの高さから',
+  goal: '惑星の地表に何が要るかを自分で決められるようになり、色・凹凸・粗さを別々に作らず 1 つの高さから導く組み立て方が身につきます。',
+  requires: ['x04-star-look', 't04-texture', 'w18-normal-map'],
   threeApis: [
     'CanvasTexture',
-    'Texture.colorSpace',
-    'Texture.needsUpdate',
     'MeshStandardMaterial.map',
     'MeshStandardMaterial.bumpMap',
+    'MeshStandardMaterial.bumpScale',
     'MeshStandardMaterial.roughnessMap',
+    'MeshStandardMaterial.displacementMap',
     'SphereGeometry',
   ],
   mathRecall: [
-    { slug: '13-random', note: 'ノイズ ― 近い場所は似た値になる乱数' },
-    { slug: '05-trig', note: '緯度と経度から方向ベクトルを作る' },
-    { slug: '11-normal-light', note: '凹凸と粗さが明るさを変える理由' },
-    { slug: 't04-texture', note: 'UV と CanvasTexture、色空間の指定' },
+    { slug: 't04-texture', note: 'CanvasTexture で絵をコードから作る' },
+    { slug: 'w18-normal-map', note: '面の凹凸は、法線を傾けて出す' },
+    { slug: 't03-material', note: '粗さと金属度が質感を決める' },
   ],
   blocks: [
     {
       kind: 'md',
       text: `
-## 灰色の球を、惑星にする
+## 灰色の球が、まだ灰色のまま
 
-前の章で置いた仮の球は、まだただの灰色の玉です。ここに地表を描き込みます。
-[](#/ch/t04-texture)でやった {{CanvasTexture|テクスチャ}} を使って、**絵をコードで描いて貼ります。**
+[](#/ch/x04-star-look)で星空ができました。骨組みも、奥行きの設定も、点の見せ方も済んでいます。
 
-必要なのは 3 枚です。1 枚ではありません。
+**残っているのは真ん中の球です。** いまはただの灰色の玉で、惑星には見えません。
 
-- **色**（\`map\`）… 海の青、陸の緑と茶、極の白
-- **凹凸**（\`bumpMap\`）… 山脈の陰影。{{バンプマップ}}は形を変えず、光の当たり方だけを変える
-- **粗さ**（\`roughnessMap\`）… **海だけつるつるにする**。ここが効きます
-
-3 枚目が意外に大事です。海と陸が同じ粗さだと、どれだけ色を作り込んでも
-「塗った球」に見えてしまいます。海に太陽の照り返しが乗った瞬間に、water らしくなります。
+ここから $4$ 章かけて、この球に地表を描きます。**画像は $1$ 枚も使いません。**
+この章はその $4$ 章ぶんの**設計**です ― 何が要るのかを先に決めてから、作りに入ります。
 `,
-    },
-    {
-      kind: 'md',
-      text: `
-## 高さを 1 つ決めれば、3 枚とも決まる
-
-3 枚を別々に考える必要はありません。**まず「その地点の高さ」を 1 つ決めて、
-そこから 3 枚ぶんの値を導きます。**
-
-- 高さが海面より低ければ → 色は青（深さで濃淡）、凹凸は平ら、粗さは 0.2（つるつる）
-- 高さが海面より高ければ → 色は緑〜茶〜白、凹凸は高さそのまま、粗さは 0.9（ざらざら）
-
-高さを決めるのが{{ノイズ}}です。[](#/ch/13-random)でやったとおり、
-ただの乱数では点がばらばらになるだけで地形になりません。
-**近い場所は似た値になる**乱数が要ります。
-`,
-    },
-    {
-      kind: 'md',
-      text: `
-## 粗い形と細かい凹凸を、重ねる
-
-ノイズを 1 枚だけ使うと、のっぺりした染みのような大陸になります。
-実際の地形は「**大きな起伏の上に、小さな起伏が乗っている**」構造です。
-
-そこで、**細かさを 2 倍・4 倍・8 倍…にしたノイズを、振幅を半分・4 分の 1…にして足していきます。**
-これを {{fBm}}（fractional Brownian motion）と呼びますが、名前は覚えなくてかまいません。
-やっていることは「**大きな山の上に小さな石を置く**」だけです。
-`,
-    },
-    {
-      kind: 'formula',
-      tex: 'h(p) = \\sum_{i=0}^{n-1} g^{\\,i}\\, \\mathrm{noise}(2^{i} p)',
-      readAloud:
-        '高さ h は、i 段目のノイズを「細かさ 2 の i 乗倍・強さ g の i 乗倍」で引いて、全部足したもの、と読みます。g（ゲイン）はふつう 0.5 です。段を進むごとに細かく・弱くなっていくので、大きな形が主役のまま細部が乗ります。',
-      worked: {
-        given: '$g = 0.5$、3 段。ある点で各段のノイズが 0.6、0.9、0.4 を返したとします。',
-        steps: [
-          { calc: '1 段目 : 1    x 0.6 = 0.6', note: '大陸の形を決める、大きな起伏' },
-          { calc: '2 段目 : 0.5  x 0.9 = 0.45', note: '倍の細かさ、半分の強さ' },
-          { calc: '3 段目 : 0.25 x 0.4 = 0.1', note: '海岸線のギザギザ' },
-          { calc: '合計       : 0.6 + 0.45 + 0.1 = 1.15' },
-          { calc: '重みの合計 : 1 + 0.5 + 0.25   = 1.75' },
-          { calc: '1.15 / 1.75 = 0.657', note: '0〜1 に収める' },
-        ],
-        result: '高さは **0.657**。海面 `SEA` が 0.5 なので、ここは**陸**です。`SEA` を 0.7 に上げれば、同じ点が海に沈みます。**惑星の性格を決めているのは、この 1 本のしきい値**です。',
-      },
-    },
-    {
-      kind: 'demo',
-      id: 'fbm-octaves',
-      caption:
-        '段数を 1 にすると海岸線がなめらかすぎて大陸に見えません。5 にすると入り江や島が出てきます。海面の高さを上げていくと、つながっていた大陸がちぎれて島々になります ― 地形を「作る」のではなく「水位を決める」だけで景色が変わるのが、手続き的生成の面白いところです。',
-    },
-    {
-      kind: 'callout',
-      tone: 'analogy',
-      title: 'なぜ「重ねる」とそれらしくなるのか',
-      text: `
-自然の地形は、遠くから見ても近くで見ても似た凹凸を持っています。
-山脈には尾根があり、尾根には岩があり、岩には割れ目があります。
-**倍率を変えても同じような見た目になる**この性質を自己相似といい、海岸線や雲、木の枝にも現れます。
-
-細かさを倍にしながら弱く足していく操作は、この自己相似をいちばん安く真似る方法です。
-だから「自然っぽさ」が出ます。
-`,
-    },
-    {
-      kind: 'md',
-      text: `
-## 球に貼るときの罠 ― 平面のノイズは必ず破綻する
-
-ここが第3部でいちばん引っかかる場所です。
-
-テクスチャは平らな画像で、球の {{UV}} は「横が経度、縦が緯度」に対応しています。
-そこで、つい**画像の座標 $(u, v)$ をそのままノイズに渡してしまいます**（{{正距円筒図法}}のままノイズを引く、ということです）。
-すると、必ず 2 つの破綻が起きます。
-
-- **経度 0 度に縦の継ぎ目が出る。** $u = 0$ と $u = 1$ は球の上では同じ場所ですが、
-  ノイズにとっては遠く離れた入力なので、値がつながりません
-- **極が横方向に伸びる。** 画像の一番上の行は、球の上では 1 点に潰れます。
-  なのにノイズは横方向にしっかり変化するので、極が渦を巻いたように歪みます
-
-**解決は驚くほど素直です。** 画素の $(u, v)$ ではなく、
-**その画素が球の上でどの向きを指しているか（方向ベクトル）でノイズを引きます。**
-そのために 2 次元ではなく **3 次元のノイズ**を使います。
-`,
-    },
-    {
-      kind: 'formula',
-      tex: '(x, y, z) = (\\cos\\phi\\cos\\lambda,\\; \\sin\\phi,\\; \\cos\\phi\\sin\\lambda)',
-      readAloud:
-        'φ（ファイ）が緯度、λ（ラムダ）が経度です。緯度のコサインかける経度のコサインが x、緯度のサインが y、緯度のコサインかける経度のサインが z。三角関数の章と前の章でやった「角度から座標」が、また出てきました。この向きをノイズに渡します。',
-      worked: {
-        given: '緯度 $\\phi = 30$ 度、経度 $\\lambda = 45$ 度の地点の方向ベクトルを出します。',
-        steps: [
-          { calc: 'cos 30 = 0.866,  sin 30 = 0.5' },
-          { calc: 'cos 45 = 0.707,  sin 45 = 0.707' },
-          { calc: 'x = 0.866 x 0.707 = 0.612' },
-          { calc: 'y = 0.5' },
-          { calc: 'z = 0.866 x 0.707 = 0.612' },
-          { calc: '確かめ : 0.612の2乗 x 2 + 0.5の2乗' },
-          { calc: '       = 0.375 + 0.375 + 0.25 = 1.0' },
-        ],
-        result: 'この $(0.612,\\; 0.5,\\; 0.612)$ を**そのままノイズに渡します**。経度 0 度と 360 度は同じ方向ベクトルになるので、継ぎ目が生まれる余地がありません。UV を渡すと、この 2 つが別の入力になってしまいます。',
-      },
     },
     {
       kind: 'callout',
       tone: 'tip',
-      title: '継ぎ目が消える理由',
+      title: '設計だけの章を、なぜ挟むのか',
       text: `
-$u = 0$ と $u = 1$ は、方向に直すと**まったく同じベクトル**になります。
-同じ入力なら同じ値が返るので、継ぎ目は原理的に発生しません。
+「とりあえずノイズで色を作ってみる」から始めると、たいてい途中で作り直しになります。
 
-極も同じです。一番上の行のすべての画素は、ほぼ同じ「真上」の向きを指すので、
-色もほぼ一定になります。**画像の上では横に引き伸ばされていても、球の上では点に潰れる** ―
-その潰れ方に、ノイズの引き方が最初から合っているわけです。
+色を作ってから凹凸を足すと、**色と凹凸がずれます。**
+陸の色を塗った場所と、山を立てた場所が別々に決まるからです。
+
+先に「何を情報源にするか」を決めておけば、この作り直しは起きません。
+30 分の設計が、3 時間の手戻りを消します。
 `,
     },
     {
       kind: 'md',
       text: `
-## 3枚まとめて、1回のループで作る
+## 色だけ貼っても、惑星にならない
 
-高さを 1 つ求めれば 3 枚ぶん決まるので、**ループは 1 回で済みます。**
-50 万画素ぶんのノイズを 3 回引き直すのは、単純に 3 倍の時間がかかるだけで何の得もありません。
+まず結論から言うと、**必要な{{テクスチャ}}は $3$ 枚**です。$1$ 枚ではありません。
 
-色の画像だけ \`colorSpace\` に \`THREE.SRGBColorSpace\` を指定します。
-凹凸と粗さは**色ではなく数値**なので、指定してはいけません。
-ここを間違えると、凹凸の強さや粗さがずれます（[](#/ch/t04-texture)で扱った話です）。
+| 枚 | 渡す先 | 変わるもの |
+|---|---|---|
+| **色** | \`map\` | 海の青、陸の緑と茶、極の白 |
+| **凹凸** | \`bumpMap\` | 山脈の陰影。形は変えず、光の当たり方だけ変える |
+| **粗さ** | \`roughnessMap\` | **海だけつるつるにする** |
+
+$1$ 枚目だけだと、どれだけ色を作り込んでも「**絵を貼った球**」に見えます。
+陰影が球そのものの丸みだけで決まっていて、地形が光に反応しないからです。
+
+$2$ 枚目を足すと山脈に影がつきます。ここで「地面」らしくなります。
+
+そして**いちばん効くのは $3$ 枚目**です。
+海と陸が同じ粗さだと、太陽の照り返しがどこにも出ません。
+海にだけ照り返しが乗った瞬間に、それが**水**になります。
+`,
+    },
+    {
+      kind: 'md',
+      text: `
+## 3 段階を並べて見る
+
+言葉より見たほうが早いので、**同じ球に $1$ 枚ずつ足していったもの**を $3$ つ並べます。
+
+高さの作り方はまだやっていないので、ここでは
+$\\sin$ と $\\cos$ を数本混ぜた**仮の地形**を使います
+（本物のノイズは[](#/ch/x06-value-noise)から $3$ 章かけて作ります）。
+
+**見るべきは地形の出来ではなく、$1$ 枚足すたびに何が変わるか**です。
+（$\\sin$ と $\\cos$ の重ね合わせなので、海に薄い格子模様が残ります。
+**規則が目に見えてしまう** ― これがノイズを使う理由でもあります）
 `,
     },
     {
       kind: 'sandbox',
-      title: '惑星の地表を作る',
-      guide: { focus: ['3次元の value noise', '3枚のテクスチャを1回のループで作る'] },
+      title: '色 → 凹凸 → 粗さ、と 1 枚ずつ足す',
+      guide: { focus: ['仮の高さ', '高さから3枚を導く'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const TEX_W = 1024;
-const TEX_H = 512;
-const SEA = 0.5;          // 海面の高さ。上げると島だらけになる
-const FREQ = 2.2;         // 基本の細かさ。上げると大陸が小さく細かくなる
-const OCTAVES = 5;        // 重ね合わせの段数
+const TEX_W = 512;
+const TEX_H = 256;
+const SEA = 0.5;
 
-/* ---- 3次元の value noise ---- */
-// 球に貼るので3次元で引く。2次元だと継ぎ目と極で破綻する
-
-function hash3(x, y, z, seed) {
-  let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(z, 1274126177);
-  h = Math.imul(h + Math.imul(seed, 2246822519), 2654435761);
-  h ^= h >>> 15;
-  h = Math.imul(h, 2246822519);
-  h ^= h >>> 13;
-  return (h >>> 0) / 4294967295;
+/* ---- 仮の高さ ---- */
+// 本物のノイズはまだ作っていないので、sin と cos を数本混ぜて代用する。
+// この章で見たいのは地形の出来ではなく「1枚足すと何が変わるか」なので、これで足りる
+function height(lat, lon) {
+  return 0.5
+    + 0.28 * Math.sin(lon * 3) * Math.cos(lat * 2)        // 大陸のかたまり
+    + 0.13 * Math.sin(lon * 5 + 1.3) * Math.cos(lat * 3 + 0.7)
+    + 0.10 * Math.sin(lon * 11 + 2.1) * Math.cos(lat * 7 + 1.1)
+    + 0.06 * Math.sin(lon * 23) * Math.cos(lat * 17)      // ここから下が山肌。
+    + 0.03 * Math.sin(lon * 41 + 0.6) * Math.cos(lat * 31); // 細かい起伏が無いと、凹凸は見えない
 }
 
-// 両端で傾きが 0 になる重み。格子の継ぎ目を見せないため
-function fade(t) { return t * t * (3 - 2 * t); }
-function mix(a, b, t) { return a + (b - a) * t; }
+/* ---- 高さから3枚を導く ---- */
+// 3枚を別々に設計しない。高さを1つ決めて、そこから3枚ぶんの値を出す。
+// こうしておくと「陸を塗った場所」と「山を立てた場所」が食い違いようがない
 
-function noise3(x, y, z, seed) {
-  const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
-  const u = fade(x - xi), v = fade(y - yi), w = fade(z - zi);
-
-  const x00 = mix(hash3(xi, yi, zi, seed), hash3(xi + 1, yi, zi, seed), u);
-  const x10 = mix(hash3(xi, yi + 1, zi, seed), hash3(xi + 1, yi + 1, zi, seed), u);
-  const x01 = mix(hash3(xi, yi, zi + 1, seed), hash3(xi + 1, yi, zi + 1, seed), u);
-  const x11 = mix(hash3(xi, yi + 1, zi + 1, seed), hash3(xi + 1, yi + 1, zi + 1, seed), u);
-
-  return mix(mix(x00, x10, v), mix(x01, x11, v), w);
-}
-
-// 細かさを倍に、強さを半分にしながら足していく
-function fbm(x, y, z) {
-  let sum = 0, total = 0, amp = 1, freq = 1;
-  for (let i = 0; i < OCTAVES; i++) {
-    sum += noise3(x * freq, y * freq, z * freq, 1337 + i * 101) * amp;
-    total += amp;
-    amp *= 0.5;
-    freq *= 2;
+function surfaceAt(h, absLat) {
+  if (h < SEA) {
+    const depth = Math.min(1, (SEA - h) / SEA);
+    return {
+      r: 14 + (1 - depth) * 40,
+      g: 48 + (1 - depth) * 78,
+      b: 92 + (1 - depth) * 74,
+      bump: 96,      // 海面は平ら
+      rough: 46,     // つるつる。ここに照り返しが出る
+    };
   }
-  return sum / total;
+  const above = (h - SEA) / (1 - SEA);
+  const snowLine = 0.62 - absLat * 0.62;
+  let r, g, b;
+  if (above > snowLine) { r = 232; g = 238; b = 246; }        // 雪
+  else if (above < 0.06) { r = 196; g = 182; b = 136; }       // 波打ち際の砂
+  else {
+    const rock = Math.min(1, above / Math.max(0.001, snowLine));
+    r = 62 + rock * 92; g = 96 + rock * 66; b = 58 + rock * 60;
+  }
+  return { r: r, g: g, b: b, bump: 96 + above * 159, rough: 216 };
 }
 
-/* ---- 3枚のテクスチャを1回のループで作る ---- */
+/* ---- 3枚を焼く ---- */
 
-function createSurface() {
+function bake() {
   const make = () => {
     const canvas = document.createElement('canvas');
     canvas.width = TEX_W;
@@ -236,70 +148,23 @@ function createSurface() {
     const ctx = canvas.getContext('2d');
     return { canvas: canvas, ctx: ctx, image: ctx.createImageData(TEX_W, TEX_H) };
   };
-
-  const color = make();
-  const bump = make();
-  const rough = make();
+  const color = make(), bump = make(), rough = make();
 
   for (let row = 0; row < TEX_H; row++) {
-    // 画像の一番上の行が北極（テクスチャは上下が反転して貼られる）
     const lat = (0.5 - row / (TEX_H - 1)) * Math.PI;
-    const cosLat = Math.cos(lat);
-    const sinLat = Math.sin(lat);
     const absLat = Math.min(1, Math.abs(lat) / (Math.PI / 2));
-
     for (let col = 0; col < TEX_W; col++) {
       const lon = (col / TEX_W - 0.5) * Math.PI * 2;
-
-      // その画素が指している「向き」でノイズを引く。これが継ぎ目対策
-      const height = fbm(
-        cosLat * Math.cos(lon) * FREQ + 8,
-        sinLat * FREQ + 8,
-        cosLat * Math.sin(lon) * FREQ + 8,
-      );
-
-      let r, g, b, bumpValue, roughValue;
-
-      if (height < SEA) {
-        // 海。深いほど暗く、濃い青
-        const depth = Math.min(1, (SEA - height) / SEA);
-        r = 14 + (1 - depth) * 40;
-        g = 48 + (1 - depth) * 78;
-        b = 92 + (1 - depth) * 74;
-        bumpValue = 96;      // 海面は平ら
-        roughValue = 46;     // つるつる（照り返しが出る）
-      } else {
-        const above = (height - SEA) / (1 - SEA);   // 海面からの高さ 0〜1
-        const snowLine = 0.62 - absLat * 0.62;      // 極では低いところでも雪
-
-        if (above > snowLine) {
-          r = 232; g = 238; b = 246;                // 雪
-        } else if (above < 0.06) {
-          r = 196; g = 182; b = 136;               // 波打ち際の砂
-        } else {
-          const rock = Math.min(1, above / snowLine);
-          r = 62 + rock * 92;                      // 緑 → 茶
-          g = 96 + rock * 66;
-          b = 58 + rock * 60;
-        }
-        bumpValue = 96 + above * 159;               // 高いほど白い＝高い
-        roughValue = 216;                           // ざらざら
-      }
+      const s = surfaceAt(height(lat, lon), absLat);
 
       const at = (row * TEX_W + col) * 4;
-      color.image.data[at] = r;
-      color.image.data[at + 1] = g;
-      color.image.data[at + 2] = b;
+      color.image.data[at] = s.r;
+      color.image.data[at + 1] = s.g;
+      color.image.data[at + 2] = s.b;
       color.image.data[at + 3] = 255;
-
-      bump.image.data[at] = bumpValue;
-      bump.image.data[at + 1] = bumpValue;
-      bump.image.data[at + 2] = bumpValue;
+      bump.image.data[at] = bump.image.data[at + 1] = bump.image.data[at + 2] = s.bump;
       bump.image.data[at + 3] = 255;
-
-      rough.image.data[at] = roughValue;
-      rough.image.data[at + 1] = roughValue;
-      rough.image.data[at + 2] = roughValue;
+      rough.image.data[at] = rough.image.data[at + 1] = rough.image.data[at + 2] = s.rough;
       rough.image.data[at + 3] = 255;
     }
   }
@@ -309,21 +174,20 @@ function createSurface() {
   rough.ctx.putImageData(rough.image, 0, 0);
 
   const colorMap = new THREE.CanvasTexture(color.canvas);
-  colorMap.colorSpace = THREE.SRGBColorSpace;   // これは「色」なので指定する
-
-  // 凹凸と粗さは色ではなく数値なので、colorSpace は指定しない
-  const bumpMap = new THREE.CanvasTexture(bump.canvas);
-  const roughnessMap = new THREE.CanvasTexture(rough.canvas);
-
-  return { colorMap: colorMap, bumpMap: bumpMap, roughnessMap: roughnessMap };
+  colorMap.colorSpace = THREE.SRGBColorSpace;   // 色なので指定する
+  // 凹凸と粗さは色ではなく数値。colorSpace は指定しない
+  return {
+    colorMap: colorMap,
+    bumpMap: new THREE.CanvasTexture(bump.canvas),
+    roughnessMap: new THREE.CanvasTexture(rough.canvas),
+  };
 }
 
 /* ---- シーン ---- */
 
 const scene = new THREE.Scene();
-
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 3000);
-camera.position.set(0, 1.2, 5.4);
+const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.5, 100);
+camera.position.set(0, 0.9, 8.2);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -332,35 +196,48 @@ document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.minDistance = 2.6;
-controls.maxDistance = 30;
 
-const surface = createSurface();
+const maps = bake();
 
-const planet = new THREE.Mesh(
-  new THREE.SphereGeometry(1.6, 96, 64),
-  new THREE.MeshStandardMaterial({
-    map: surface.colorMap,
-    bumpMap: surface.bumpMap,
-    bumpScale: 0.5,
-    roughnessMap: surface.roughnessMap,
-    metalness: 0,
-  }),
-);
-scene.add(planet);
+// 左：色だけ／中央：色＋凹凸／右：色＋凹凸＋粗さ
+const recipes = [
+  { x: -2.9, label: '色だけ', options: { map: maps.colorMap, roughness: 0.9 } },
+  { x: 0, label: '＋凹凸', options: { map: maps.colorMap, bumpMap: maps.bumpMap, bumpScale: 1.6, roughness: 0.9 } },
+  { x: 2.9, label: '＋粗さ', options: { map: maps.colorMap, bumpMap: maps.bumpMap, bumpScale: 1.6, roughnessMap: maps.roughnessMap } },
+];
 
-const sun = new THREE.DirectionalLight(0xfff2e0, 3.4);
-sun.position.set(5, 1.5, 3);
-scene.add(sun, new THREE.AmbientLight(0x3a4a6a, 0.35));
+const planets = recipes.map((recipe) => {
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(1.15, 96, 64),
+    new THREE.MeshStandardMaterial(Object.assign({ metalness: 0 }, recipe.options)),
+  );
+  mesh.position.x = recipe.x;
+  scene.add(mesh);
+  return mesh;
+});
+
+// 海の照り返しは「光が真横から当たっているとき」にいちばん出る
+const sun = new THREE.DirectionalLight(0xfff2e0, 3.6);
+sun.position.set(6, 2.2, 4);
+scene.add(sun, new THREE.AmbientLight(0x3a4a6a, 0.3));
+
+recipes.forEach((recipe, index) => {
+  const div = document.createElement('div');
+  div.textContent = recipe.label;
+  div.style.cssText =
+    'position:absolute; bottom:22px; transform:translateX(-50%);' +
+    'color:#e8e8f2; font:12px sans-serif; pointer-events:none; white-space:nowrap;';
+  div.style.left = (18 + index * 32) + '%';
+  document.body.appendChild(div);
+});
 
 const clock = new THREE.Clock();
-function animate() {
-  requestAnimationFrame(animate);
-  planet.rotation.y += clock.getDelta() * 0.06;
+renderer.setAnimationLoop(() => {
+  const dt = clock.getDelta();
+  planets.forEach((p) => { p.rotation.y += dt * 0.12; });
   controls.update();
   renderer.render(scene, camera);
-}
-animate();
+});
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -368,235 +245,281 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });`,
       caption:
-        '海の上を光がゆっくり流れていくのが、`roughnessMap` の効果です。`roughValue = 216` を海の側にも入れると、その照り返しが消えて一気に「塗った球」に戻ります。`bumpScale` を 0 にすると山脈の陰影が消えます。`SEA` を 0.62 にすると島だらけの惑星になります。',
+        '左は陰影が球の丸みだけで決まっていて、地形が光に反応しません。中央で山肌に影がつきます。右で海が暗く沈み、太陽の照り返しだけが細く残ります ― **この 1 つで「塗った球」から「水のある星」に変わります。** 右の `roughnessMap` を消して `roughness: 0.9` に戻すと、その照り返しが消えます。`bumpScale` を 0 にすると中央が左と同じになります。 **ところで、海に薄い格子模様が見えているはずです。** $\\sin$ と $\\cos$ を重ねただけなので、**規則が目に見えてしまう**のです ― 次の章からノイズを作るのは、これを消すためでもあります。',
     },
     {
       kind: 'md',
       text: `
-## 破綻するほうも見ておく
+## 3 枚を、別々に作らない
 
-「2 次元のノイズを UV に掛けると破綻する」と言われても、見ないと納得できません。
-次のコードは**わざと $(u, v)$ でノイズを引いています。**
+さて、$3$ 枚要ることは分かりました。**問題はここからです。**
 
-**惑星を回して経度 0 度を正面に持ってくると、縦にすっと線が入ります。**
-極を上から覗くと、色が放射状に流れているのも見えます。
+素直にやると、$3$ 枚を別々に作りたくなります。色は色で塗り、山は山で立て、
+海の粗さは海の形をもう一度求めて… という具合に。
+
+**これは必ず破綻します。**
+
+- 色の「海」と、粗さの「海」が、$1$ 画素ずれる
+- 色を調整して大陸を広げたら、山だけ前の位置に残る
+- 山を高くしたら、雪が降っていない山頂ができる
+
+$3$ つの絵が**別々の情報源**を持っているからです。
+情報源が $3$ つあれば、$3$ つは必ず食い違います。
+
+**解決は、上のサンドボックスで先に書いてあります。**
+$3$ 枚を作るのではなく、**「その地点の高さ」を $1$ つ決めて、そこから $3$ 枚ぶんの値を導きます。**
 `,
     },
     {
-      kind: 'sandbox',
-      title: '継ぎ目が出るほう（2次元ノイズを UV に掛ける）',
-      code: `import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-// 解像度も色の付け方も、前のコードとまったく同じにしてあります。
-// ちがうのは「ノイズに何を渡すか」の1点だけです。
-const TEX_W = 1024;
-const TEX_H = 512;
-const SEA = 0.5;
-
-function hash2(x, y) {
-  let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
-}
-function fade(t) { return t * t * (3 - 2 * t); }
-function mix(a, b, t) { return a + (b - a) * t; }
-
-// 2次元の value noise。u と v をそのまま渡す
-function noise2(x, y) {
-  const xi = Math.floor(x), yi = Math.floor(y);
-  const u = fade(x - xi), v = fade(y - yi);
-  const a = mix(hash2(xi, yi), hash2(xi + 1, yi), u);
-  const b = mix(hash2(xi, yi + 1), hash2(xi + 1, yi + 1), u);
-  return mix(a, b, v);
-}
-function fbm2(x, y) {
-  let sum = 0, total = 0, amp = 1, freq = 1;
-  for (let i = 0; i < 5; i++) {
-    sum += noise2(x * freq, y * freq) * amp;
-    total += amp;
-    amp *= 0.5;
-    freq *= 2;
+      kind: 'code',
+      title: '情報源は 1 つ、出口が 3 つ',
+      code: `// 高さ h（0〜1）と、赤道からの離れ具合 absLat（0〜1）だけを入力にする
+function surfaceAt(h, absLat) {
+  if (h < SEA) {
+    // 海：深いほど暗く濃い青、平ら、つるつる
+    return { r: ..., g: ..., b: ..., bump: 96, rough: 46 };
   }
-  return sum / total;
-}
+  // 陸：高さで緑→茶→白、高いほど盛り上がり、ざらざら
+  return { r: ..., g: ..., b: ..., bump: 96 + above * 159, rough: 216 };
+}`,
+    },
+    {
+      kind: 'callout',
+      tone: 'tip',
+      title: 'この形は、このあと何度も出ます',
+      text: `
+「持つ値は 1 つ。見た目はそこから全部導く」は、実践編で繰り返し使う型です。
 
-const canvas = document.createElement('canvas');
-canvas.width = TEX_W;
-canvas.height = TEX_H;
-const ctx = canvas.getContext('2d');
-const image = ctx.createImageData(TEX_W, TEX_H);
+- **この惑星** … 高さ 1 つから、色・凹凸・粗さ
+- **街の時刻**（[](#/ch/p07-city-light)） … 時刻 1 つから、光の色・強さ・空・影・窓の明かり
 
-for (let row = 0; row < TEX_H; row++) {
-  const absLat = Math.abs(0.5 - row / (TEX_H - 1)) * 2;
+どちらも、値を別々に持った瞬間に「朝焼けなのに窓が消えている」
+「海なのにざらざら」といった食い違いが入り込みます。
 
-  for (let col = 0; col < TEX_W; col++) {
-    const u = col / TEX_W;
-    const v = row / TEX_H;
-
-    // ここが問題。u = 0 と u = 1 は球の上では同じ場所なのに、値がつながらない
-    const height = fbm2(u * 6, v * 6);
-
-    let r, g, b;
-    if (height < SEA) {
-      const depth = Math.min(1, (SEA - height) / SEA);
-      r = 14 + (1 - depth) * 40;
-      g = 48 + (1 - depth) * 78;
-      b = 92 + (1 - depth) * 74;
-    } else {
-      const above = (height - SEA) / (1 - SEA);
-      const snowLine = 0.62 - absLat * 0.62;
-      if (above > snowLine) { r = 232; g = 238; b = 246; }
-      else if (above < 0.06) { r = 196; g = 182; b = 136; }
-      else {
-        const rock = Math.min(1, above / snowLine);
-        r = 62 + rock * 92; g = 96 + rock * 66; b = 58 + rock * 60;
-      }
-    }
-
-    const at = (row * TEX_W + col) * 4;
-    image.data[at] = r;
-    image.data[at + 1] = g;
-    image.data[at + 2] = b;
-    image.data[at + 3] = 255;
-  }
-}
-ctx.putImageData(image, 0, 0);
-
-const map = new THREE.CanvasTexture(canvas);
-map.colorSpace = THREE.SRGBColorSpace;
-
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 100);
-camera.position.set(0, 0.6, 5.2);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-
-const planet = new THREE.Mesh(
-  new THREE.SphereGeometry(1.6, 96, 64),
-  new THREE.MeshStandardMaterial({ map: map, roughness: 0.9 }),
-);
-// 経度 0 度（u = 0 と u = 1 の境目）が、最初から正面に来るようにしておく
-planet.rotation.y = Math.PI / 2;
-scene.add(planet);
-
-const sunLight = new THREE.DirectionalLight(0xffffff, 3);
-sunLight.position.set(0.5, 1, 3);
-scene.add(sunLight, new THREE.AmbientLight(0xffffff, 0.55));
-
-const clock = new THREE.Clock();
-function animate() {
-  requestAnimationFrame(animate);
-  planet.rotation.y += clock.getDelta() * 0.12;   // 継ぎ目が正面を通り過ぎていく
-  controls.update();
-  renderer.render(scene, camera);
-}
-animate();
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});`,
-      caption:
-        '最初から経度 0 度が正面に来ています。陸の模様がぶつりと途切れる縦線が中央に走っているのが継ぎ目です。上から覗くと、極で模様が放射状に引き伸ばされているのも見えます。解像度も色の付け方も前のコードと同じで、ちがうのは「ノイズに $(u, v)$ を渡したか、方向ベクトルを渡したか」だけです。',
+**食い違いを直すのではなく、食い違いようがない形にしておく。** これが安く済みます。
+`,
     },
     {
       kind: 'md',
       text: `
-## 手続き的に作る、ということ
+## なぜ bumpMap を選ぶのか
 
-ここでやったのは、**画像を用意する代わりに「画像を作る手続き」を書く**ことでした。
-これを{{手続き的生成}}と呼びます。
-利点と欠点があります。
+凹凸を出す道具は $3$ つあります。ここで選んでおきます。
 
-- **利点** … リポジトリが軽い。数値を変えれば無限に別の惑星が作れる。継ぎ目を原理的に消せる
-- **利点** … 「なぜこの見た目なのか」が全部コードに書いてある。あとから直せる
-- **欠点** … 生成に時間がかかる（この 1024×512 で数百ミリ秒）。読み込みではなく計算で待つ
-- **欠点** … 「地球そのもの」のような**特定の**見た目は作れない。それは写真の仕事
+| 道具 | 何をするか | 費用 |
+|---|---|---|
+| \`displacementMap\` | **頂点を実際に動かす**。輪郭が凸凹になる | 頂点が要る。球を細かく割らないと効かない |
+| \`normalMap\` | 法線を、画像に書いた向きに置き換える | 画像が $3$ チャンネル要る。作るのがやや面倒 |
+| \`bumpMap\` | **白黒の高さから法線の傾きを計算**して使う | 画像は $1$ チャンネル。いちばん安い |
 
-重いのが問題になるなら、\`OffscreenCanvas\` と Web Worker に逃がす手があります。
-生成を別のスレッドでやれば、そのあいだも画面は動きます。
+惑星は**遠くから丸ごと眺めるもの**なので、輪郭のギザギザは見えません。
+見えるのは**面の中の陰影**だけです。だから \`bumpMap\` で足ります。
+
+[](#/ch/w18-normal-map)でやったとおり、$3$ つとも
+「面の向き（法線）を変えて、光の当たり方を変える」ことが目的です。
+違うのは、その向きをどうやって手に入れるかだけ。
+
+**近づいて輪郭を見せる作品なら \`displacementMap\` が要ります。**
+そのときは球の分割数も上げることになり、費用が跳ね上がります ―
+だから**先に「どれくらい寄るのか」を決めておく**必要がありました。
 `,
     },
     {
       kind: 'callout',
       tone: 'warn',
-      title: '解像度を上げる前に、伸ばす場所を確かめる',
+      title: 'bumpMap は輪郭を変えません',
       text: `
-テクスチャを 2048×1024 にすると、生成時間は 4 倍になります。
-その前に、**いま足りないのは解像度なのか**を確かめてください。
+真横から見ると、山脈は**まったく出っ張っていません。**
+シルエットは完全な円のままです。
 
-近づいたときにぼやけるなら解像度の問題ですが、
-「なんとなく安っぽい」のは、たいてい**色の作り方**の問題です。
-砂浜の細い帯を入れる、雪の境界を緯度で動かす、といった 1 行のほうが、
-画素を 4 倍にするよりずっと効きます。
+これはバグではなく、\`bumpMap\` の仕様です。
+変えているのは法線だけで、頂点は 1 つも動いていません。
+
+見る距離を決めずに「なんか平べったい」と悩むと、ここで時間を溶かします。
+**遠景なら気づかれない。寄るなら別の道具が要る。** 先に決めてください。
+`,
+    },
+    {
+      kind: 'md',
+      text: `
+## ここから 4 章の段取り
+
+高さを $1$ つ決めれば $3$ 枚とも決まる ― 設計はこれで済みました。
+残るのは「**その高さをどうやって作るか**」です。
+
+- **[](#/ch/x06-value-noise)** … 格子に乱数を置いて、あいだを埋める。ノイズの中身を書く
+- **[](#/ch/x07-fbm-terrain)** … 重ねて地形にする。段数はどこまで増やす意味があるか
+- **[](#/ch/x08-sphere-seam)** … 球に貼る。継ぎ目と極の歪みを原理的に消す
+- **[](#/ch/x09-surface-bake)** … $3$ 枚を $1$ 回のループで焼く。色の作り方と、生成の費用
+
+[](#/ch/p01-planet-setup)で決めた「$1$ つ足すたびに動かす」をここでも守ります。
+$4$ 章のどこで止めても、画面には何かが映っています。
 `,
     },
   ],
   exercises: [
     {
-      prompt: `1 つ目のサンドボックスで \`SEA\` を 0.3 と 0.7 にしてください。惑星はどう変わりますか。
-つぎに \`FREQ\` を 1.0 と 6.0 にしてください。`,
-      hint: 'SEA は「この高さより下を海にする」しきい値、FREQ は模様の細かさです。',
-      answer: `\`SEA\` を下げると陸が増えて**大陸だらけ**に、上げると**島がぽつぽつ浮かぶ水の惑星**になります。
-\`FREQ\` を下げると大陸が数個の巨大な塊になり、上げると細かい群島になります。
-**同じコードのまま、数値 2 つで惑星の性格が決まる**のがこの作り方の強みで、
-画像を用意していたら、こうはいきません。`,
+      prompt: `サンドボックスの右の球（$3$ 枚とも使っているもの）で、\`roughnessMap\` の行を消して
+\`roughness: 0.9\` に差し替えてください。
+
+何が消えますか。そしてなぜ、それが「水に見えなくなる」ことになるのでしょう。`,
+      hint: '海と陸の粗さが同じになると、光の返り方はどう変わりますか。',
+      answer: `**海の上を流れていた細長い光（照り返し）が消えます。**
+
+**何が起きているか**
+
+粗さは「面がどれだけ光を散らすか」です。
+
+- 粗さが低い（つるつる） … 光は**そろった向き**に返る。太陽の像がそのまま映る
+- 粗さが高い（ざらざら） … 光は**あらゆる向き**に散る。どこから見ても同じ明るさ
+
+海だけ \`rough = 46\`（$0.18$ 相当）にしてあるので、海面が鏡に近くなり、
+太陽の像が細長く引き伸ばされて映ります。これが照り返しです。
+
+陸は \`rough = 216\`（$0.85$ 相当）なので、散らします。だから土に見えます。
+
+**なぜ「水」になるのか**
+
+人が水を水と見分けているのは、色ではなく**光の返し方**です。
+
+濁った川も澄んだ海も色はまるで違うのに、どちらも水に見えます。
+共通しているのは「まわりを映す」ことだけ。
+
+だから、青く塗っても水にはならず、**つるつるにすると水になります。**
+
+**これが 3 枚目がいちばん効く理由です。** 色は $1$ 枚目でいくらでも作り込めますが、
+質感は色では作れません。`,
+      answerCode: `// 変える前
+{ map: maps.colorMap, bumpMap: maps.bumpMap, bumpScale: 1.6, roughnessMap: maps.roughnessMap }
+
+// 変えたあと（照り返しが消える）
+{ map: maps.colorMap, bumpMap: maps.bumpMap, bumpScale: 1.6, roughness: 0.9 }`,
     },
     {
-      prompt: `2 つ目のサンドボックス（継ぎ目が出るほう）を横に回して、**継ぎ目を探して**ください。
-そのあと上から見て、極のあたりも見てください。1 つ目のコードと違うのは 1 か所だけです。どこでしょう。`,
-      hint: 'ノイズに何を渡しているかだけが違います。',
-      answer: `違いは**ノイズに UV（経度・緯度）を渡すか、方向ベクトル（x, y, z）を渡すか**の 1 点だけです。
-UV を渡すと、経度 0 度の左端と右端が別の値になるので**縦の継ぎ目**が出て、
-極では経度がぜんぶ 1 点に集まるので**模様が渦を巻いて潰れます**。
-方向ベクトルで引けば、球の上のどの点も 3 次元空間のただの 1 点なので、
-継ぎ目も極も**そもそも存在しません**。`,
+      prompt: `\`surfaceAt\` を書き換えて、**海の色だけ**を紫にしてみてください。
+
+そのとき、粗さと凹凸のコードは $1$ 行も触らずに済むはずです。**なぜでしょう。**`,
+      hint: '海かどうかを判定しているのは、何か所ですか。',
+      answer: `**海かどうかの判定が $1$ か所（\`h < SEA\`）にしかないからです。**
+
+**変えるのはここだけ**
+
+\`if (h < SEA)\` の中の \`r\`・\`g\`・\`b\` を紫に振るだけで、
+\`bump: 96\`（平ら）と \`rough: 46\`（つるつる）はそのまま効きます。
+
+紫の海が、ちゃんと照り返しを持ったままになります。
+
+**もし 3 枚を別々に作っていたら**
+
+色の画像を作るループ、凹凸の画像を作るループ、粗さの画像を作るループの
+**$3$ か所に \`h < SEA\` が書かれている**ことになります。
+
+海の形を変えたくなったとき、$3$ か所を同じように直さなければなりません。
+$1$ か所直し忘れると「色は海なのに、ざらざらの陸」ができます。
+
+**しかも、その間違いはエラーになりません。** ただ少しおかしく見えるだけです。
+気づくのは、ずっとあとになります。
+
+**判定を 1 か所にする、ということ**
+
+これは惑星に限った話ではありません。
+
+「同じ条件で分岐するコードが $2$ か所以上にある」と気づいたら、
+**分岐を $1$ か所にまとめて、そこから複数の値を返す**形に直せないか考えてください。
+
+$3$ つの出口が同時に動くようになり、食い違う余地が消えます。`,
+      answerCode: `if (h < SEA) {
+  const depth = Math.min(1, (SEA - h) / SEA);
+  return {
+    r: 78 + (1 - depth) * 60,     // 紫に振る
+    g: 34 + (1 - depth) * 40,
+    b: 116 + (1 - depth) * 70,
+    bump: 96,     // ここは触らない
+    rough: 46,    // ここも触らない ― 紫の海に照り返しが残る
+  };
+}`,
+    },
+    {
+      prompt: `惑星に**すごく寄って**、山脈の輪郭がギザギザに見えるようにしたい。
+
+\`bumpScale\` を大きくすれば済みますか。済まないなら、何が要りますか。`,
+      hint: 'bumpMap は頂点を動かしていますか。',
+      answer: `**済みません。\`bumpScale\` をいくら上げても、輪郭は完全な円のままです。**
+
+**理由**
+
+\`bumpMap\` が変えているのは**法線（面の向き）だけ**です。
+頂点は $1$ つも動いていません。
+
+だから面の中の陰影は強くなりますが、**シルエットは球のまま**です。
+真横から見れば、山脈は $1$ ミリも出っ張っていません。
+
+\`bumpScale\` を上げすぎると、陰影だけが不自然に濃くなって、
+「立体なのに平ら」というちぐはぐな見た目になります。
+
+**要るもの**
+
+\`displacementMap\` に切り替えて、**頂点を実際に動かします。**
+
+ただし条件が $2$ つ付きます。
+
+- **球の分割数を上げる。** \`SphereGeometry(1.6, 96, 64)\` は約 $6000$ 頂点。
+  これでは山 $1$ つに数頂点しか割り当たらず、動かしてもカクカクした塊にしかなりません
+- **法線を取り直す。** 頂点を動かしたら、その面の向きは変わっています。
+  取り直さないと、動かす前の陰影のまま光ります
+
+**費用の話**
+
+分割数を $4$ 倍にすると頂点は $16$ 倍です。
+遠景の惑星 $1$ つのためにこれを払うのは割に合いません。
+
+**だから設計の段で「どれくらい寄るのか」を決める必要がありました。**
+この作品は「星空の中に惑星が浮かび、マウスで眺める」ものなので、
+輪郭が見えるほどは寄りません ― それが \`bumpMap\` で足りる根拠です。
+
+**中間の手**
+
+寄る作品なら、\`displacementMap\` を**惑星全体ではなく、寄っている面だけ**に効かせる手もあります。
+細かい球に差し替える、地形だけ別のメッシュにする、といったやり方で、
+これは「必要なところにだけ費用を払う」という[](#/ch/w44-gpu-cost)の考え方そのものです。`,
     },
   ],
   quiz: [
     {
-      q: '球のテクスチャを2次元ノイズで作ると、経度0度に縦の継ぎ目が出ます。理由はどれですか。',
+      q: '色・凹凸・粗さの 3 枚のうち、「塗った球」を「水のある星」に変えるのに、いちばん効くのはどれですか。',
       choices: [
-        '`u = 0` と `u = 1` は球の上では同じ場所だが、ノイズには別の入力として渡るから',
-        'テクスチャの解像度が足りないから',
-        '`colorSpace` の指定を忘れているから',
-        'SphereGeometry の分割数が少ないから',
+        '粗さ（海だけつるつるにして、太陽の照り返しを出す）',
+        '色（海を濃い青にする）',
+        '凹凸（山脈に陰影をつける）',
+        '3 枚とも同じくらい効く',
       ],
       answer: 0,
       explain:
-        '同じ場所に別の入力を渡せば、当然別の値が返ります。画素が指す「方向」でノイズを引けば、u=0 と u=1 はまったく同じベクトルになるので、継ぎ目は原理的に発生しません。',
+        '人が水を水と見分けているのは色ではなく光の返し方です。濁った川と澄んだ海は色がまるで違うのに、どちらも水に見えます。共通しているのは「まわりを映す」ことだけなので、青く塗っても水にはならず、つるつるにすると水になります。',
     },
     {
-      q: '`bumpMap` と `roughnessMap` に `colorSpace = THREE.SRGBColorSpace` を指定してはいけないのはなぜですか。',
+      q: '色・凹凸・粗さを、それぞれ別のループで別々に作ると、どんな不具合が起きますか。',
       choices: [
-        '色ではなく数値なので、色として変換されると値がずれるから',
-        '容量が増えるから',
-        '`bumpMap` は必ず線形でなければ動かないから',
-        'CanvasTexture では指定できないから',
+        '色の「海」と粗さの「海」がずれて、色は海なのにざらざら、という場所ができる',
+        '生成が遅くなるだけで、見た目は変わらない',
+        'colorSpace の指定が効かなくなる',
+        'テクスチャの解像度が揃わなくなる',
       ],
       answer: 0,
       explain:
-        'sRGB の指定は「これは人が見る色だから、明るさの変換をしてから使ってください」という意味です。凹凸や粗さは見せる色ではなく計算に使う数値なので、変換されると意図した強さになりません。色の map だけに指定します。',
+        '情報源が 3 つあれば、3 つは必ず食い違います。しかもエラーは出ず、少しおかしく見えるだけなので、気づくのがずっとあとになります。高さを 1 つ決めて 3 枚ぶんの値を導けば、食い違う余地そのものが無くなります。',
     },
     {
-      q: 'ノイズを1段だけ使うと大陸が「染み」のように見えます。段数を増やすと何が変わりますか。',
+      q: '`bumpScale` を大きくすると、惑星の輪郭（シルエット）はどうなりますか。',
       choices: [
-        '大きな形は保ったまま、海岸線や山肌の細部が増える',
-        '大陸の位置が変わる',
-        '海の色が濃くなる',
-        '生成が速くなる',
+        '変わらない。完全な円のまま',
+        '山脈のぶんギザギザになる',
+        '球がひとまわり大きくなる',
+        '分割数によっては変わる',
       ],
       answer: 0,
       explain:
-        '段を進むごとに細かく・弱くなるので、主役はいちばん粗い段のまま、細部だけが乗っていきます。だから「大陸の配置は気に入っているが細部が足りない」というときは、段数だけを増やせば済みます。',
+        'bumpMap が変えているのは法線だけで、頂点は 1 つも動いていません。面の中の陰影は強くなりますが、シルエットは球のままです。輪郭を変えたいなら displacementMap で頂点を実際に動かし、あわせて分割数を上げ、法線を取り直す必要があります。',
     },
   ],
 };
