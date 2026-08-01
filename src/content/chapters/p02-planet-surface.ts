@@ -3,10 +3,10 @@ import type { Chapter } from '../types.ts';
 export const chapterP02: Chapter = {
   slug: 'p02-planet-surface',
   part: 'project',
-  number: 2,
+  number: 5,
   title: '惑星ビューアー ― 表面をコードで描く',
   goal: '画像を1枚も用意せずに惑星の地表を作れるようになり、球にテクスチャを貼るときの継ぎ目と極の問題を回避できるようになります。',
-  requires: ['p01-planet-setup', 't04-texture', '13-random'],
+  requires: ['x04-star-look', 't04-texture', '13-random'],
   threeApis: [
     'CanvasTexture',
     'Texture.colorSpace',

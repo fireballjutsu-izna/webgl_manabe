@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterP08: Chapter = {
   slug: 'p08-city-motion',
   part: 'project',
-  number: 8,
+  number: 11,
   title: 'ローポリの街 ― 車を走らせて仕上げる',
   goal: '曲線に沿って向きまで正しく走る動きを作れるようになり、まとめ描画とカリングを両立させられるようになります。',
   requires: ['p07-city-light', '12-curve', 't11-performance'],

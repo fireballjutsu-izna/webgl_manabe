@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterP03: Chapter = {
   slug: 'p03-planet-atmosphere',
   part: 'project',
-  number: 3,
+  number: 6,
   title: '惑星ビューアー ― 大気と雲と、夜',
   goal: '縁が光る大気を自分で書けるようになり、昼と夜の境目に応じて見た目を変えられるようになります。',
   requires: ['p02-planet-surface', 't14-fragment-shader', '03-dot'],

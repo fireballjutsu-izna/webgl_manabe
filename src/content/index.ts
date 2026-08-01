@@ -138,6 +138,9 @@ import { chapterW49 } from './chapters/w49-onbeforecompile.ts';
 import { chapterW50 } from './chapters/w50-small-forest.ts';
 
 import { chapterP01 } from './chapters/p01-planet-setup.ts';
+import { chapterX02 } from './chapters/x02-depth-precision.ts';
+import { chapterX03 } from './chapters/x03-uniform-sphere.ts';
+import { chapterX04 } from './chapters/x04-star-look.ts';
 import { chapterP02 } from './chapters/p02-planet-surface.ts';
 import { chapterP03 } from './chapters/p03-planet-atmosphere.ts';
 import { chapterP04 } from './chapters/p04-planet-orbits.ts';
@@ -293,6 +296,9 @@ export const chapters: Chapter[] = [
   chapterW50,
 
   chapterP01,
+  chapterX02,
+  chapterX03,
+  chapterX04,
   chapterP02,
   chapterP03,
   chapterP04,

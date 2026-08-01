@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterP04: Chapter = {
   slug: 'p04-planet-orbits',
   part: 'project',
-  number: 4,
+  number: 7,
   title: '惑星ビューアー ― 軌道と、寄っていく視点',
   goal: '傾いた自転軸と公転を階層で組み立てられるようになり、クリックした対象へなめらかに寄る視点を作れるようになります。',
   requires: ['p03-planet-atmosphere', 't08-raycaster', '09-hierarchy'],

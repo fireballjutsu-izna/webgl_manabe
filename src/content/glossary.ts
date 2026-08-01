@@ -329,6 +329,12 @@ export const glossary: GlossaryEntry[] = [
     chapter: 't01-first-scene',
   },
   {
+    term: 'Zファイティング',
+    reading: 'ゼットファイティング',
+    def: '近い距離にある2つの面が、フレームごとに前後を入れ替えてちらつく現象。奥行きの記録の精度が足りず、どちらが手前か決められないために起きる。near を大きくするのがいちばん効く。',
+    chapter: 'x02-depth-precision',
+  },
+  {
     term: 'ピクセル比',
     reading: 'ピクセルひ',
     def: 'CSS 上の 1px が、実際の画面で何ピクセルに当たるかの倍率。高精細な画面では 2〜3 になり、そのまま使うと描く量が数倍に増える。',
