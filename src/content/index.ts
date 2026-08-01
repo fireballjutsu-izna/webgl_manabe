@@ -126,9 +126,16 @@ import { chapterT10 } from './chapters/t10-scene-graph.ts';
 import { chapterW39 } from './chapters/w39-find-traverse.ts';
 import { chapterW40 } from './chapters/w40-dispose.ts';
 import { chapterT11 } from './chapters/t11-performance.ts';
+import { chapterW42 } from './chapters/w42-draw-calls.ts';
+import { chapterW43 } from './chapters/w43-instancing.ts';
+import { chapterW44 } from './chapters/w44-gpu-cost.ts';
 import { chapterT12 } from './chapters/t12-shader-intro.ts';
 import { chapterT13 } from './chapters/t13-vertex-shader.ts';
 import { chapterT14 } from './chapters/t14-fragment-shader.ts';
+
+import { chapterW48 } from './chapters/w48-shader-debug.ts';
+import { chapterW49 } from './chapters/w49-onbeforecompile.ts';
+import { chapterW50 } from './chapters/w50-small-forest.ts';
 
 import { chapterP01 } from './chapters/p01-planet-setup.ts';
 import { chapterP02 } from './chapters/p02-planet-surface.ts';
@@ -275,9 +282,15 @@ export const chapters: Chapter[] = [
   chapterW39,
   chapterW40,
   chapterT11,
+  chapterW42,
+  chapterW43,
+  chapterW44,
   chapterT12,
   chapterT13,
   chapterT14,
+  chapterW48,
+  chapterW49,
+  chapterW50,
 
   chapterP01,
   chapterP02,

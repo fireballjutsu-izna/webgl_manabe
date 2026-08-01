@@ -4,210 +4,239 @@ export const chapterT11: Chapter = {
   slug: 't11-performance',
   part: 'threejs',
   number: 41,
-  title: '速くする',
-  goal: '重さの原因を数字で切り分けられるようになり、ドローコールとメモリの両方を計画的に減らせるようになります。',
-  requires: ['t10-scene-graph', '13-random'],
+  title: '速くする ― まず、測る',
+  goal: '重さの原因を CPU・GPU・メモリに切り分けられるようになり、「何ミリ秒削ればよいか」を数字で言えるようになります。',
+  requires: ['w40-dispose', '13-random'],
   threeApis: [
-    'InstancedMesh',
-    'InstancedMesh.setMatrixAt',
-    'BufferGeometryUtils',
-    'WebGLRenderer',
-    'Object3D.frustumCulled',
-    'LOD',
-    'BufferGeometry',
+    'WebGLRenderer.info',
+    'WebGLRenderer.setPixelRatio',
+    'Clock',
   ],
   mathRecall: [
-    { slug: '06-matrix', note: 'インスタンスの配置は 4x4 行列そのもの' },
-    { slug: '13-random', note: '大量配置はノイズや乱数で作る' },
+    { slug: 'b11-distance', note: '予算も超過も、割り算と引き算だけ' },
   ],
   blocks: [
     {
       kind: 'md',
       text: `
-## まず、どこが重いのかを知る
+## 「重い」は 3 つある
 
-「重い」には主に 3 つの原因があり、**対処法がまったく違います**。
+「重い」には主に $3$ つの原因があり、**対処法がまったく違います**。
 当てずっぽうで直そうとすると、時間だけが溶けます。
 
 - **CPU が忙しい** … 命令を送る回数（{{ドローコール}}）が多すぎる。**いちばん多い原因**
 - **GPU が忙しい** … 画素あたりの計算が重い。大きな画面、透明の重ね、重いシェーダ
 - **メモリが足りない** … テクスチャが大きすぎる、解放漏れ
 
-見分け方は簡単です。**ウィンドウを小さくして軽くなるなら GPU 側**、
-変わらないなら CPU 側（ドローコール）です。
+**この $3$ つは、直し方に何の共通点もありません。**
+ドローコールを $1000$ から $1$ に減らしても、原因が GPU 側なら $1$ ミリ秒も速くなりません。
+
+だから最初にやるのは、**どれなのかを決めること**です。
 `,
+    },
+    {
+      kind: 'md',
+      text: `
+## 切り分けは、ウィンドウの大きさで
+
+いちばん安上がりな実験がこれです。
+
+**ウィンドウを半分の大きさにして、軽くなるかどうかを見る。**
+
+- **軽くなった** → **GPU 側**。画素の数が効いている
+- **変わらない** → **CPU 側**。ドローコールか、JavaScript そのもの
+
+ウィンドウを縮めても、シーンの中身もドローコールも変わりません。
+変わるのは**塗る画素の数だけ**です。だからこの $1$ 回で切り分けられます。
+
+**シーンを何度も作り直すうちに重くなる**なら、
+それは $3$ つ目 ― [](#/ch/w40-dispose)の解放漏れです。
+`,
+    },
+    {
+      kind: 'md',
+      text: `
+## 数字を見る ― renderer.info
+
+\`renderer.info\` は、いま何が起きているかを教えてくれます。
+
+- \`info.render.calls\` … $1$ フレームのドローコール数
+- \`info.render.triangles\` … 三角形の数
+- \`info.memory.geometries\` / \`.textures\` … GPU に載っている数
+
+**まずこれを画面に出してください。数字を見ずに最適化を始めてはいけません。**
+
+目安として、ドローコールが $100$ を超えたら気にしはじめ、
+$1000$ を超えていたら確実に減らす価値があります。
+
+**そして、フレーム時間を測ってください。** これが本命です。
+`,
+    },
+    {
+      kind: 'formula',
+      tex: 't_{\\text{予算}} = \\frac{1000}{\\text{fps}} \\qquad \\Delta = t_{\\text{実測}} - t_{\\text{予算}}',
+      readAloud:
+        '目指す fps から、**$1$ フレームに使ってよいミリ秒**が決まります（$60$ fps なら $16.7$ ms）。実測との差 $\\Delta$ が、**削らなければならない量**です。',
+      worked: {
+        given:
+          'フレーム時間を測ったら **$1$ フレーム $24$ ms** でした。いまは何 fps で、$60$ fps にするには何 ms 削る必要があるでしょうか。',
+        steps: [
+          { calc: 'いまの fps = 1000 / 24' },
+          { calc: '            = 41.7 fps' },
+          { calc: '60 fps の予算 = 1000 / 60' },
+          { calc: '              = 16.7 ms' },
+          { calc: 'Δ = 24 - 16.7 = 7.3 ms', note: '削るべき量' },
+          { calc: '30 fps なら予算 33.3 ms' },
+          { calc: '  33.3 - 24 = 9.3 ms 余る' },
+        ],
+        result:
+          '**$41.7$ fps。$60$ fps にするには $7.3$ ms 削る必要があります。** ここが大事なところで、「速くする」という漠然とした話が、**$7.3$ ms という具体的な目標**に変わりました。何をどう削るかを決められるようになります ― たとえばポストプロセスが $5$ ms 使っているなら、それを外すだけで $7.3$ のうち $5$ が片づく。**逆に $0.2$ ms しか使っていないところをいくら磨いても、絶対に届きません。** なお $30$ fps でよいなら、いまのままで $9.3$ ms も余っています。**目標を決めずに測ると、いつまでも「もっと速く」が続きます。**',
+      },
     },
     {
       kind: 'callout',
       tone: 'tip',
-      title: 'renderer.info が教えてくれます',
+      title: 'フレーム時間は fps より読みやすい',
       text: `
-\`renderer.info.render.calls\` が 1 フレームのドローコール数、
-\`renderer.info.render.triangles\` が三角形の数です。
-**まずこれを画面に出してください。** 数字を見ずに最適化を始めてはいけません。
+fps は割り算の結果なので、変化の大きさが直感に合いません。
 
-目安として、ドローコールが 100 を超えたら気にしはじめ、
-1000 を超えていたら確実に減らす価値があります。
+120 fps → 60 fps は「半分」に見えますが、増えたのは 8.3 ms。
+30 fps → 20 fps も「3 分の 1 減った」ですが、増えたのは 16.7 ms ― 倍です。
+
+ミリ秒で見れば、足し算と引き算で扱えます。
+
+「この効果は 3 ms」「影で 4 ms」と積み上げれば、
+予算に収まるかどうかがその場で分かります。
 `,
     },
     {
-      kind: 'md',
-      text: `
-## ドローコール ― 回数を減らす
+      kind: 'sandbox',
+      title: '数字を出す ― 負荷を上げ下げして見る',
+      code: `import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-GPU に「これを描いて」と命令を送るたびに、CPU 側で準備の費用がかかります。
-**三角形 1000 個を 1 回で送る**のと、**1 個を 1000 回送る**のとでは、
-描く量は同じでも後者が圧倒的に重くなります。
+// 個別のメッシュを何個置くか。増やすとドローコールが増える
+const COUNT = 600;
 
-Three.js では、おおまかに**「メッシュ 1 つ＝ドローコール 1 回」**です。
-木を 1000 本置いたら 1000 回になります。
+// 画素の数に効く。1 にすると GPU 側が一気に軽くなる
+const PIXEL_RATIO = Math.min(window.devicePixelRatio, 2);
 
-そこで、**同じ形・同じ材質のものは 1 回にまとめます**。これを{{インスタンス化}}と呼び、\`InstancedMesh\` が担います。
-`,
-    },
-    {
-      kind: 'demo',
-      id: 'instancing-compare',
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a12);
+scene.fog = new THREE.Fog(0x0a0a12, 18, 46);
+
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 7, 20);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(PIXEL_RATIO);
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, 2, 0);
+
+const key = new THREE.DirectionalLight(0xffffff, 2.4);
+key.position.set(6, 10, 6);
+scene.add(key, new THREE.HemisphereLight(0x99bbff, 0x241f2e, 1.1));
+
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(90, 90),
+  new THREE.MeshStandardMaterial({ color: 0x232840, roughness: 0.95 }),
+);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
+
+// わざと 1 個ずつ Mesh を作る。ドローコールが COUNT ぶん増える
+const geo = new THREE.ConeGeometry(0.35, 1.5, 8);
+const mat = new THREE.MeshStandardMaterial({ color: 0x4a7c59, roughness: 0.7 });
+
+for (let i = 0; i < COUNT; i++) {
+  const cone = new THREE.Mesh(geo, mat);
+  const a = i * 2.399;                       // 黄金角でばらまく
+  const r = Math.sqrt(i / COUNT) * 32;
+  cone.position.set(Math.cos(a) * r, 0.75, Math.sin(a) * r);
+  cone.rotation.y = a;
+  scene.add(cone);
+}
+
+const readout = document.createElement('div');
+readout.style.cssText =
+  'position:fixed;left:12px;top:12px;padding:8px 12px;border-radius:8px;' +
+  'background:rgba(10,10,18,.82);color:#e8e8f2;font:13px/1.7 monospace;' +
+  'border:1px solid #3a3a5c;white-space:pre';
+document.body.appendChild(readout);
+
+// フレーム時間は 1 回だけ測ってもばらつく。ならして見る
+let avg = 0;
+let last = performance.now();
+
+renderer.setAnimationLoop(() => {
+  const now = performance.now();
+  const dt = now - last;
+  last = now;
+  avg = avg === 0 ? dt : avg * 0.92 + dt * 0.08;
+
+  controls.update();
+  renderer.render(scene, camera);
+
+  const r = renderer.info.render;
+  const budget = 1000 / 60;
+  readout.textContent =
+    'フレーム   ' + avg.toFixed(1) + ' ms  (' + (1000 / avg).toFixed(0) + ' fps)\\n' +
+    '60fps の予算 ' + budget.toFixed(1) + ' ms  差 ' + (avg - budget).toFixed(1) + ' ms\\n' +
+    'ドローコール ' + r.calls + '\\n' +
+    '三角形       ' + r.triangles.toLocaleString() + '\\n' +
+    '画素比       ' + renderer.getPixelRatio();
+});
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});`,
       caption:
-        '「描き方」を切り替えると、ドローコールの数字が跳ね上がったり 1 に戻ったりします。三角形の数はどちらも同じであることに注目してください。減っているのは命令の回数だけです。',
+        '**まず「全画面」で開いて、ウィンドウの大きさを変えてみてください。** フレーム時間が変われば GPU 側、変わらなければ CPU 側です。そのあと `COUNT` を $600 \\to 60$ にすると**ドローコールだけ**が減り、`PIXEL_RATIO` を $1$ にすると**画素だけ**が減ります。**どちらが効いたかを、数字で確かめてから直してください。**',
     },
     {
       kind: 'md',
       text: `
-## InstancedMesh ― 同じものを大量に置く
+## 平均だけを見ない
 
-使い方は素直です。**個数を先に決めて作り、1 つずつの配置を行列で渡す**だけ。
+フレーム時間の**平均が $14$ ms でも、体験は良くない**ことがあります。
 
-[](#/ch/06-matrix)でやった 4x4 行列が、そのまま出てきます。
-位置・回転・拡大をまとめて 1 つの行列にする、あの形です。
-`,
-    },
-    {
-      kind: 'code',
-      title: 'InstancedMesh で 1000 本の木を置く',
-      code: `const geometry = new THREE.ConeGeometry(0.4, 1.6, 8);
-const material = new THREE.MeshStandardMaterial({ color: 0x4a7c59 });
+$100$ フレームのうち $95$ が $10$ ms、$5$ が $90$ ms だと、平均は $14$ ms。
+けれど画面は $1$ 秒に $3$ 回、はっきり引っかかります。
 
-const trees = new THREE.InstancedMesh(geometry, material, 1000);
+**人が「重い」と感じるのは、平均ではなく引っかかりのほうです。**
 
-// 配置を組み立てるための使い捨てオブジェクト
-const dummy = new THREE.Object3D();
+引っかかりの原因は、たいてい**毎フレームやらなくてよいこと**です。
 
-for (let i = 0; i < 1000; i++) {
-  dummy.position.set(
-    THREE.MathUtils.randFloatSpread(80),
-    0.8,
-    THREE.MathUtils.randFloatSpread(80),
-  );
-  dummy.rotation.y = Math.random() * Math.PI * 2;
-  dummy.scale.setScalar(0.8 + Math.random() * 0.5);
+- ジオメトリやテクスチャを、そのフレームで初めて作った
+- シェーダのコンパイルが走った（そのマテリアルを初めて描いた）
+- ガベージコレクタが動いた（毎フレーム \`new\` していませんか）
 
-  dummy.updateMatrix();               // position/rotation/scale から行列を作る
-  trees.setMatrixAt(i, dummy.matrix); // i 番目の配置として登録する
-}
-
-scene.add(trees);
-
-// 途中で配置を変えたら、必ずこれを立てる
-trees.instanceMatrix.needsUpdate = true;
-
-// 1つずつ色を変えることもできる
-trees.setColorAt(0, new THREE.Color(0xffd166));
-trees.instanceColor.needsUpdate = true;`,
-    },
-    {
-      kind: 'callout',
-      tone: 'warn',
-      title: 'needsUpdate を忘れると変化が届きません',
-      text: `
-\`setMatrixAt\` はメモリ上の配列を書き換えるだけです。
-GPU へ送り直すには \`instanceMatrix.needsUpdate = true\` が必要です。
-
-逆に、**毎フレーム全部を更新するのは無駄**です。動かないものは最初に 1 回だけ設定し、
-動くものだけを別の InstancedMesh に分けると、更新の範囲を絞れます。
-`,
-    },
-    {
-      kind: 'md',
-      text: `
-## まとめる方法はもう1つ
-
-**まったく動かないもの**なら、そもそも 1 つのジオメトリに合体させてしまえます。
-\`BufferGeometryUtils.mergeGeometries()\` を使います。
-
-- **InstancedMesh** … 同じ形が大量にあり、**1 つずつ動かしたい**とき
-- **mergeGeometries** … 形はばらばらでもよく、**もう二度と動かさない**とき（建物・地形・柵）
-
-合体させると 1 つのメッシュになるので、個別に動かすことも、
-個別に消すこともできなくなります。そのかわり、いちばん軽くなります。
-`,
-    },
-    {
-      kind: 'code',
-      title: '動かないものを合体させる',
-      code: `import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
-
-const parts = [];
-
-for (let i = 0; i < 200; i++) {
-  const box = new THREE.BoxGeometry(1, 1, 1);
-  // 合体前に、それぞれの位置へ動かしておく
-  box.translate(
-    THREE.MathUtils.randFloatSpread(40),
-    0.5,
-    THREE.MathUtils.randFloatSpread(40),
-  );
-  parts.push(box);
-}
-
-// 200個 → 1個のジオメトリへ。ドローコールも 200 → 1
-const merged = BufferGeometryUtils.mergeGeometries(parts);
-scene.add(new THREE.Mesh(merged, material));
-
-// 元のジオメトリはもう要らない
-for (const part of parts) part.dispose();`,
-    },
-    {
-      kind: 'md',
-      text: `
-## GPU 側が重いとき
-
-ウィンドウを小さくすると軽くなるなら、画素あたりの計算が重すぎます。
-
-- **ピクセル比を下げる。** \`setPixelRatio(Math.min(devicePixelRatio, 2))\`。
-  1.5 まで落としても、たいてい見分けはつきません
-- **透明の重ねを減らす。** 透明な面が何枚も重なると、同じ画素を何度も塗り直します
-- **影の範囲と解像度を見直す。** [](#/ch/t05-light-shadow) でやったとおり、
-  範囲を狭めるのがいちばん効きます
-- **ライトを減らす。** ライト 1 つごとに全マテリアルの計算が増えます
-- **ポストプロセスを疑う。** 画面全体をもう一度処理するので、素直に重い
-
-**{{アンチエイリアス}}を切る**（\`antialias: false\`）のも、効果のわりに見た目の劣化が小さい手です。
-`,
-    },
-    {
-      kind: 'md',
-      text: `
-## 描かなくていいものを描かない
-
-- **{{視錐台カリング}}** … 画面の外にあるものは自動で省かれます（既定で有効）。
-  ただし、**動かさない大きなものを 1 つに合体させると効かなくなる**ことに注意してください。
-  地形をいくつかの塊に分けておくと、見えていない部分を省けます
-- **LOD** … 遠くにあるものを、粗いモデルに差し替える仕組み。\`THREE.LOD\` が用意されています
-- **描画そのものを止める** … [](#/ch/t06-loop-clock) で触れたとおり、
-  動きがないときは \`render\` を呼ばない
+**最初の $2$ つは、始まる前に一度描いておけば消えます。**
+画面の外で $1$ フレーム描く、あるいは \`renderer.compile(scene, camera)\` を呼びます。
 `,
     },
     {
       kind: 'callout',
       tone: 'warn',
-      title: 'メモリの解放漏れは、あとから効いてきます',
+      title: '毎フレーム new しない',
       text: `
-最初は快適でも、シーンを何度も作り直すうちに重くなっていくなら、
-[](#/ch/t10-scene-graph) の \`dispose()\` 漏れを疑ってください。
+描画ループの中で new THREE.Vector3() と書くと、
+60 fps で毎秒 60 個、10 か所あれば 600 個のごみが生まれます。
 
-\`renderer.info.memory.geometries\` と \`.textures\` を出してみると、
-**使っていないはずのものが増え続けている**のが見えます。ここが増え続けたら赤信号です。
+すぐには問題になりません。
+ガベージコレクタがまとめて掃除するとき、数ミリ秒止まります。
+
+これが「ときどき引っかかる」の正体です。
+
+使い回す変数をループの外に 1 つ作ってください。
+three 自身が Vector3 を引数に取る書き方（getSize(v) など）をしているのは、
+同じ理由です。
 `,
     },
     {
@@ -217,10 +246,13 @@ for (const part of parts) part.dispose();`,
 
 効果が大きい順に並べると、たいていこうなります。
 
-1. **モデルとテクスチャを軽くする**（読み込み時間にも効く。いちばん効果が大きい）
-2. **ドローコールをまとめる**（InstancedMesh / mergeGeometries）
-3. **ピクセル比と影の設定を見直す**
-4. **シェーダやポストプロセスを削る**
+1. **モデルとテクスチャを軽くする** … [](#/ch/w37-asset-cost)。読み込み時間にも効く
+2. **ドローコールをまとめる** … 次の $2$ 章
+3. **画素の数を減らす** … ピクセル比・影・ポストプロセス
+4. **シェーダを削る**
+
+**ただし、この順番は「よくある場合」でしかありません。**
+測った結果が違うことを言っているなら、**測ったほうが正しい。**
 
 そして最後にもう一度。**必ず数字を見てから始めてください。**
 思い込みで直したところは、たいてい原因ではありません。
@@ -229,20 +261,170 @@ for (const part of parts) part.dispose();`,
   ],
   exercises: [
     {
-      prompt: `デモで「描き方」を切り替えながら、個数を増やしてください。
-**ドローコール**と**三角形**の 2 つの数字が、それぞれどう動くかを見比べてください。`,
-      hint: '片方だけが変わります。',
-      answer: `三角形の数は**どちらもまったく同じ**で、ドローコールだけが「個数ぶん」から「1」に減ります。
-つまり速くなっているのは、GPU の仕事が減ったからではなく、**CPU から GPU への命令の回数が減ったから**です。
-「重いから頂点を減らす」の前に、**まず命令の回数を疑う**。これが最初に効く手です。`,
+      prompt: `フレーム時間を測ったら **$38$ ms** でした。
+
+1. いまは何 fps ですか。
+2. $60$ fps にするには何 ms 削る必要がありますか。
+3. $30$ fps でよいなら、何 ms 削ればよいですか。`,
+      hint: '$t_{\\text{予算}} = 1000 / \\text{fps}$、$\\Delta = t_{\\text{実測}} - t_{\\text{予算}}$。',
+      answer: `**1. $26.3$ fps　2. $21.3$ ms　3. $4.7$ ms**
+
+**1 ― いまの fps**
+
+$\\dfrac{1000}{38} = 26.3$ fps
+
+**2 ― $60$ fps を目指す**
+
+予算は $\\dfrac{1000}{60} = 16.7$ ms
+
+$\\Delta = 38 - 16.7 = 21.3$ ms
+
+**いまの半分以上を削る必要があります。**
+
+**3 ― $30$ fps でよいなら**
+
+予算は $\\dfrac{1000}{30} = 33.3$ ms
+
+$\\Delta = 38 - 33.3 = 4.7$ ms
+
+**$21.3$ と $4.7$ では、やることがまったく違います。**
+
+**なぜ目標を先に決めるのか**
+
+$4.7$ ms なら、ピクセル比を下げるか影の解像度を落とすだけで届きます ― **$30$ 分の作業**です。
+
+$21.3$ ms は、**作り方を変えないと届きません。**
+ドローコールをまとめ、ポストプロセスを外し、シェーダを削る ― **数日の作業**です。
+
+**目標を決めずに測ると、いつまでも「もっと速く」が続きます。**
+
+**どちらを目指すべきか**
+
+作品の性質で決めてください。
+
+- **視点をぐりぐり動かすもの** … $60$ fps。動かすと差がはっきり見える
+- **ゆっくり眺めるもの・見るだけのもの** … $30$ fps で十分なことが多い
+- **VR** … $72$ 〜 $90$ fps。ここは妥協できません
+
+**そして、スマートフォンで測ってください。**
+手元の PC で $60$ fps でも、スマートフォンでは $3$ 分の $1$ ということがふつうにあります。`,
     },
     {
-      prompt: '100 個の箱が、それぞれ**別の**\`MeshStandardMaterial\`（色だけ違う）を持っています。ジオメトリは共有しています。ドローコールはいくつになりますか。',
-      hint: '1 回のドローコールで描けるのは、同じジオメトリと同じマテリアルの組み合わせです。',
-      answer: `**100 回**です。ジオメトリを共有していても、マテリアルが別なら別々に描かれます。
-色を個別に持たせたいなら、\`InstancedMesh\` の \`setColorAt()\` を使うか、
-ジオメトリに頂点カラーを持たせてマテリアルを 1 つに揃えます。
-第3部のローポリの街は後者を使い、**数百棟をドローコール 1 回**で描いています。`,
+      prompt: `次の $3$ つの計測結果から、それぞれ**原因はどちら側**か、**次に何をするか**を答えてください。
+
+**A.** ウィンドウを半分にしても $24$ ms のまま。ドローコール $1{,}840$
+**B.** ウィンドウを半分にしたら $22$ ms → $9$ ms。ドローコール $37$
+**C.** 開いた直後は $12$ ms。画面を $10$ 回行き来したあと $40$ ms。ドローコールは変わらず $37$`,
+      hint: 'ウィンドウの大きさで変わるのは、何の数ですか。',
+      answer: `**A は CPU 側、B は GPU 側、C はメモリの解放漏れです。**
+
+**A ― CPU 側（ドローコール）**
+
+ウィンドウを縮めても変わらない ＝ **画素の数は関係ない。**
+
+ドローコール $1{,}840$ は明らかに多すぎます。
+$1$ 回あたりの準備の費用が積み上がって CPU を食い切っています。
+
+**次にやること**: 同じ形・同じ材質のものを \`InstancedMesh\` でまとめる。
+動かないものは \`mergeGeometries\` で合体させる。**次の $2$ 章の話です。**
+
+**B ― GPU 側（画素）**
+
+画素の数が $\\frac{1}{4}$（縦横それぞれ半分）になって $22 \\to 9$ ms。
+
+ドローコール $37$ は少ないので、CPU 側は問題ありません。
+
+**次にやること**: ピクセル比を下げる、透明の重ねを減らす、
+影の解像度と範囲を見直す、ポストプロセスを疑う。
+
+**C ― 解放漏れ**
+
+**開いた直後は速い**のが決定的です。シーンの中身は同じ（ドローコール $37$）なのに、
+行き来した回数だけ遅くなっている。
+
+**次にやること**: \`renderer.info.memory\` を出して、
+画面を切り替える前後で数字が戻るか確かめる。
+戻らなければ [](#/ch/w40-dispose)の \`dispose\` 漏れです。
+
+**この $3$ つを取り違えると、何日も無駄になります**
+
+A に対してピクセル比を下げても $1$ ミリ秒も変わりません。
+B に対して \`InstancedMesh\` を導入しても、同じく変わりません。
+
+そして C は、**どちらの手当てをしても直りません。**
+測り直すたびに数字が違うので、「直った気がする」を繰り返すことになります。
+
+**ウィンドウを縮める。$5$ 秒で終わる実験です。**`,
+    },
+    {
+      prompt: `フレーム時間の**平均が $14$ ms**なのに、「かくつく」と言われました。
+測り直すと、$100$ フレームのうち $95$ が $10$ ms、$5$ が **$90$ ms** です。
+
+1. 平均が $14$ ms になることを確かめてください。
+2. **何が起きていると考えられますか。** $3$ つ挙げてください。`,
+      hint: '$90$ ms かかったフレームは、他のフレームと何が違いますか。',
+      answer: `**1. 確かに $14$ ms。2. 作りかけの生成・シェーダのコンパイル・ガベージコレクタです。**
+
+**1 ― 平均の確認**
+
+$\\dfrac{95 \\times 10 + 5 \\times 90}{100} = \\dfrac{950 + 450}{100} = \\dfrac{1400}{100} = 14$ ms
+
+**平均は「$60$ fps の予算 $16.7$ ms 以内」に収まっています。**
+数字だけ見れば合格です。
+
+**それでも、$1$ 秒間に約 $3$ 回**（$60$ フレーム中 $3$ フレーム）、
+**$90$ ms ＝ $0$.$1$ 秒近く止まります。** 目にははっきり見えます。
+
+**人が「重い」と感じるのは、平均ではなく引っかかりのほうです。**
+
+**2 ― 原因の候補**
+
+**a. そのフレームで初めて何かを作った**
+
+ジオメトリやテクスチャを描画ループの中で生成していませんか。
+GPU への転送はその場で起きるので、大きなテクスチャなら $10$ ms 単位でかかります。
+
+**b. シェーダのコンパイルが走った**
+
+three はマテリアルを**初めて描くとき**にシェーダをコンパイルします。
+新しいマテリアルが画面に入った瞬間、そのフレームだけ跳ねます。
+
+**始まる前に \`renderer.compile(scene, camera)\` を呼ぶ**か、
+画面の外で $1$ フレーム描いておけば消えます。
+
+**c. ガベージコレクタ**
+
+描画ループの中で \`new THREE.Vector3()\` を書いていませんか。
+$60$ fps で $10$ か所なら毎秒 $600$ 個のごみが生まれ、
+たまったところで掃除が走ります ― **数ミリ秒、JavaScript が止まります。**
+
+使い回す変数をループの外に作ってください。
+
+**見つけ方**
+
+フレーム時間を**配列にためて、最悪値と上位 $5\\%$ を出してください。**
+
+平均だけを表示していると、この問題は永遠に見えません。
+`,
+      answerCode: `const times = [];
+let last = performance.now();
+
+renderer.setAnimationLoop(() => {
+  const now = performance.now();
+  times.push(now - last);
+  last = now;
+  if (times.length > 240) times.shift();
+
+  renderer.render(scene, camera);
+
+  // 平均だけでなく、悪いほうも見る
+  const sorted = [...times].sort((a, b) => a - b);
+  const p95 = sorted[Math.floor(sorted.length * 0.95)];
+  readout.textContent =
+    '平均 ' + (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) + ' ms\\n' +
+    '上位 5% ' + p95.toFixed(1) + ' ms\\n' +
+    '最悪 ' + sorted[sorted.length - 1].toFixed(1) + ' ms';
+});`,
     },
   ],
   quiz: [
@@ -259,28 +441,23 @@ for (const part of parts) part.dispose();`,
         '画素の数が減って軽くなったということは、画素あたりの処理が効いています。ピクセル比・透明の重ね・ポストプロセス・影を疑ってください。ドローコールが原因なら、大きさを変えても変わりません。',
     },
     {
-      q: '同じ木を1000本置きたいとき、ドローコールを1回に抑える方法はどれですか。',
-      choices: [
-        '`InstancedMesh` で1つにまとめる',
-        'ジオメトリとマテリアルを共有した Mesh を1000個作る',
-        '`visible` を切り替える',
-        'ピクセル比を下げる',
-      ],
+      q: 'フレーム時間が 24 ms でした。60 fps にするには何 ms 削りますか。',
+      choices: ['7.3 ms', '24 ms', '16.7 ms', '41.7 ms'],
       answer: 0,
       explain:
-        'ジオメトリを共有しても、メッシュが1000個あればドローコールは1000回です。InstancedMesh は「同じものを、違う配置で、まとめて1回」描く仕組みです。',
+        '60 fps の予算は 1000 / 60 = 16.7 ms。24 − 16.7 = 7.3 ms です。「速くする」を「7.3 ms 削る」に変えると、どこに手をつけるかを数字で決められます。',
     },
     {
-      q: '`setMatrixAt()` で配置を変えたのに、画面が変わりません。足りないのはどれですか。',
+      q: 'フレーム時間の平均は 14 ms なのに、かくついて見えます。まず何を疑いますか。',
       choices: [
-        '`instanceMatrix.needsUpdate = true`',
-        '`scene.add()` のやり直し',
-        '`renderer.render()` の呼び直し',
-        '`material.needsUpdate = true`',
+        '数フレームだけ極端に遅い（生成・シェーダのコンパイル・GC）',
+        'ドローコールが多い',
+        'テクスチャが大きい',
+        'モニタのリフレッシュレート',
       ],
       answer: 0,
       explain:
-        '`setMatrixAt` はメモリ上の配列を書き換えるだけです。GPU へ送り直すことを明示しないと反映されません。',
+        '95 フレームが 10 ms、5 フレームが 90 ms でも平均は 14 ms です。平均だけを表示していると永遠に見えません。上位 5% と最悪値を出してください。',
     },
   ],
 };

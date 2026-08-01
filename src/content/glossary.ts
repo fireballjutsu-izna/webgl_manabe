@@ -384,24 +384,29 @@ export const glossary: GlossaryEntry[] = [
   {
     term: 'ドローコール',
     def: 'GPU に「これを描いて」と命令を送る1回ぶん。三角形の数が同じでも、回数が多いほど CPU 側の負担が増える。',
-    chapter: 't11-performance',
+    chapter: 'w42-draw-calls',
   },
   {
     term: 'インスタンス化',
     reading: 'インスタンスか',
     def: '同じ形・同じ材質のものを、配置だけ変えてまとめて1回で描く仕組み。木を1000本置いてもドローコールは1回で済む。',
-    chapter: 't11-performance',
+    chapter: 'w43-instancing',
   },
   {
     term: '視錐台カリング',
     reading: 'しすいだいカリング',
     def: 'カメラに写らない範囲にあるものを、描く前に省く仕組み。既定で有効。ただし大きな塊にまとめてしまうと効かなくなる。',
-    chapter: 't11-performance',
+    chapter: 'w42-draw-calls',
   },
   {
     term: 'アンチエイリアス',
     def: '斜めの輪郭に出るギザギザをなめらかにする処理。切ると軽くなるが、輪郭が階段状になる。',
-    chapter: 't11-performance',
+    chapter: 'w44-gpu-cost',
+  },
+  {
+    term: 'オーバードロー',
+    def: '同じ画素を何度も塗り直してしまうこと。半透明が重なると深度テストで捨てられないため、重なった枚数だけ塗ることになる。',
+    chapter: 'w44-gpu-cost',
   },
   {
     term: 'シェーダ',
