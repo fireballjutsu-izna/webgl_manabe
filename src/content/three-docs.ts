@@ -124,6 +124,7 @@ const ADDONS: Record<string, string> = {
   DragControls: 'controls',
   GLTFLoader: 'loaders',
   DRACOLoader: 'loaders',
+  KTX2Loader: 'loaders',
   OBJLoader: 'loaders',
   FBXLoader: 'loaders',
   SVGLoader: 'loaders',

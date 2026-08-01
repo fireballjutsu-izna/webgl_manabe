@@ -115,8 +115,16 @@ import { chapterT07 } from './chapters/t07-controls.ts';
 import { chapterW28 } from './chapters/w28-camera-move.ts';
 import { chapterW29 } from './chapters/w29-controls-ux.ts';
 import { chapterT08 } from './chapters/t08-raycaster.ts';
+import { chapterW31 } from './chapters/w31-hover-click.ts';
+import { chapterW32 } from './chapters/w32-drag.ts';
+import { chapterW33 } from './chapters/w33-pick-cost.ts';
 import { chapterT09 } from './chapters/t09-loader.ts';
+import { chapterW35 } from './chapters/w35-fit-model.ts';
+import { chapterW36 } from './chapters/w36-loading-ui.ts';
+import { chapterW37 } from './chapters/w37-asset-cost.ts';
 import { chapterT10 } from './chapters/t10-scene-graph.ts';
+import { chapterW39 } from './chapters/w39-find-traverse.ts';
+import { chapterW40 } from './chapters/w40-dispose.ts';
 import { chapterT11 } from './chapters/t11-performance.ts';
 import { chapterT12 } from './chapters/t12-shader-intro.ts';
 import { chapterT13 } from './chapters/t13-vertex-shader.ts';
@@ -256,8 +264,16 @@ export const chapters: Chapter[] = [
   chapterW28,
   chapterW29,
   chapterT08,
+  chapterW31,
+  chapterW32,
+  chapterW33,
   chapterT09,
+  chapterW35,
+  chapterW36,
+  chapterW37,
   chapterT10,
+  chapterW39,
+  chapterW40,
   chapterT11,
   chapterT12,
   chapterT13,
