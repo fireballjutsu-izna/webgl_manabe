@@ -13,6 +13,22 @@ import { docsUrl, isKnownUnlinked } from '../src/content/three-docs.ts';
 import { demos } from '../src/demos/registry.ts';
 
 /** 1 章に置けるサンドボックスの上限。WebGL コンテキストを使い切らないための歯止め。 */
+/**
+ * サンドボックスのコードから、区切りコメントの見出し名だけを取り出す。
+ * src/ui/sandbox.ts の scanSections と同じ正規表現を使うこと
+ * （片方だけ直すと、地図に出ているのに検査を素通りする）。
+ */
+const SECTION_RE = /^[\t ]*\/\* [=-]{2,} (.+?) [=-]{2,} \*\/[\t ]*$/;
+
+function scanSections(code: string): string[] {
+  const names: string[] = [];
+  for (const line of code.split('\n')) {
+    const match = SECTION_RE.exec(line);
+    if (match?.[1]) names.push(match[1].trim());
+  }
+  return names;
+}
+
 const MAX_SANDBOXES = 3;
 
 const errors: string[] = [];
@@ -126,6 +142,31 @@ for (const chapter of chapters) {
       if (block.caption) texts.push(block.caption);
       if (!/\bimport\b/.test(block.code)) {
         warnings.push(`${where}: サンドボックスに import がありません（意図どおりか確認）`);
+      }
+
+      // コードの地図。区切りコメントは実行時に走査するので、
+      // ここでは「focus に書いた見出しが実在するか」だけを見る。
+      // 見出しの文言を直したときに guide が取り残されるのを、これで検出する
+      const sections = scanSections(block.code);
+      const focus = block.guide?.focus ?? [];
+
+      if (focus.length > 0 && sections.length < 2) {
+        errors.push(`${where}: guide.focus があるのに、コードに区切りコメントが 2 つ未満です`);
+      }
+      for (const name of focus) {
+        if (!sections.includes(name)) {
+          errors.push(
+            `${where}: guide.focus の "${name}" がコードの区切りコメントにありません` +
+              `（あるのは ${sections.map((n) => `"${n}"`).join('・') || 'なし'}）`,
+          );
+        }
+      }
+      const seen = new Set<string>();
+      for (const name of sections) {
+        if (seen.has(name)) {
+          warnings.push(`${where}: 区切りコメント "${name}" が重複しています（地図で見分けが付きません）`);
+        }
+        seen.add(name);
       }
     }
   }

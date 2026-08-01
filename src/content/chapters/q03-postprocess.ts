@@ -109,6 +109,7 @@ function animate() {
     {
       kind: 'sandbox',
       title: 'OutputPass を外すと、どうなるか',
+      guide: { focus: ['ポストプロセス'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -295,6 +296,7 @@ window.addEventListener('resize', () => {
     {
       kind: 'sandbox',
       title: '夜の街にブルームをかける',
+      guide: { focus: ['ポストプロセス'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';

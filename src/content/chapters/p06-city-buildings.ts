@@ -145,6 +145,7 @@ scene.add(new THREE.Mesh(merged, material));   // ドローコールは 1 回`,
     {
       kind: 'sandbox',
       title: '個別に描く / まとめて描く（ボタンで切り替え）',
+      guide: { focus: ['1つの街区から、積み上げる箱の一覧を作る', '箱の一覧を先に作る（描き方は後で決める）'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
@@ -439,6 +440,7 @@ function scaleBoxUv(geometry, w, h, d) {
     {
       kind: 'sandbox',
       title: '街ができました（昼・ドローコール 2 回）',
+      guide: { focus: ['窓のテクスチャ（8x8 個。半分ほどを点ける）', '街を組む'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';

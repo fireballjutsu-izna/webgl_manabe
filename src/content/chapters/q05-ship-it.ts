@@ -89,6 +89,7 @@ function guessQuality() {
     {
       kind: 'sandbox',
       title: '品質を切り替える',
+      guide: { focus: ['設定は1か所だけ', '1つの値から、全部を決める'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';

@@ -132,6 +132,7 @@ Group は行列を 1 つ増やすだけで、描画の重さはほぼ変わり�
     {
       kind: 'sandbox',
       title: '傾いた自転軸と、月の公転',
+      guide: { focus: ['傾き用の入れ物を1枚かぶせる', '月。位置を自分で計算する（軌道を自由にできる）'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -285,6 +286,7 @@ window.addEventListener('resize', () => {
     {
       kind: 'sandbox',
       title: '惑星ビューアー（完成）',
+      guide: { focus: ['惑星（傾き用の入れ物をかぶせる）', '月', 'ラベル', 'クリックで寄る'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
@@ -297,39 +299,6 @@ import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer
 const TEX_W = 1024;
 const TEX_H = 512;
 const SEA = 0.5;
-
-/* ---- 3次元ノイズ（3-02） ---- */
-
-function hash3(x, y, z, seed) {
-  let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(z, 1274126177);
-  h = Math.imul(h + Math.imul(seed, 2246822519), 2654435761);
-  h ^= h >>> 15;
-  h = Math.imul(h, 2246822519);
-  h ^= h >>> 13;
-  return (h >>> 0) / 4294967295;
-}
-function fade(t) { return t * t * (3 - 2 * t); }
-function mix(a, b, t) { return a + (b - a) * t; }
-
-function noise3(x, y, z, seed) {
-  const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
-  const u = fade(x - xi), v = fade(y - yi), w = fade(z - zi);
-  const x00 = mix(hash3(xi, yi, zi, seed), hash3(xi + 1, yi, zi, seed), u);
-  const x10 = mix(hash3(xi, yi + 1, zi, seed), hash3(xi + 1, yi + 1, zi, seed), u);
-  const x01 = mix(hash3(xi, yi, zi + 1, seed), hash3(xi + 1, yi, zi + 1, seed), u);
-  const x11 = mix(hash3(xi, yi + 1, zi + 1, seed), hash3(xi + 1, yi + 1, zi + 1, seed), u);
-  return mix(mix(x00, x10, v), mix(x01, x11, v), w);
-}
-function fbm(x, y, z, octaves, seed) {
-  let sum = 0, total = 0, amp = 1, freq = 1;
-  for (let i = 0; i < octaves; i++) {
-    sum += noise3(x * freq, y * freq, z * freq, seed + i * 101) * amp;
-    total += amp;
-    amp *= 0.5;
-    freq *= 2;
-  }
-  return sum / total;
-}
 
 /* ---- 地表・雲・街明かりを、1回のループでまとめて作る（3-02, 3-03） ---- */
 
@@ -690,9 +659,43 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
   labelRenderer.setSize(window.innerWidth, window.innerHeight);
-});`,
+});
+
+/* ---- 下ごしらえ：3次元ノイズ（3-02 で作ったもの。読み飛ばして可） ---- */
+
+function hash3(x, y, z, seed) {
+  let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(z, 1274126177);
+  h = Math.imul(h + Math.imul(seed, 2246822519), 2654435761);
+  h ^= h >>> 15;
+  h = Math.imul(h, 2246822519);
+  h ^= h >>> 13;
+  return (h >>> 0) / 4294967295;
+}
+function fade(t) { return t * t * (3 - 2 * t); }
+function mix(a, b, t) { return a + (b - a) * t; }
+
+function noise3(x, y, z, seed) {
+  const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
+  const u = fade(x - xi), v = fade(y - yi), w = fade(z - zi);
+  const x00 = mix(hash3(xi, yi, zi, seed), hash3(xi + 1, yi, zi, seed), u);
+  const x10 = mix(hash3(xi, yi + 1, zi, seed), hash3(xi + 1, yi + 1, zi, seed), u);
+  const x01 = mix(hash3(xi, yi, zi + 1, seed), hash3(xi + 1, yi, zi + 1, seed), u);
+  const x11 = mix(hash3(xi, yi + 1, zi + 1, seed), hash3(xi + 1, yi + 1, zi + 1, seed), u);
+  return mix(mix(x00, x10, v), mix(x01, x11, v), w);
+}
+function fbm(x, y, z, octaves, seed) {
+  let sum = 0, total = 0, amp = 1, freq = 1;
+  for (let i = 0; i < octaves; i++) {
+    sum += noise3(x * freq, y * freq, z * freq, seed + i * 101) * amp;
+    total += amp;
+    amp *= 0.5;
+    freq *= 2;
+  }
+  return sum / total;
+}
+`,
       caption:
-        '惑星や月をクリックすると寄っていき、何もない場所をクリックすると引きます。ドラッグでは寄りません（4 ピクセルの閾値）。`camera.position.lerp` の `0.06` を `0.5` にすると瞬間移動に近くなり、`0.01` にすると眠くなるほど遅くなります。月の `rotation.y = -a` を消すと、月がゆっくり自転して裏側が見えるようになります。最初にテクスチャを作るので、走り出すまで一瞬待ちます。',
+        '惑星や月をクリックすると寄っていき、何もない場所をクリックすると引きます。ドラッグでは寄りません（4 ピクセルの閾値）。`camera.position.lerp` の `0.06` を `0.5` にすると瞬間移動に近くなり、`0.01` にすると眠くなるほど遅くなります。月の `rotation.y = -a` を消すと、月がゆっくり自転して裏側が見えるようになります。最初にテクスチャを作るので、走り出すまで一瞬待ちます。 **コードの地図で色が付いているところが、この章で足したぶんです。** 残りは[](#/ch/p01-planet-setup)から[](#/ch/p03-planet-atmosphere)までで作ったものが、そのまま入っています。',
     },
     {
       kind: 'md',

@@ -142,6 +142,7 @@ B を採ります。書き方も短く、10 行ほどで済みます。
     {
       kind: 'sandbox',
       title: '街区を切り出す（真上から）',
+      guide: { focus: ['土地を再帰的に割る'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 

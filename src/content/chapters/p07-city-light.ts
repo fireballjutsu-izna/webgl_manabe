@@ -114,6 +114,7 @@ const daylight = smoothstep(-0.05, 0.25, sunDirection.y);`,
     {
       kind: 'sandbox',
       title: '時刻を動かす（スライダーで朝・昼・夕・夜）',
+      guide: { focus: ['時刻から、光と空と窓を導く', 'スライダー'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
@@ -123,105 +124,6 @@ const ROAD = 3.2;
 const MIN_LOT = 9;
 const SIDEWALK = 0.9;
 const PALETTE = [0x6b7280, 0x7c7468, 0x5f6b7a, 0x8a8378, 0x4f5560, 0x6e6a74];
-
-/* ---- 3-05, 3-06 で作ったもの ---- */
-
-function makeRandom(seed) {
-  let state = seed >>> 0;
-  return function () {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function splitLots(rect, rand, out) {
-  const canSplitX = rect.w > MIN_LOT * 2 + ROAD;
-  const canSplitZ = rect.d > MIN_LOT * 2 + ROAD;
-  if (!canSplitX && !canSplitZ) { out.push(rect); return out; }
-  const alongX = canSplitX && (!canSplitZ || rect.w >= rect.d);
-  const length = alongX ? rect.w : rect.d;
-  const cut = length * (0.35 + rand() * 0.3);
-  if (alongX) {
-    splitLots({ x: rect.x, z: rect.z, w: cut - ROAD / 2, d: rect.d }, rand, out);
-    splitLots({ x: rect.x + cut + ROAD / 2, z: rect.z, w: rect.w - cut - ROAD / 2, d: rect.d }, rand, out);
-  } else {
-    splitLots({ x: rect.x, z: rect.z, w: rect.w, d: cut - ROAD / 2 }, rand, out);
-    splitLots({ x: rect.x, z: rect.z + cut + ROAD / 2, w: rect.w, d: rect.d - cut - ROAD / 2 }, rand, out);
-  }
-  return out;
-}
-
-function buildingBoxes(lot, rand) {
-  const cx = lot.x + lot.w / 2;
-  const cz = lot.z + lot.d / 2;
-  const r = Math.min(1, Math.hypot(cx, cz) / (CITY * 0.62));
-  const height = 58 * Math.pow(1 - r, 1.8) * (0.45 + rand() * 0.75) + 3.5;
-  const stages = height > 26 ? 3 : (height > 14 ? 2 : 1);
-  const fractions = stages === 3 ? [0.55, 0.3, 0.15] : (stages === 2 ? [0.7, 0.3] : [1]);
-  const color = new THREE.Color(PALETTE[Math.floor(rand() * PALETTE.length)]);
-  color.offsetHSL(0, 0, (rand() - 0.5) * 0.08);
-
-  const boxes = [];
-  let w = Math.max(1.6, lot.w - SIDEWALK * 2);
-  let d = Math.max(1.6, lot.d - SIDEWALK * 2);
-  let bottom = 0.35;
-  for (let s = 0; s < stages; s++) {
-    const h = height * fractions[s];
-    boxes.push({ x: cx, y: bottom + h / 2, z: cz, w: w, h: h, d: d, color: color });
-    bottom += h;
-    w *= 0.72;
-    d *= 0.72;
-  }
-  return boxes;
-}
-
-function createWindowTexture() {
-  const cell = 16;
-  const grid = 8;
-  const canvas = document.createElement('canvas');
-  canvas.width = cell * grid;
-  canvas.height = cell * grid;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const rand = makeRandom(4242);
-  for (let gy = 0; gy < grid; gy++) {
-    for (let gx = 0; gx < grid; gx++) {
-      if (gx === 0 && gy === 0) continue;
-      if (rand() > 0.55) continue;
-      const level = 150 + Math.floor(rand() * 105);
-      ctx.fillStyle = 'rgb(' + level + ',' + Math.floor(level * 0.86) + ',' + Math.floor(level * 0.6) + ')';
-      ctx.fillRect(gx * cell + cell * 0.22, gy * cell + cell * 0.2, cell * 0.56, cell * 0.5);
-    }
-  }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.magFilter = THREE.NearestFilter;
-  return texture;
-}
-
-function scaleBoxUv(geometry, w, h, d) {
-  const uv = geometry.getAttribute('uv');
-  const cols = (size) => Math.max(1, Math.round(size / 2.4)) / 8;
-  const rows = Math.max(1, Math.round(h / 3.4)) / 8;
-  const faces = [
-    { u: cols(d), v: rows }, { u: cols(d), v: rows },
-    null, null,
-    { u: cols(w), v: rows }, { u: cols(w), v: rows },
-  ];
-  for (let f = 0; f < 6; f++) {
-    for (let i = 0; i < 4; i++) {
-      const at = f * 4 + i;
-      if (faces[f] === null) uv.setXY(at, 0.06, 0.06);
-      else uv.setXY(at, uv.getX(at) * faces[f].u, uv.getY(at) * faces[f].v);
-    }
-  }
-}
 
 /* ---- シーン ---- */
 
@@ -422,7 +324,107 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-});`,
+});
+
+/* ---- 下ごしらえ：3-05, 3-06 で作ったもの（読み飛ばして可） ---- */
+
+function makeRandom(seed) {
+  let state = seed >>> 0;
+  return function () {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function splitLots(rect, rand, out) {
+  const canSplitX = rect.w > MIN_LOT * 2 + ROAD;
+  const canSplitZ = rect.d > MIN_LOT * 2 + ROAD;
+  if (!canSplitX && !canSplitZ) { out.push(rect); return out; }
+  const alongX = canSplitX && (!canSplitZ || rect.w >= rect.d);
+  const length = alongX ? rect.w : rect.d;
+  const cut = length * (0.35 + rand() * 0.3);
+  if (alongX) {
+    splitLots({ x: rect.x, z: rect.z, w: cut - ROAD / 2, d: rect.d }, rand, out);
+    splitLots({ x: rect.x + cut + ROAD / 2, z: rect.z, w: rect.w - cut - ROAD / 2, d: rect.d }, rand, out);
+  } else {
+    splitLots({ x: rect.x, z: rect.z, w: rect.w, d: cut - ROAD / 2 }, rand, out);
+    splitLots({ x: rect.x, z: rect.z + cut + ROAD / 2, w: rect.w, d: rect.d - cut - ROAD / 2 }, rand, out);
+  }
+  return out;
+}
+
+function buildingBoxes(lot, rand) {
+  const cx = lot.x + lot.w / 2;
+  const cz = lot.z + lot.d / 2;
+  const r = Math.min(1, Math.hypot(cx, cz) / (CITY * 0.62));
+  const height = 58 * Math.pow(1 - r, 1.8) * (0.45 + rand() * 0.75) + 3.5;
+  const stages = height > 26 ? 3 : (height > 14 ? 2 : 1);
+  const fractions = stages === 3 ? [0.55, 0.3, 0.15] : (stages === 2 ? [0.7, 0.3] : [1]);
+  const color = new THREE.Color(PALETTE[Math.floor(rand() * PALETTE.length)]);
+  color.offsetHSL(0, 0, (rand() - 0.5) * 0.08);
+
+  const boxes = [];
+  let w = Math.max(1.6, lot.w - SIDEWALK * 2);
+  let d = Math.max(1.6, lot.d - SIDEWALK * 2);
+  let bottom = 0.35;
+  for (let s = 0; s < stages; s++) {
+    const h = height * fractions[s];
+    boxes.push({ x: cx, y: bottom + h / 2, z: cz, w: w, h: h, d: d, color: color });
+    bottom += h;
+    w *= 0.72;
+    d *= 0.72;
+  }
+  return boxes;
+}
+
+function createWindowTexture() {
+  const cell = 16;
+  const grid = 8;
+  const canvas = document.createElement('canvas');
+  canvas.width = cell * grid;
+  canvas.height = cell * grid;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const rand = makeRandom(4242);
+  for (let gy = 0; gy < grid; gy++) {
+    for (let gx = 0; gx < grid; gx++) {
+      if (gx === 0 && gy === 0) continue;
+      if (rand() > 0.55) continue;
+      const level = 150 + Math.floor(rand() * 105);
+      ctx.fillStyle = 'rgb(' + level + ',' + Math.floor(level * 0.86) + ',' + Math.floor(level * 0.6) + ')';
+      ctx.fillRect(gx * cell + cell * 0.22, gy * cell + cell * 0.2, cell * 0.56, cell * 0.5);
+    }
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.magFilter = THREE.NearestFilter;
+  return texture;
+}
+
+function scaleBoxUv(geometry, w, h, d) {
+  const uv = geometry.getAttribute('uv');
+  const cols = (size) => Math.max(1, Math.round(size / 2.4)) / 8;
+  const rows = Math.max(1, Math.round(h / 3.4)) / 8;
+  const faces = [
+    { u: cols(d), v: rows }, { u: cols(d), v: rows },
+    null, null,
+    { u: cols(w), v: rows }, { u: cols(w), v: rows },
+  ];
+  for (let f = 0; f < 6; f++) {
+    for (let i = 0; i < 4; i++) {
+      const at = f * 4 + i;
+      if (faces[f] === null) uv.setXY(at, 0.06, 0.06);
+      else uv.setXY(at, uv.getX(at) * faces[f].u, uv.getY(at) * faces[f].v);
+    }
+  }
+}
+`,
       caption:
         'スライダーを 0 付近（深夜）と 0.5（正午）で往復させてください。窓の明かりが夜だけ点き、日の出と日没で街が赤くなります。`buildingMaterial.emissiveIntensity` の行を消すと、夜が「ただの薄暗い昼」に落ちるのが分かります。時刻 0.26 あたりの、影がいちばん長い瞬間がいちばんきれいです。',
     },

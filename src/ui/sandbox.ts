@@ -23,6 +23,43 @@ export interface SandboxOptions {
   title?: string;
   /** 編集内容の保存先を分けるための鍵。章の slug とブロック番号から作る。 */
   storageKey: string;
+  /** 地図で「この章で新しいところ」として強調する区切りの見出し名。 */
+  focus?: string[];
+}
+
+/** コードの中の区切りコメント。行番号ではなく見出し名で扱う。 */
+export interface CodeSection {
+  name: string;
+  /** 1 から数えた行番号（画面に出さない。飛ぶためだけに使う） */
+  line: number;
+  /** その区切りが受け持つ行数 */
+  length: number;
+}
+
+const SECTION_RE = /^[\t ]*\/\* [=-]{2,} (.+?) [=-]{2,} \*\/[\t ]*$/;
+
+/**
+ * 区切りコメントを走査して、コードの地図を作る。
+ *
+ * 行番号を書き留めないのは、コードを 1 行足しただけで地図が古くなるため。
+ * 見出し名だけを頼りにして、位置は毎回ここで数え直す。
+ */
+export function scanSections(code: string): CodeSection[] {
+  const lines = code.split('\n');
+  const found: CodeSection[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const match = SECTION_RE.exec(lines[i] ?? '');
+    if (match?.[1]) found.push({ name: match[1].trim(), line: i + 1, length: 0 });
+  }
+
+  for (let i = 0; i < found.length; i++) {
+    const next = found[i + 1];
+    const start = found[i]!.line;
+    found[i]!.length = (next ? next.line : lines.length + 1) - start;
+  }
+
+  return found;
 }
 
 export interface SandboxInstance {
@@ -107,11 +144,62 @@ export function createSandbox(options: SandboxOptions): SandboxInstance {
 
   const consolePanel = el('div', { class: 'sandbox__console', hidden: true });
 
+  /* ---- コードの地図 ---- */
+
+  const focusSet = new Set(options.focus ?? []);
+  const map = el('div', { class: 'sandbox__map', hidden: true });
+
+  /** 指定の行が上のほうに来るように、エディタをスクロールさせる。 */
+  const jumpToLine = (line: number): void => {
+    const rows = textarea.value.split('\n').length;
+    const height = textarea.scrollHeight / Math.max(rows, 1);
+    textarea.scrollTop = Math.max(0, (line - 2) * height);
+    syncScroll();
+    textarea.focus({ preventScroll: true });
+    const index = textarea.value.split('\n').slice(0, line).join('\n').length;
+    textarea.setSelectionRange(index, index);
+  };
+
+  const syncMap = (): void => {
+    const sections = scanSections(textarea.value);
+    if (sections.length < 2) {
+      map.hidden = true;
+      map.replaceChildren();
+      return;
+    }
+
+    const chips: HTMLElement[] = [el('span', { class: 'sandbox__map-label' }, 'コードの地図')];
+
+    for (const section of sections) {
+      const chip = el(
+        'button',
+        {
+          class: 'sandbox__map-chip',
+          type: 'button',
+          'data-focus': focusSet.has(section.name) ? 'yes' : 'no',
+          title: `${section.length} 行`,
+        },
+        el('span', { class: 'sandbox__map-name' }, section.name),
+        el('span', { class: 'sandbox__map-len' }, `${section.length}`),
+      );
+      chip.addEventListener('click', () => jumpToLine(section.line));
+      chips.push(chip);
+    }
+
+    if (focusSet.size > 0) {
+      chips.push(el('span', { class: 'sandbox__map-note' }, '色が付いているのが、この章の読みどころです'));
+    }
+
+    map.replaceChildren(...chips);
+    map.hidden = false;
+  };
+
   const root = el(
     'div',
     { class: 'sandbox' },
     stage,
     bar,
+    map,
     editor,
     consolePanel,
   );
@@ -125,6 +213,7 @@ export function createSandbox(options: SandboxOptions): SandboxInstance {
     gutterInner.textContent = Array.from({ length: lines }, (_, i) => String(i + 1)).join('\n');
     // 行数に応じて高さを合わせる（長いコードはエディタ側でスクロールさせる）
     editor.style.setProperty('--editor-rows', String(Math.min(Math.max(lines, 6), 24)));
+    syncMap();
   };
 
   const syncScroll = (): void => {

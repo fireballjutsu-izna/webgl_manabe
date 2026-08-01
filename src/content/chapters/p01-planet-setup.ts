@@ -85,6 +85,7 @@ export const chapterP01: Chapter = {
     {
       kind: 'sandbox',
       title: '骨組みと星空',
+      guide: { focus: ['星空'] },
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 

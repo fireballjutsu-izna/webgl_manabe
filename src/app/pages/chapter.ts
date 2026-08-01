@@ -277,6 +277,7 @@ export const renderChapterPage: PageRenderer = (root, ctx) => {
           code: block.code,
           title: block.title,
           storageKey: `${chapter.slug}:${index}`,
+          focus: block.guide?.focus,
         });
         instances.push(sandbox);
         placeholder.replaceWith(sandbox.element);
