@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterT06: Chapter = {
   slug: 't06-loop-clock',
   part: 'threejs',
-  number: 13,
+  number: 20,
   title: '動かす ― ループと時間',
   goal: 'フレームレートに左右されない動かし方が身につき、どの端末でも同じ速さで動くアニメーションを書けるようになります。',
   requires: ['t01-first-scene', '08-interp'],

@@ -3,23 +3,21 @@ import type { Chapter } from '../types.ts';
 export const chapterT04: Chapter = {
   slug: 't04-texture',
   part: 'threejs',
-  number: 11,
+  number: 14,
   title: 'テクスチャ ― 面に絵を貼る',
-  goal: 'UV が何を表しているのかが分かり、繰り返し・向き・色空間で困らずにテクスチャを貼れるようになります。',
-  requires: ['t03-material'],
+  goal: 'UV が何を表しているのかが分かり、画像を使わずにコードでテクスチャを作れるようになります。',
+  requires: ['w13-color-space'],
   threeApis: [
     'Texture',
     'CanvasTexture',
     'TextureLoader',
-    'Texture.wrapS',
-    'Texture.repeat',
     'Texture.colorSpace',
-    'Texture.magFilter',
-    'MeshStandardMaterial',
+    'Texture.needsUpdate',
+    'Texture.dispose',
   ],
   mathRecall: [
-    { slug: '01-space', note: 'UV も「2つ組の座標」。考え方は同じ' },
-    { slug: '08-interp', note: 'ピクセルの間は補間で埋められる' },
+    { slug: '01-space', note: 'UV も「2 つ組の座標」。考え方は同じ' },
+    { slug: '08-interp', note: '三角形の内側は、頂点の UV の補間で埋まる' },
   ],
   blocks: [
     {
@@ -30,11 +28,14 @@ export const chapterT04: Chapter = {
 テクスチャを貼るには、**「画像のこの点を、面のこの点に合わせる」**という対応が要ります。
 その対応を記録しているのが **{{UV}}** です。
 
-UV は画像の中の位置を表す 2 つ組で、**左下が (0, 0)、右上が (1, 1)**。
-画像が何ピクセルであっても、常に 0〜1 で表します。
+UV は画像の中の位置を表す 2 つ組で、**左下が $(0, 0)$、右上が $(1, 1)$**。
+画像が $16$ ピクセルでも $4096$ ピクセルでも、**常に $0$〜$1$** で表します。
 
-そして UV は**頂点ごとに**持たされます。三角形の中はその 3 つを混ぜて埋められる——
-[](#/ch/08-interp)の lerp が、ここでも働いています。
+そして UV は[](#/ch/w08-attributes)でやった**属性**の 1 つとして、
+**頂点ごとに**持たされます。itemSize は 2 です。
+
+三角形の中はその 3 つを混ぜて埋められる ―
+[](#/ch/08-interp)の補間が、ここでも働いています。
 `,
     },
     {
@@ -42,9 +43,30 @@ UV は画像の中の位置を表す 2 つ組で、**左下が (0, 0)、右上�
       tone: 'analogy',
       title: '型紙とシール',
       text: `
-立体に紙を貼るとき、紙のどこを立体のどこに合わせるかを決めますね。UV はその対応表です。
+立体に紙を貼るとき、紙のどこを立体のどこに合わせるかを決めますね。
+UV はその対応表です。
+
 球のように「平らな紙では包めない形」だと、どこかで必ず伸びたり歪んだりします。
 世界地図で北極付近が大きく歪むのと、まったく同じ理由です。
+
+だから UV には「正解」がありません。どこを歪ませるかの選択があるだけです。
+`,
+    },
+    {
+      kind: 'md',
+      text: `
+## なぜ、そこまでして絵を貼るのか
+
+理由は 1 つです。**三角形を増やさずに、情報量を増やせるから。**
+
+$1024 \\times 1024$ のテクスチャは、**100 万個の色**を持てます。
+同じ情報を頂点で持とうとしたら、$100$ 万頂点 ―
+[](#/ch/w07-index)で見たとおり、それだけで $32$MB です。
+
+テクスチャなら $4$MB。しかも**三角形は 2 枚のままでいい。**
+
+**「形は粗く、絵で細かく」** ― これが 3D の基本戦略です。
+このあと出てくる法線マップ・粗さマップも、すべて同じ考え方でできています。
 `,
     },
     {
@@ -52,12 +74,15 @@ UV は画像の中の位置を表す 2 つ組で、**左下が (0, 0)、右上�
       text: `
 ## 画像はコードでも作れる
 
-テクスチャは画像ファイルから読むのが普通ですが、**\`<canvas>\` に描いた絵をそのまま
-テクスチャにする**こともできます。これが \`CanvasTexture\` です。
+テクスチャは画像ファイルから読むのが普通ですが、
+**\`<canvas>\` に描いた絵をそのままテクスチャにする**こともできます。
+これが \`CanvasTexture\` です。
 
 このサイトのサンドボックスでは外部ファイルを読めないので、以下はすべてこの方法を使います。
-実務でも、市松模様・グラデーション・文字ラベルなど「わざわざ画像を用意するほどでもないもの」
-にはとても便利です。
+
+**実務でも便利です。** 市松模様・グラデーション・文字ラベル・ミニマップ ―
+「わざわざ画像を用意するほどでもないもの」や
+「実行時にしか内容が決まらないもの」には、これがいちばん素直です。
 `,
     },
     {
@@ -69,8 +94,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0a12);
 
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(2.5, 2, 4);
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(3, 2.4, 4.5);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -97,23 +122,22 @@ function checkerTexture(size = 256, cells = 8) {
       ctx.fillRect(x * cell, y * cell, cell, cell);
     }
   }
-  // 左下が UV の (0,0)。目印を置いて向きを確かめる
+
+  // 向きの目印を 2 つ置く。canvas の左上が UV の (0, 1) 側になる
   ctx.fillStyle = '#ffd166';
   ctx.beginPath();
-  ctx.arc(cell * 0.5, size - cell * 0.5, cell * 0.3, 0, Math.PI * 2);
+  ctx.arc(cell * 0.5, size - cell * 0.5, cell * 0.3, 0, Math.PI * 2);   // UV の (0,0)
   ctx.fill();
 
+  ctx.fillStyle = '#ff6b8a';
+  ctx.fillRect(size - cell * 0.8, cell * 0.2, cell * 0.6, cell * 0.6);  // UV の (1,1)
+
   const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;  // 色として使うなら必ず指定する
+  texture.colorSpace = THREE.SRGBColorSpace;   // 色として使うなら必ず指定する
   return texture;
 }
 
 const texture = checkerTexture();
-
-// 繰り返しの設定。repeat を 1 より大きくするなら wrap も要る
-texture.wrapS = THREE.RepeatWrapping;
-texture.wrapT = THREE.RepeatWrapping;
-texture.repeat.set(1, 1);   // ← 2, 2 にすると模様が細かくなります
 
 const box = new THREE.Mesh(
   new THREE.BoxGeometry(2, 2, 2),
@@ -121,12 +145,14 @@ const box = new THREE.Mesh(
 );
 scene.add(box);
 
-function animate() {
-  requestAnimationFrame(animate);
+console.log('画像の大きさ', texture.image.width, 'x', texture.image.height);
+console.log('UV の itemSize', box.geometry.attributes.uv.itemSize);
+console.log('頂点数', box.geometry.attributes.uv.count);
+
+renderer.setAnimationLoop(() => {
   controls.update();
   renderer.render(scene, camera);
-}
-animate();
+});
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -134,166 +160,108 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });`,
       caption:
-        '黄色い丸が UV の (0, 0) 側です。`texture.repeat.set(2, 2)` にすると模様が 4 倍細かくなり、`texture.offset.set(0.5, 0)` にすると横にずれます。`BoxGeometry` を `SphereGeometry(1.2, 32, 20)` に変えると、極で UV が潰れる様子が見えます。',
+        '**黄色い丸が UV の $(0,0)$、ピンクの四角が $(1,1)$ です。** 6 面すべてに同じ絵が貼られていて、目印の位置から各面の UV の向きが読めます。`cells` を 4 や 16 に変えると模様の細かさが変わります。`BoxGeometry` を `SphereGeometry(1.4, 32, 20)` にすると、極で UV が潰れる様子が見えます。',
     },
     {
       kind: 'md',
       text: `
-## repeat と wrap ― セットで使う
+## 色として使う画像には、colorSpace を指定する
 
-床のタイルのように**同じ模様を敷き詰めたい**とき、大きな画像を用意する必要はありません。
-小さな 1 枚を繰り返せば済みます。
+[](#/ch/w13-color-space)でやったとおり、色には 2 つの目盛りがあります。
 
-- \`texture.repeat.set(4, 4)\` … 縦横 4 回ずつ繰り返す
-- \`texture.wrapS\` / \`wrapT\` … 0〜1 の外側をどう扱うか
+three は色コードなら自動で判断できますが、**画像は判断できません。**
+同じ画像ファイルが、色として使われることもデータとして使われることもあるからです。
 
-**この 2 つはセットです。** 既定の wrap は「端の色を引き伸ばす」なので、
-repeat を上げても繰り返さず、端が伸びるだけになります。
-繰り返したいなら \`THREE.RepeatWrapping\` を指定してください。
+- **色として使う**（\`map\`、\`emissiveMap\`）→ \`texture.colorSpace = THREE.SRGBColorSpace\`
+- **データとして使う**（\`normalMap\`、\`roughnessMap\`、\`metalnessMap\`、\`aoMap\`）→ **指定しない**
 
-S と T は、それぞれ横方向・縦方向のことです（U と V の別名だと思って構いません）。
+**指定を忘れると、全体が明るく白っぽくなります。**
+sRGB で書かれた値を「もうリニアだ」として扱ってしまい、変換を 1 回飛ばすからです。
+
+逆に、データに指定すると**値が歪みます。**
+法線マップなら凹凸の向きが狂い、粗さマップなら質感が変わります。
 `,
+    },
+    {
+      kind: 'formula',
+      tex: '\\text{メモリ} \\;=\\; w \\times h \\times 4 \\times \\tfrac{4}{3}',
+      readAloud:
+        'テクスチャが GPU 上で占めるバイト数です。1 画素あたり RGBA の 4 バイト。ファイルの中では圧縮されていても、GPU に載るときは展開されます。最後の 3 分の 4 は、次の章で出てくるミップマップの分です。',
+      worked: {
+        given: '$4096 \\times 4096$ の画像と、$1024 \\times 1024$ の画像で、GPU 上の大きさを比べます。',
+        steps: [
+          { calc: '4096 x 4096 = 16,777,216 画素' },
+          { calc: 'x 4 バイト = 67,108,864 = 67.1 MB' },
+          { calc: 'ミップマップ込み x 4/3 = 89.5 MB' },
+          { calc: '1024 x 1024 = 1,048,576 画素' },
+          { calc: 'x 4 x 4/3 = 5.59 MB' },
+          { calc: '89.5 / 5.59 = 16 倍' },
+        ],
+        result:
+          '**$4$K のテクスチャ 1 枚で $89$MB**、$1$K の **16 倍**です。ここが盲点になりがちで、**ファイルは $2$MB の JPEG でも、GPU に載ると $89$MB** になります。圧縮されているのはファイルの中だけだからです。**画面上で数センチにしか映らないものに $4$K は要りません。** 縦横を半分にすればメモリは 4 分の 1。「必要な解像度まで落とす」のは、いちばん効く軽量化のひとつです。',
+      },
     },
     {
       kind: 'callout',
       tone: 'warn',
-      title: '色として使うテクスチャには colorSpace を指定する',
+      title: 'テクスチャも dispose が要ります',
       text: `
-色（\`map\`）に使う画像には \`texture.colorSpace = THREE.SRGBColorSpace\` を指定してください。
-忘れると、**全体が妙に明るく白っぽくなります**。
+テクスチャは GPU にメモリを確保します。
+使い終えたら texture.dispose() を呼んでください。
 
-いっぽう、粗さ・金属度・法線マップなど「色ではなくデータ」を入れた画像には**指定しません**。
-これらは数値としてそのまま読む必要があるためです。
-\`TextureLoader\` で読み込んだ画像も同じで、色に使うものだけ指定します。
+とくに CanvasTexture を毎フレーム作り直すコードは危険です。
+古いものが解放されないまま積み上がり、数秒でメモリを食い尽くします。
+
+canvas の中身を書き換えたいだけなら、作り直さず
+texture.needsUpdate = true を立ててください。同じ入れ物を使い回せます。
 `,
     },
     {
-      kind: 'md',
-      text: `
-## 拡大したときのぼやけ ― フィルタ
-
-小さな画像を大きく引き伸ばすと、既定ではなめらかにぼやけます（線形補間）。
-写真ならこれで正解ですが、**ドット絵やはっきりした模様では困ります**。
-
-そのときは \`texture.magFilter = THREE.NearestFilter\` を指定します。
-補間せず、いちばん近いピクセルの色をそのまま使うので、輪郭がくっきり残ります。
-`,
-    },
-    {
-      kind: 'md',
-      text: `
-## 色以外にも貼れる
-
-\`map\`（色）以外にも、マテリアルはいろいろな画像を受け取ります。
-
-- **normalMap** … 面の凹凸を法線の傾きとして記録した画像。
-  **形は変えずに、光の当たり方だけで凹凸に見せます**。レンガや布に絶大な効果があります
-- **roughnessMap** / **metalnessMap** … 場所ごとに粗さ・金属度を変える
-- **aoMap** … 隅の暗がりをあらかじめ焼き付けたもの
-- **emissiveMap** … 自分で光っている部分
-
-とくに \`normalMap\` は、**三角形を増やさずに情報量を増やせる**ため、
-実用上いちばん効果が大きい貼り物です。
-`,
-    },
-    {
-      kind: 'sandbox',
-      title: '法線マップで凹凸を作る（形は平らなまま）',
+      kind: 'code',
+      title: '中身が変わるテクスチャは、作り直さない',
       code: `import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0a12);
+const canvas = document.createElement('canvas');
+canvas.width = canvas.height = 256;
+const ctx = canvas.getContext('2d');
 
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 2.6, 4.2);
+const texture = new THREE.CanvasTexture(canvas);   // 1 回だけ作る
+texture.colorSpace = THREE.SRGBColorSpace;
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+const material = new THREE.MeshBasicMaterial({ map: texture });
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
+function drawScore(score) {
+  ctx.fillStyle = '#12121f';
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.fillStyle = '#4fd6ff';
+  ctx.font = 'bold 64px monospace';
+  ctx.fillText(String(score), 40, 140);
 
-const key = new THREE.DirectionalLight(0xffffff, 3);
-key.position.set(2, 3, 2);
-scene.add(key, new THREE.AmbientLight(0xffffff, 0.15));
-
-// 法線マップは「傾きを色で記録した画像」。
-// R が横の傾き、G が縦の傾き、B が真上成分。傾きゼロは (0.5, 0.5, 1.0) になる
-function bumpNormalMap(size = 256) {
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  const image = ctx.createImageData(size, size);
-
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      // 波打った高さを想定して、その傾きを色にする
-      const nx = Math.cos((x / size) * Math.PI * 8) * 0.5;
-      const ny = Math.cos((y / size) * Math.PI * 8) * 0.5;
-      const i = (y * size + x) * 4;
-      image.data[i] = (nx * 0.5 + 0.5) * 255;
-      image.data[i + 1] = (ny * 0.5 + 0.5) * 255;
-      image.data[i + 2] = 255;
-      image.data[i + 3] = 255;
-    }
-  }
-  ctx.putImageData(image, 0, 0);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  // 法線マップは「色」ではなくデータなので colorSpace は指定しない
-  return texture;
+  texture.needsUpdate = true;    // 送り直す。作り直さない
 }
 
-const normalMap = bumpNormalMap();
+// 悪い例：毎回 new すると、古いテクスチャが GPU に残り続ける
+// material.map = new THREE.CanvasTexture(canvas);
 
-// 左：ただの平らな板　右：同じ板に法線マップだけを足したもの
-const geometry = new THREE.PlaneGeometry(1.8, 1.8);
-
-const plain = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
-  color: 0xc0c8d8, roughness: 0.5,
-}));
-plain.position.x = -1.1;
-plain.rotation.x = -Math.PI / 3;
-
-const bumped = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
-  color: 0xc0c8d8, roughness: 0.5, normalMap,
-}));
-bumped.position.x = 1.1;
-bumped.rotation.x = -Math.PI / 3;
-
-scene.add(plain, bumped);
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
-}
-animate();
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});`,
-      caption:
-        '右の板は頂点がまったく増えていません。法線だけを画像で差し替えて、光の当たり方を変えています。視点を横から見ると、右の板も本当は真っ平らだと分かります。',
+// 片付け
+texture.dispose();
+material.dispose();`,
     },
     {
       kind: 'md',
       text: `
 ## ファイルから読むとき
 
-実際のプロジェクトでは \`TextureLoader\` を使います。読み込みは**非同期**なので、
-すぐには絵が出ません（[](#/ch/t09-loader)で詳しく扱います）。
+実際のプロジェクトでは \`TextureLoader\` を使います。
+読み込みは**非同期**なので、すぐには絵が出ません（[](#/ch/t09-loader)で詳しく扱います）。
 `,
     },
     {
       kind: 'code',
       title: 'TextureLoader で読み込む',
-      code: `const loader = new THREE.TextureLoader();
+      code: `import * as THREE from 'three';
+
+const loader = new THREE.TextureLoader();
 
 // 色に使うものは colorSpace を指定する
 const colorMap = loader.load('/textures/brick_color.jpg');
@@ -313,64 +281,150 @@ const material = new THREE.MeshStandardMaterial({
 loader.load('/textures/brick_color.jpg', (texture) => {
   texture.colorSpace = THREE.SRGBColorSpace;
   material.map = texture;
-  material.needsUpdate = true;
+  material.needsUpdate = true;      // マップの付け外しは、これが要る
 });`,
     },
     {
-      kind: 'callout',
-      tone: 'tip',
-      title: '大きすぎる画像は重いだけ',
+      kind: 'md',
       text: `
-4096×4096 の画像は、メモリ上でおよそ 64MB を占めます（圧縮されるのはファイルの中だけで、
-GPU に載るときは展開されます）。画面上で数センチにしか映らないものに
-4K のテクスチャは要りません。**必要な解像度まで落とす**のが、いちばん効く軽量化です。
+## この先の 4 章
+
+テクスチャは「貼る」だけでは終わりません。困りごとが 4 つ待っています。
+
+- **UV が思ったようになっていない** → 次の章
+- **タイルを敷き詰めたい・向きを直したい** → その次
+- **遠くがちらつく・近くがぼける** → その次
+- **凹凸を出したいが、三角形は増やしたくない** → 最後
+
+順に片付けます。
 `,
     },
   ],
   exercises: [
     {
-      prompt: `1 つ目のサンドボックスで \`texture.repeat.set(2, 2)\` にしてください。模様が細かくなります。
-つぎに \`texture.wrapS\` と \`wrapT\` の 2 行を消してください。何が起きますか。`,
-      hint: '繰り返しの設定を消すと、1 を超えた UV はどう扱われるでしょう。',
-      answer: `繰り返されなくなり、**端の 1 列の色が引き伸ばされます**（既定の \`ClampToEdgeWrapping\`）。
-\`repeat\` は「UV を何倍にするか」を決めるだけで、1 を超えた UV をどう扱うかは \`wrapS\` / \`wrapT\` が決めます。
-**この 2 つはいつも組で必要**です。「repeat を上げたのに模様が増えず、端だけ伸びた」はこれです。`,
-    },
-    {
-      prompt: '1 つ目のサンドボックスから \`texture.colorSpace = THREE.SRGBColorSpace;\` の行を消してください。見た目はどう変わりますか。',
+      prompt: `サンドボックスから \`texture.colorSpace = THREE.SRGBColorSpace;\` の行を消してください。
+見た目はどう変わりますか。**なぜ**でしょう。`,
       hint: 'なくても絵は出ます。違いは明るさの出方です。',
       answer: `**全体が明るく、白っぽく浅い色**になります。
-色として作った画像は sRGB で書かれているのに、それを指定しないと three が「もう線形になっている数値」として扱い、
-変換を 1 回飛ばしてしまうからです。**色に使う画像には必ず指定し、データに使う画像には指定しない**。
-この理屈は [](#/ch/q02-color)「色の通り道」で最後まで追いかけます。`,
+
+canvas に描いた \`#4fd6ff\` という色は、**sRGB の目盛りで書かれています。**
+これは CSS の色なので当然です。
+
+three は計算をリニアでやるので、受け取った値を**リニアに直す**必要があります。
+\`colorSpace = THREE.SRGBColorSpace\` は「この画像は sRGB です」と伝える指定です。
+
+指定しないと、three は**「もうリニアになっている値だ」**として扱い、
+変換を 1 回飛ばします。
+
+**数字で見ると** … $\\text{0x4f} = 79$、$79/255 = 0.31$。
+正しく変換すれば $0.31^{2.2} = 0.0776$ になるところが、$0.31$ のまま使われます。
+**4 倍明るい**わけです。
+
+明るいだけでなく、**暗い部分ほど強く持ち上がる**ので、
+コントラストが浅くなって「洗いざらしたような」見た目になります。
+
+**逆をやると、もっと分かりやすく壊れます。**
+法線マップに \`SRGBColorSpace\` を指定すると、
+「傾き」を表す数値が $2.2$ 乗されて歪み、**凹凸の向きが狂います。**
+
+**色に使う画像には指定し、データに使う画像には指定しない。**
+この理屈は[](#/ch/q02-color)で最後まで追いかけます。`,
     },
     {
-      prompt: '2 つ目のサンドボックス（法線マップ）で、\`bumpNormalMap\` の中に \`texture.colorSpace = THREE.SRGBColorSpace;\` を**足して**ください。凹凸はどうなりますか。',
-      hint: '法線マップの RGB は、色ではなく「傾き」の数値です。',
-      answer: `凹凸の向きが狂い、光の当たり方がおかしくなります。
-法線マップの RGB は色ではなく**ベクトルの成分をそのまま入れた数値**なので、sRGB の変換をかけると値が歪みます。
-\`map\` には指定し、\`normalMap\` \`roughnessMap\` \`metalnessMap\` には**指定しない**、と覚えてください。`,
+      prompt: `$2048 \\times 2048$ のテクスチャを **8 枚**使っています。
+GPU 上で合計何 MB になりますか。すべて $512 \\times 512$ に落とすと、何 MB になりますか。`,
+      hint: 'ミップマップ込みで $w \\times h \\times 4 \\times 4/3$ です。',
+      answer: `**$179$MB → $11.2$MB。$16$ 分の 1 になります。**
+
+**$2048 \\times 2048$ 一枚**
+
+$2048 \\times 2048 = 4{,}194{,}304$ 画素
+$\\times 4$ バイト $= 16{,}777{,}216 = 16.8$MB
+ミップマップ込みで $\\times 4/3 = 22.4$MB
+
+**8 枚で $179$MB。**
+
+**$512 \\times 512$ 一枚**
+
+$512 \\times 512 \\times 4 \\times 4/3 = 1{,}398{,}101 = 1.40$MB
+
+**8 枚で $11.2$MB。**
+
+**$179 / 11.2 = 16$ 倍。**
+
+縦横を $1/4$ にすると、面積は $1/16$。**メモリは面積に比例します。**
+
+**なぜこれが重要か**
+
+- スマートフォンの GPU メモリは、実質 $200$〜$500$MB 程度しか使えません。
+  **テクスチャだけで $179$MB は、それだけで危険水域**です
+- 足りなくなると、ブラウザがコンテキストを失って**画面が真っ黒になります**
+- 転送にも時間がかかり、初回表示が遅くなります
+
+**判断の基準** … 「画面上で最大何ピクセルに映るか」。
+$300$ ピクセルにしか映らないものに $2048$ は要りません。
+$512$ で十分です。
+
+**なお、圧縮テクスチャ（KTX2 / Basis）を使えば $1/4$〜$1/6$ になります。**
+展開せずに GPU に載せられる形式で、大量のテクスチャを使うなら必須の手です。`,
+    },
+    {
+      prompt: `スコア表示を \`CanvasTexture\` で作りました。毎フレーム数字を描き直します。
+次のコードには**重大な問題**があります。何ですか。
+
+\`function update(score) { ctx.fillText(score, 10, 50); material.map = new THREE.CanvasTexture(canvas); }\``,
+      hint: '毎フレーム作られたテクスチャは、どこへ行きますか。',
+      answer: `**毎フレーム新しいテクスチャが GPU に確保され、古いものが解放されません。**
+
+\`new THREE.CanvasTexture(canvas)\` は、そのたびに
+**canvas の中身を GPU へ転送し、新しい領域を確保します。**
+
+$256 \\times 256$ でも 1 枚 $0.35$MB。毎秒 60 回なら **毎秒 $21$MB**。
+**10 秒で $210$MB** です。数十秒でメモリを食い尽くし、
+コンテキストが失われて画面が真っ黒になります。
+
+しかも \`material.map\` を差し替えているので、
+毎フレーム \`needsUpdate\` 相当のシェーダ確認まで走ります。
+
+**直し方**
+
+テクスチャは**最初に 1 回だけ作り**、以後は \`needsUpdate = true\` を立てます。
+これは[](#/ch/w09-geometry-edit)の \`BufferAttribute.needsUpdate\` とまったく同じ仕組みです。
+
+**「入れ物は使い回し、中身が変わったことだけ伝える」** ―
+three 全体を貫く考え方です。
+
+**さらに言えば、毎フレーム描き直す必要もありません。**
+スコアが変わったときだけ \`drawScore()\` を呼べば、
+canvas への描画も転送も、変化した瞬間だけで済みます。`,
+      answerCode: `// テクスチャは 1 回だけ作る
+const texture = new THREE.CanvasTexture(canvas);
+texture.colorSpace = THREE.SRGBColorSpace;
+const material = new THREE.MeshBasicMaterial({ map: texture });
+
+let lastScore = -1;
+
+function update(score) {
+  if (score === lastScore) return;    // 変わったときだけ
+  lastScore = score;
+
+  ctx.fillStyle = '#12121f';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#4fd6ff';
+  ctx.font = 'bold 64px monospace';
+  ctx.fillText(String(score), 10, 100);
+
+  texture.needsUpdate = true;         // 送り直すだけ
+}`,
     },
   ],
   quiz: [
     {
-      q: 'UV 座標の (0, 0) は画像のどこを指しますか。',
+      q: 'UV 座標の $(0, 0)$ は画像のどこを指しますか。',
       choices: ['左下', '左上', '中心', '右上'],
       answer: 0,
       explain:
-        '左下が (0, 0)、右上が (1, 1) です。画像のピクセル数に関係なく、常に 0〜1 で表します。上下が逆に見えるときは、この向きの違いを疑ってください。',
-    },
-    {
-      q: '`texture.repeat.set(4, 4)` を指定したのに繰り返されず、端が引き伸ばされます。足りないのはどれですか。',
-      choices: [
-        '`wrapS` と `wrapT` に `THREE.RepeatWrapping` を指定すること',
-        '`colorSpace` の指定',
-        '`magFilter` の指定',
-        'テクスチャの読み直し',
-      ],
-      answer: 0,
-      explain:
-        '既定の wrap は「端の色を引き伸ばす」設定です。0〜1 の外側をどう扱うかを繰り返しに変えないと、repeat は効きません。',
+        '左下が $(0,0)$、右上が $(1,1)$ です。画像のピクセル数に関係なく、常に $0$〜$1$ で表します。上下が逆に見えるときは、この向きの違いを疑ってください（画像ファイルは左上が原点のものが多いためです）。',
     },
     {
       q: '色として使うテクスチャに `colorSpace` を指定し忘れると、どうなりますか。',
@@ -382,7 +436,14 @@ GPU に載るときは展開されます）。画面上で数センチにしか�
       ],
       answer: 0,
       explain:
-        '色として記録された画像を、そのまま数値として読んでしまうためです。色に使う画像だけ `THREE.SRGBColorSpace` を指定し、法線マップなどのデータには指定しません。',
+        'sRGB で記録された値を「もうリニアだ」として扱い、変換を 1 回飛ばすためです。色に使う画像だけ `THREE.SRGBColorSpace` を指定し、法線マップなどのデータには指定しません。',
+    },
+    {
+      q: '$4096 \\times 4096$ の JPEG（ファイルサイズ 2MB）は、GPU 上でおよそ何 MB を占めますか。',
+      choices: ['約 90MB', '2MB のまま', '約 16MB', '約 8MB'],
+      answer: 0,
+      explain:
+        '圧縮されているのはファイルの中だけで、GPU に載るときは展開されます。$4096^2 \\times 4$ バイト $= 67$MB、ミップマップ込みで $89.5$MB です。ファイルサイズを見て安心してはいけません。',
     },
   ],
 };

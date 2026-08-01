@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterT13: Chapter = {
   slug: 't13-vertex-shader',
   part: 'threejs',
-  number: 20,
+  number: 27,
   title: '頂点シェーダ ― 形を動かす',
   goal: 'gl_Position の 1 行の意味が読めるようになり、頂点を動かして波・膨張・ねじれを自分で作れるようになります。',
   requires: ['t12-shader-intro', '05-trig'],

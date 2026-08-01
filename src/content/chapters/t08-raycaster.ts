@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterT08: Chapter = {
   slug: 't08-raycaster',
   part: 'threejs',
-  number: 15,
+  number: 22,
   title: 'マウスで触る ― Raycaster',
   goal: '画面上のマウス位置から3D空間へ光線を飛ばせるようになり、ホバー・クリック・ドラッグを自分で実装できるようになります。',
   requires: ['t07-controls', '03-dot'],

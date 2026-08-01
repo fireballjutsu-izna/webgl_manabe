@@ -143,7 +143,14 @@ const ADDONS: Record<string, string> = {
  * three のものではない、または公式ドキュメントに項目が無いためリンクしない名前。
  * ここに無い未知のクラス名は、整合性チェックで警告される。
  */
-const UNLINKED = new Set(['Math', 'Number', 'GLSL', 'WebGL', 'window', 'document', 'requestAnimationFrame']);
+// three の定数（クラスではないので、クラス表からはリンクを張れない）
+const UNLINKED = new Set([
+  'Math', 'Number', 'GLSL', 'WebGL', 'window', 'document', 'requestAnimationFrame',
+  'SRGBColorSpace', 'LinearSRGBColorSpace', 'NoColorSpace',
+  'NearestFilter', 'LinearFilter', 'LinearMipmapLinearFilter',
+  'RepeatWrapping', 'ClampToEdgeWrapping', 'MirroredRepeatWrapping',
+  'AdditiveBlending', 'DoubleSide', 'FrontSide', 'BackSide',
+]);
 
 /** 'Vector3.dot' や 'THREE.Vector3' から、公式ドキュメントの URL を作る。 */
 export function docsUrl(api: string): string | null {

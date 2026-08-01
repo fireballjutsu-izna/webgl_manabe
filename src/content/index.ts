@@ -95,7 +95,14 @@ import { chapterW07 } from './chapters/w07-index.ts';
 import { chapterW08 } from './chapters/w08-attributes.ts';
 import { chapterW09 } from './chapters/w09-geometry-edit.ts';
 import { chapterT03 } from './chapters/t03-material.ts';
+import { chapterW11 } from './chapters/w11-pbr.ts';
+import { chapterW12 } from './chapters/w12-transparent.ts';
+import { chapterW13 } from './chapters/w13-color-space.ts';
 import { chapterT04 } from './chapters/t04-texture.ts';
+import { chapterW15 } from './chapters/w15-uv.ts';
+import { chapterW16 } from './chapters/w16-repeat.ts';
+import { chapterW17 } from './chapters/w17-filter.ts';
+import { chapterW18 } from './chapters/w18-normal-map.ts';
 import { chapterT05 } from './chapters/t05-light-shadow.ts';
 import { chapterT06 } from './chapters/t06-loop-clock.ts';
 import { chapterT07 } from './chapters/t07-controls.ts';
@@ -221,7 +228,14 @@ export const chapters: Chapter[] = [
   chapterW08,
   chapterW09,
   chapterT03,
+  chapterW11,
+  chapterW12,
+  chapterW13,
   chapterT04,
+  chapterW15,
+  chapterW16,
+  chapterW17,
+  chapterW18,
   chapterT05,
   chapterT06,
   chapterT07,
