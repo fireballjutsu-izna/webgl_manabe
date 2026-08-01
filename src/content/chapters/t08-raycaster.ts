@@ -3,18 +3,18 @@ import type { Chapter } from '../types.ts';
 export const chapterT08: Chapter = {
   slug: 't08-raycaster',
   part: 'threejs',
-  number: 8,
-  title: 'マウスで触る ― Raycaster',
-  goal: '画面上のマウス位置から3D空間へ光線を飛ばせるようになり、ホバー・クリック・ドラッグを自分で実装できるようになります。',
-  requires: ['t07-controls', '03-dot'],
+  number: 30,
+  title: 'マウスで触る ― Raycaster と NDC',
+  goal: '画面のマウス位置を 3D の光線に変換できるようになり、狙ったものを正しく拾えるようになります。',
+  requires: ['w29-controls-ux', '03-dot'],
   threeApis: [
     'Raycaster',
     'Raycaster.setFromCamera',
     'Raycaster.intersectObjects',
     'Vector2',
-    'Plane',
-    'Ray',
+    'Raycaster.ray',
     'Object3D.userData',
+    'Matrix3.getNormalMatrix',
   ],
   mathRecall: [
     { slug: '02-vector', note: '光線は「起点＋向き」。まさにベクトル' },
@@ -182,148 +182,52 @@ window.addEventListener('resize', () => {
     {
       kind: 'md',
       text: `
-## 平面との交点 ― ドラッグの作り方
+## 返ってくるのは、位置だけではない
 
-「物体をマウスで引きずる」には、**光線と平面の交点**を使います。
+\`intersectObjects\` が返す配列の各要素には、**当たった物体だけでなく**、
+そのときの情報がひととおり入っています。
 
-物体をどこへ動かすかは、光線だけでは決まりません（線上のどこでもよいため）。
-そこで「この平面の上を動く」という制約を足します。
-床の上を滑らせるなら y = 0 の平面、カメラに正対したまま動かすなら視線に垂直な平面です。
+| 中身 | 何が入るか |
+|---|---|
+| \`object\` | 当たった \`Mesh\` |
+| \`point\` | 当たった位置（**ワールド座標**） |
+| \`distance\` | 光線の起点からの距離 |
+| \`face\` | 当たった三角形。\`face.normal\` は**ローカル座標の法線** |
+| \`uv\` | その位置の UV（[](#/ch/w15-uv)） |
+| \`instanceId\` | \`InstancedMesh\` なら、何番目か |
 
-Three.js には \`Plane\` と \`Ray.intersectPlane()\` が用意されているので、1 行で求まります。
+**\`point\` はワールド、\`face.normal\` はローカル**という食い違いに注意してください。
+法線をワールドで使いたいなら、[](#/ch/m08-normal-matrix)の法線行列で変換します。
+
+**\`uv\` が取れる**のは思ったより便利です。
+壁のどこをクリックしたかが $0$〜$1$ で分かるので、
+そこにテクスチャで印を描き込む、といったことができます。
 `,
     },
     {
-      kind: 'sandbox',
-      title: '床の上を引きずる',
+      kind: 'code',
+      title: '当たった向きに、ものを置く',
       code: `import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0a12);
+const hits = raycaster.intersectObjects(targets, false);
+if (hits.length > 0) {
+  const hit = hits[0];
 
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 6, 8);
+  // 位置はワールド座標なので、そのまま使える
+  marker.position.copy(hit.point);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+  // 法線はローカル座標。ワールドへ直すには法線行列を掛ける
+  const normalMatrix = new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld);
+  const worldNormal = hit.face.normal.clone().applyMatrix3(normalMatrix).normalize();
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
+  // その向きへ立たせる
+  marker.lookAt(hit.point.clone().add(worldNormal));
 
-const key = new THREE.DirectionalLight(0xffffff, 2.6);
-key.position.set(3, 6, 4);
-scene.add(key, new THREE.HemisphereLight(0x99bbff, 0x101020, 0.6));
-scene.add(new THREE.GridHelper(16, 16, 0x3a3a5c, 0x26263c));
+  // わずかに浮かせて、ちらつきを避ける
+  marker.position.addScaledVector(worldNormal, 0.01);
 
-const pieces = [0x4fd6ff, 0xffd166, 0xff7ad9].map((color, i) => {
-  const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(0.5, 32, 20),
-    new THREE.MeshStandardMaterial({ color, roughness: 0.4 }),
-  );
-  mesh.position.set((i - 1) * 2.2, 0.5, 0);
-  scene.add(mesh);
-  return mesh;
-});
-
-const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-
-// y = 0.5 の水平な平面。この上を滑らせる
-const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.5);
-const hitPoint = new THREE.Vector3();
-const grabOffset = new THREE.Vector3();
-let dragging = null;
-
-function updatePointer(event) {
-  const rect = renderer.domElement.getBoundingClientRect();
-  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-  raycaster.setFromCamera(pointer, camera);
-}
-
-renderer.domElement.addEventListener('pointerdown', (event) => {
-  updatePointer(event);
-  const hits = raycaster.intersectObjects(pieces, false);
-  if (hits.length === 0) return;
-
-  dragging = hits[0].object;
-  controls.enabled = false;                       // ドラッグ中は視点を止める
-
-  // つかんだ瞬間のずれを覚えておくと、中心へ飛ばずに自然につかめる
-  raycaster.ray.intersectPlane(dragPlane, hitPoint);
-  grabOffset.copy(dragging.position).sub(hitPoint);
-
-  renderer.domElement.setPointerCapture(event.pointerId);
-});
-
-renderer.domElement.addEventListener('pointermove', (event) => {
-  if (!dragging) return;
-  updatePointer(event);
-  // 光線と平面の交点が「マウスの指している床の上の位置」
-  if (raycaster.ray.intersectPlane(dragPlane, hitPoint)) {
-    dragging.position.copy(hitPoint).add(grabOffset);
-  }
-});
-
-function endDrag(event) {
-  if (!dragging) return;
-  dragging = null;
-  controls.enabled = true;
-  if (renderer.domElement.hasPointerCapture(event.pointerId)) {
-    renderer.domElement.releasePointerCapture(event.pointerId);
-  }
-}
-renderer.domElement.addEventListener('pointerup', endDrag);
-renderer.domElement.addEventListener('pointercancel', endDrag);
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
-}
-animate();
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});`,
-      caption:
-        '球をドラッグすると床の上を滑ります。`grabOffset` の 2 行を消すと、つかんだ瞬間に球の中心がカーソルへ飛びます。ドラッグ中に `controls.enabled = false` を外すと、視点と物体が同時に動いて操作不能になります。',
-    },
-    {
-      kind: 'md',
-      text: `
-## 当たり判定の中身と、速さ
-
-\`intersectObjects\` は、まず**バウンディングスフィア**（その物体を包む球）で大まかに判定し、
-当たりそうなものだけ三角形ごとに調べます。それでも、対象が多いと重くなります。
-
-- **調べる対象を絞る。** シーン全体ではなく、触れるものだけの配列を渡す
-- **再帰を切る。** 第 2 引数 \`false\` で子を辿らない
-- **毎フレーム調べない。** \`pointermove\` のたびで十分。回転しているだけなら判定は要らない
-- **代役を使う。** 複雑なモデルには、単純な形の見えないメッシュを重ねて、そちらで判定する
-
-なお、\`Points\` や \`Line\` には \`raycaster.params\` のしきい値（\`threshold\`）があります。
-点や線は面積が無いので、「どれくらい近ければ当たったとみなすか」を決める必要があるためです。
-`,
-    },
-    {
-      kind: 'callout',
-      tone: 'tip',
-      title: '交点の情報は位置だけではありません',
-      text: `
-\`intersectObjects\` が返す要素には、当たった物体（\`object\`）のほかに、
-**当たった位置**（\`point\`）、**距離**（\`distance\`）、**面の法線**（\`face.normal\`）、
-**その面の UV**（\`uv\`）が入っています。
-
-法線が取れるということは、[](#/ch/11-normal-light)や
-[](#/ch/04-cross)でやったことがそのまま使えるということです。
-壁に貼り付くマークや、当たった向きに跳ね返るエフェクトが作れます。
-`,
+  console.log('距離', hit.distance.toFixed(2), '/ UV', hit.uv);
+}`,
     },
   ],
   exercises: [
@@ -349,12 +253,49 @@ pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;`,
 「どの車が選ばれたか」を知るには \`object.parent\` をたどるか、\`userData\` に印を付けておきます。`,
     },
     {
-      prompt: 'ドラッグのサンドボックスで、\`new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.5)\` の \`-0.5\` を \`0\` にしてください。球の動きはどう変わりますか。',
-      hint: 'Plane の第 2 引数は、原点からの符号付き距離です（法線の向きを正とする）。',
-      answer: `球が**床にめり込んだ高さ**（中心が y = 0）で滑るようになります。
-この平面は「球の中心が乗る面」なので、半径 0.5 のぶんだけ持ち上げて y = 0.5 にしてありました。
-符号が逆なのは、Plane の定数が「法線方向にどれだけずらすか」ではなく $n \\cdot p + d = 0$ の $d$ だからです。
-**上向きの法線で y = 0.5 の面なら d は −0.5** になります。`,
+      prompt: `壁をクリックしたところに、**壁に貼り付く印**を置きたい。
+\`hits[0].point\` と \`hits[0].face.normal\` を使いますが、**そのままでは向きが狂います。**
+なぜですか。`,
+      hint: '2 つの値は、同じ座標系にありますか。',
+      answer: `**\`point\` はワールド座標、\`face.normal\` はローカル座標**だからです。
+
+\`intersectObjects\` が返す情報は、座標系が揃っていません。
+
+- **\`point\`** … ワールド座標。そのまま \`marker.position.copy()\` できる
+- **\`face.normal\`** … **ジオメトリのローカル座標**。その物体が回転・拡大されていれば、ずれる
+- **\`distance\`** … 光線の起点からの距離（スケールの影響を受ける）
+
+壁が回転していなければ、たまたま合います。**回した瞬間に狂います。**
+
+**直し方は法線行列**（[](#/ch/m08-normal-matrix)）。
+
+\`new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld)\` を掛けてから正規化します。
+
+なぜ \`matrixWorld\` をそのまま掛けてはいけないかは、[](#/ch/m08-normal-matrix)のとおりです ―
+**軸ごとに倍率が違う拡大では、法線が面に垂直でなくなる**からです。
+
+**もう 1 つ、忘れがちな手当て**
+
+印を \`point\` にぴったり置くと、**壁と同じ位置**になって
+奥行きの判定が拮抗し、ちらつきます（Z ファイティング）。
+
+法線方向にわずかに浮かせてください。\`addScaledVector(worldNormal, 0.01)\` くらい。
+
+**\`uv\` を使う手もあります。** 壁のどこをクリックしたかが $0$〜$1$ で分かるので、
+\`CanvasTexture\` に印を描き込めば、物体を増やさずに跡を残せます。`,
+      answerCode: `import * as THREE from 'three';
+
+const hits = raycaster.intersectObjects(walls, false);
+if (hits.length > 0) {
+  const hit = hits[0];
+
+  // 法線をワールドへ直す
+  const nm = new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld);
+  const worldNormal = hit.face.normal.clone().applyMatrix3(nm).normalize();
+
+  marker.position.copy(hit.point).addScaledVector(worldNormal, 0.01);
+  marker.lookAt(hit.point.clone().add(worldNormal));
+}`,
     },
   ],
   quiz: [
@@ -383,16 +324,16 @@ pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;`,
         '`canvas.getBoundingClientRect()` からキャンバス自身の左上位置と大きさを取り、そこを基準に計算してください。',
     },
     {
-      q: '物体をマウスで引きずるとき、光線だけでは位置が決まりません。何を足しますか。',
+      q: '`intersectObjects` が返す `face.normal` は、どの座標系の値ですか。',
       choices: [
-        '動かす面（平面）を決めて、光線との交点を使う',
-        'カメラの距離を固定する',
-        '物体の大きさを固定する',
-        'フレームレートを固定する',
+        'ジオメトリのローカル座標',
+        'ワールド座標',
+        'カメラから見た座標',
+        '正規化デバイス座標',
       ],
       answer: 0,
       explain:
-        '光線は線なので、その上のどこに置くかが決まりません。「この平面の上を動く」と決めれば交点が1つに定まります。`Ray.intersectPlane()` で求められます。',
+        '同じ要素の `point` はワールド座標なので、揃っていません。法線をワールドで使うなら `Matrix3().getNormalMatrix(object.matrixWorld)` を掛けます。物体が回転していないと、たまたま合ってしまうのが厄介です。',
     },
   ],
 };

@@ -384,24 +384,29 @@ export const glossary: GlossaryEntry[] = [
   {
     term: 'ドローコール',
     def: 'GPU に「これを描いて」と命令を送る1回ぶん。三角形の数が同じでも、回数が多いほど CPU 側の負担が増える。',
-    chapter: 't11-performance',
+    chapter: 'w42-draw-calls',
   },
   {
     term: 'インスタンス化',
     reading: 'インスタンスか',
     def: '同じ形・同じ材質のものを、配置だけ変えてまとめて1回で描く仕組み。木を1000本置いてもドローコールは1回で済む。',
-    chapter: 't11-performance',
+    chapter: 'w43-instancing',
   },
   {
     term: '視錐台カリング',
     reading: 'しすいだいカリング',
     def: 'カメラに写らない範囲にあるものを、描く前に省く仕組み。既定で有効。ただし大きな塊にまとめてしまうと効かなくなる。',
-    chapter: 't11-performance',
+    chapter: 'w42-draw-calls',
   },
   {
     term: 'アンチエイリアス',
     def: '斜めの輪郭に出るギザギザをなめらかにする処理。切ると軽くなるが、輪郭が階段状になる。',
-    chapter: 't11-performance',
+    chapter: 'w44-gpu-cost',
+  },
+  {
+    term: 'オーバードロー',
+    def: '同じ画素を何度も塗り直してしまうこと。半透明が重なると深度テストで捨てられないため、重なった枚数だけ塗ることになる。',
+    chapter: 'w44-gpu-cost',
   },
   {
     term: 'シェーダ',
@@ -461,7 +466,24 @@ export const glossary: GlossaryEntry[] = [
   {
     term: 'バンプマップ',
     def: '面の高さを白黒で書いた画像。形そのものは変えず、法線を傾けて光の当たり方だけを変える。',
-    chapter: 'p02-planet-surface',
+    chapter: 'w18-normal-map',
+  },
+  {
+    term: '物理ベースレンダリング',
+    reading: 'PBR',
+    def: '粗さと金属度という 2 つのつまみで質感を表す考え方。どう組み合わせても物理的におかしな見た目にならず、ツール間で質感がそのまま持ち運べる。',
+    chapter: 'w11-pbr',
+  },
+  {
+    term: '輝度',
+    reading: 'luminance',
+    def: '色を人の目が感じる明るさに直した 1 つの数。$0.2126R + 0.7152G + 0.0722B$ で求める。緑は青のおよそ 10 倍明るく見える。',
+    chapter: 'w13-color-space',
+  },
+  {
+    term: 'ミップマップ',
+    def: '同じ画像を半分ずつ縮めた段を、あらかじめ全部作って持っておく仕組み。遠くのちらつきが消え、メモリは 3 分の 4 倍にしかならない。',
+    chapter: 'w17-filter',
   },
   {
     term: '加算ブレンド',

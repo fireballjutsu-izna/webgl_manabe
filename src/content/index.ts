@@ -86,19 +86,56 @@ import { chapter13 } from './chapters/13-random.ts';
 import { chapter14 } from './chapters/14-capstone.ts';
 
 import { chapterT01 } from './chapters/t01-first-scene.ts';
+import { chapterW02 } from './chapters/w02-render-loop.ts';
+import { chapterW03 } from './chapters/w03-resize.ts';
+import { chapterW04 } from './chapters/w04-blank-screen.ts';
 import { chapterT02 } from './chapters/t02-geometry.ts';
+import { chapterW06 } from './chapters/w06-buffer-geometry.ts';
+import { chapterW07 } from './chapters/w07-index.ts';
+import { chapterW08 } from './chapters/w08-attributes.ts';
+import { chapterW09 } from './chapters/w09-geometry-edit.ts';
 import { chapterT03 } from './chapters/t03-material.ts';
+import { chapterW11 } from './chapters/w11-pbr.ts';
+import { chapterW12 } from './chapters/w12-transparent.ts';
+import { chapterW13 } from './chapters/w13-color-space.ts';
 import { chapterT04 } from './chapters/t04-texture.ts';
+import { chapterW15 } from './chapters/w15-uv.ts';
+import { chapterW16 } from './chapters/w16-repeat.ts';
+import { chapterW17 } from './chapters/w17-filter.ts';
+import { chapterW18 } from './chapters/w18-normal-map.ts';
 import { chapterT05 } from './chapters/t05-light-shadow.ts';
+import { chapterW20 } from './chapters/w20-shadow.ts';
+import { chapterW21 } from './chapters/w21-shadow-quality.ts';
+import { chapterW22 } from './chapters/w22-light-cost.ts';
+import { chapterW23 } from './chapters/w23-fill-light.ts';
 import { chapterT06 } from './chapters/t06-loop-clock.ts';
+import { chapterW25 } from './chapters/w25-damping.ts';
+import { chapterW26 } from './chapters/w26-sequence.ts';
 import { chapterT07 } from './chapters/t07-controls.ts';
+import { chapterW28 } from './chapters/w28-camera-move.ts';
+import { chapterW29 } from './chapters/w29-controls-ux.ts';
 import { chapterT08 } from './chapters/t08-raycaster.ts';
+import { chapterW31 } from './chapters/w31-hover-click.ts';
+import { chapterW32 } from './chapters/w32-drag.ts';
+import { chapterW33 } from './chapters/w33-pick-cost.ts';
 import { chapterT09 } from './chapters/t09-loader.ts';
+import { chapterW35 } from './chapters/w35-fit-model.ts';
+import { chapterW36 } from './chapters/w36-loading-ui.ts';
+import { chapterW37 } from './chapters/w37-asset-cost.ts';
 import { chapterT10 } from './chapters/t10-scene-graph.ts';
+import { chapterW39 } from './chapters/w39-find-traverse.ts';
+import { chapterW40 } from './chapters/w40-dispose.ts';
 import { chapterT11 } from './chapters/t11-performance.ts';
+import { chapterW42 } from './chapters/w42-draw-calls.ts';
+import { chapterW43 } from './chapters/w43-instancing.ts';
+import { chapterW44 } from './chapters/w44-gpu-cost.ts';
 import { chapterT12 } from './chapters/t12-shader-intro.ts';
 import { chapterT13 } from './chapters/t13-vertex-shader.ts';
 import { chapterT14 } from './chapters/t14-fragment-shader.ts';
+
+import { chapterW48 } from './chapters/w48-shader-debug.ts';
+import { chapterW49 } from './chapters/w49-onbeforecompile.ts';
+import { chapterW50 } from './chapters/w50-small-forest.ts';
 
 import { chapterP01 } from './chapters/p01-planet-setup.ts';
 import { chapterP02 } from './chapters/p02-planet-surface.ts';
@@ -205,19 +242,55 @@ export const chapters: Chapter[] = [
   chapter14,
 
   chapterT01,
+  chapterW02,
+  chapterW03,
+  chapterW04,
   chapterT02,
+  chapterW06,
+  chapterW07,
+  chapterW08,
+  chapterW09,
   chapterT03,
+  chapterW11,
+  chapterW12,
+  chapterW13,
   chapterT04,
+  chapterW15,
+  chapterW16,
+  chapterW17,
+  chapterW18,
   chapterT05,
+  chapterW20,
+  chapterW21,
+  chapterW22,
+  chapterW23,
   chapterT06,
+  chapterW25,
+  chapterW26,
   chapterT07,
+  chapterW28,
+  chapterW29,
   chapterT08,
+  chapterW31,
+  chapterW32,
+  chapterW33,
   chapterT09,
+  chapterW35,
+  chapterW36,
+  chapterW37,
   chapterT10,
+  chapterW39,
+  chapterW40,
   chapterT11,
+  chapterW42,
+  chapterW43,
+  chapterW44,
   chapterT12,
   chapterT13,
   chapterT14,
+  chapterW48,
+  chapterW49,
+  chapterW50,
 
   chapterP01,
   chapterP02,

@@ -3,24 +3,23 @@ import type { Chapter } from '../types.ts';
 export const chapterT05: Chapter = {
   slug: 't05-light-shadow',
   part: 'threejs',
-  number: 5,
-  title: 'ライトと影',
-  goal: '5種類のライトを目的で選べるようになり、影が出ないときの原因を順番に潰せるようになります。',
-  requires: ['t03-material', '11-normal-light'],
+  number: 19,
+  title: 'ライト ― 5 種類の光を、目的で選ぶ',
+  goal: '5 種類のライトの違いが分かり、目的に応じて選び、強さを妥当な範囲で決められるようになります。',
+  requires: ['w18-normal-map', '11-normal-light'],
   threeApis: [
     'AmbientLight',
     'HemisphereLight',
     'DirectionalLight',
     'PointLight',
     'SpotLight',
-    'WebGLRenderer',
-    'Object3D.castShadow',
-    'Object3D.receiveShadow',
-    'DirectionalLightShadow',
+    'Light.intensity',
+    'PointLight.distance',
+    'SpotLight.angle',
   ],
   mathRecall: [
-    { slug: '11-normal-light', note: '明るさ＝法線と光の内積' },
-    { slug: '10-camera', note: '影は「光から見たカメラ」で作られる' },
+    { slug: '11-normal-light', note: '明るさ ＝ 法線と光の内積' },
+    { slug: 'b05-ratio', note: '点光源は距離の 2 乗に反比例して弱まる' },
   ],
   blocks: [
     {
@@ -30,10 +29,13 @@ export const chapterT05: Chapter = {
 
 [](#/ch/11-normal-light)でやったとおり、
 面の明るさは**法線と光の向きの内積**で決まります。
-つまり光を置かない限り、内積の相手がおらず、計算しようがありません。
 
-Three.js のライトは 5 種類あります。違いは結局のところ
-**「どこから、どの向きに、どれくらい届くか」**の 3 点だけです。
+つまり光を置かない限り、内積の相手がおらず、計算しようがありません。
+これが[](#/ch/w04-blank-screen)の「真っ黒」の 2 番目に多い原因でした。
+
+Three.js のライトは 5 種類あります。違いは結局のところ 3 点だけです。
+
+**どこから、どの向きに、どれくらい届くか。**
 `,
     },
     {
@@ -45,16 +47,15 @@ Three.js のライトは 5 種類あります。違いは結局のところ
     {
       kind: 'md',
       text: `
-## 5種類の使い分け
+## 5 種類の性格
 
-- **AmbientLight** … 全体を一律に持ち上げるだけ。**立体感は出ません**。
-  影の中が真っ黒に潰れるのを防ぐ「底上げ」として、弱めに使う
-- **HemisphereLight** … 上から空の色、下から地面の色。屋外の環境光として自然。
-  こちらも影は落ちない
-- **DirectionalLight** … 太陽。**位置ではなく向きだけ**が意味を持ちます
-  （\`position\` は「どちらから照らすか」を決めるためだけに使われ、距離では暗くなりません）
-- **PointLight** … 電球。位置があり、離れるほど暗くなる
-- **SpotLight** … 懐中電灯。円錐状に照らし、外側にはまったく当たらない
+| ライト | 何を表すか | 位置 | 向き | 距離で減衰 | 影 |
+|---|---|---|---|---|---|
+| \`AmbientLight\` | 一律の底上げ | ― | ― | ― | **落とせない** |
+| \`HemisphereLight\` | 空と地面の色 | ― | 上下のみ | ― | **落とせない** |
+| \`DirectionalLight\` | 太陽 | 向きの指定用 | **あり** | **しない** | 落とせる |
+| \`PointLight\` | 電球 | **あり** | 全方向 | **する** | 落とせる（重い） |
+| \`SpotLight\` | 懐中電灯 | **あり** | **円錐** | **する** | 落とせる |
 
 **基本の組み合わせは「DirectionalLight 1 つ ＋ 弱い HemisphereLight」**です。
 これで屋外らしい見た目になります。迷ったらここから始めてください。
@@ -63,98 +64,128 @@ Three.js のライトは 5 種類あります。違いは結局のところ
     {
       kind: 'callout',
       tone: 'warn',
-      title: 'ライトは置くほど重くなります',
+      title: 'DirectionalLight の position は「場所」ではありません',
       text: `
-ライトを 1 つ増やすと、**すべてのマテリアルのシェーダが作り直され**、
-描画のたびに計算が増えます。5 個 10 個と置くと目に見えて重くなります。
+太陽は無限に遠いものとして扱われるので、位置には意味がありません。
 
-暗い場所を明るくしたいときは、ライトを足す前に
-**環境光を上げる・マテリアルの色を明るくする・emissive を使う**を検討してください。
+position が決めているのは向きだけです。
+position.set(3, 5, 2) は「(3,5,2) の方向から照らす」であって、
+「(3,5,2) にある電球」ではありません。
+
+だから距離を変えても明るさは変わりません。
+近づけたのに明るくならない、と困ったらこれです。
 `,
     },
     {
       kind: 'md',
       text: `
-## 影 ― 3か所すべてを設定する
+## 距離で暗くなるのは、点光源だけ
 
-影はライトを置いただけでは出ません。**3 か所**の設定が必要です。
+\`PointLight\` と \`SpotLight\` は位置を持つので、**離れるほど暗くなります。**
 
-- **レンダラ**：\`renderer.shadowMap.enabled = true\`
-- **落とすもの**：\`mesh.castShadow = true\`
-- **受けるもの**：\`floor.receiveShadow = true\`
+減り方には物理的な決まりがあります。**距離の 2 乗に反比例する。**
 
-さらに、**影を作れるのは向きを持つライトだけ**（Directional / Point / Spot）です。
-ひとつでも欠けると影は出ません。「影が出ない」の原因は、ほぼこの 4 つのどれかです。
+光は球状に広がるので、距離が 2 倍になれば同じ量の光が
+$4$ 倍の面積に散ります。だから明るさは $1/4$ です。
 `,
     },
     {
+      kind: 'formula',
+      tex: 'I(d) \\;=\\; \\frac{P}{d^{2}}',
+      readAloud:
+        '点光源の明るさは、光の強さを距離の 2 乗で割ったものです。距離が 2 倍になれば 4 分の 1、3 倍になれば 9 分の 1。逆に半分に近づければ 4 倍になります。',
+      worked: {
+        given: '強さ $P = 20$ の \\`PointLight\\` から、**距離 $1$ / $2$ / $5$** の点の明るさを比べます。',
+        steps: [
+          { calc: 'd = 1 : 20 / 1^2  = 20' },
+          { calc: 'd = 2 : 20 / 2^2  = 5', note: '半分の距離ではなく 4 分の 1' },
+          { calc: 'd = 5 : 20 / 5^2  = 0.8' },
+          { calc: '1 → 2 の変化 : 20 / 5 = 4 分の 1' },
+          { calc: '2 → 5 の変化 : 5 / 0.8 = 6.25 分の 1' },
+        ],
+        result:
+          '**距離 $1$ から $5$ へ離れるだけで、明るさは $25$ 分の 1** になります。ここが「点光源の置き場所が難しい」理由です。**近すぎると白飛びし、少し離すと一気に暗くなります。** 実務では、まず光源を置きたい場所に置いてから、$P$ を調整します。「$P$ を決めてから場所を探す」と、たいてい合いません。なお \\`distance\\` を設定すると、そこで完全に $0$ になる別の減り方になります（物理的ではありませんが、影響範囲を切れるので速くなります）。',
+      },
+    },
+    {
       kind: 'sandbox',
-      title: '影を出す',
+      title: '5 種類を切り替えて、当たり方を見る',
       code: `import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// 'ambient' | 'hemisphere' | 'directional' | 'point' | 'spot'
+const KIND = 'directional';
+const POWER = 3;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0a12);
 
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(4, 3.5, 5);
-camera.lookAt(0, 0.5, 0);
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 4.5, 9);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;                    // (1) レンダラで有効にする
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;     // 影のふちを少し柔らかく
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.target.set(0, 0.5, 0);
 
-// 床（影を受ける側）
+// 床と、横一列に並べた球。距離による減衰が読めるように広く置く
 const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(14, 14),
-  new THREE.MeshStandardMaterial({ color: 0x8b93a8, roughness: 0.9 }),
+  new THREE.PlaneGeometry(20, 12),
+  new THREE.MeshStandardMaterial({ color: 0x8b93a8, roughness: 0.95 }),
 );
 floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;                           // (2) 受ける
 scene.add(floor);
 
-// 箱（影を落とす側）
-const box = new THREE.Mesh(
-  new THREE.BoxGeometry(1.2, 1.2, 1.2),
-  new THREE.MeshStandardMaterial({ color: 0x4fd6ff, roughness: 0.5 }),
+const sphere = new THREE.SphereGeometry(0.55, 32, 20);
+const material = new THREE.MeshStandardMaterial({ color: 0xd8d8e8, roughness: 0.6 });
+
+for (let i = -3; i <= 3; i++) {
+  const mesh = new THREE.Mesh(sphere, material);
+  mesh.position.set(i * 1.5, 0.55, 0);
+  scene.add(mesh);
+}
+
+// 光源の位置を目で見るための小さな球
+const bulb = new THREE.Mesh(
+  new THREE.SphereGeometry(0.12, 16, 12),
+  new THREE.MeshBasicMaterial({ color: 0xffd166 }),
 );
-box.position.y = 0.6;
-box.castShadow = true;                                // (3) 落とす
-scene.add(box);
+bulb.position.set(0, 3, 1.5);
 
-// 向きを持つライトだけが影を作れる
-const sun = new THREE.DirectionalLight(0xffffff, 3);
-sun.position.set(3, 5, 2);
-sun.castShadow = true;                                // (4) このライトが影を作る
-sun.shadow.mapSize.set(1024, 1024);                   // 影の解像度
-// 影を描く範囲。狭いほどきれいだが、はみ出すと影が切れる
-sun.shadow.camera.left = -5;
-sun.shadow.camera.right = 5;
-sun.shadow.camera.top = 5;
-sun.shadow.camera.bottom = -5;
-scene.add(sun);
+const lights = {
+  ambient:     () => new THREE.AmbientLight(0xffffff, POWER * 0.4),
+  hemisphere:  () => new THREE.HemisphereLight(0x99bbff, 0x443322, POWER),
+  directional: () => {
+    const l = new THREE.DirectionalLight(0xffffff, POWER);
+    l.position.set(3, 5, 2);        // 位置ではなく「向き」を決めている
+    return l;
+  },
+  point: () => {
+    const l = new THREE.PointLight(0xffffff, POWER * 12);   // 減衰するぶん強くする
+    l.position.copy(bulb.position);
+    scene.add(bulb);
+    return l;
+  },
+  spot: () => {
+    const l = new THREE.SpotLight(0xffffff, POWER * 20, 0, Math.PI / 9, 0.4);
+    l.position.copy(bulb.position);
+    l.target.position.set(0, 0, 0);
+    scene.add(l.target, bulb);
+    return l;
+  },
+};
 
-// 影の中が真っ黒に潰れないよう、弱い環境光を足す
-scene.add(new THREE.HemisphereLight(0x99bbff, 0x101020, 0.5));
+scene.add(lights[KIND]());
+console.log('ライトの種類', KIND);
 
-// 影の範囲を目で見る（不要なら消してください）
-scene.add(new THREE.CameraHelper(sun.shadow.camera));
-
-const clock = new THREE.Clock();
-function animate() {
-  requestAnimationFrame(animate);
-  box.position.y = 0.6 + Math.sin(clock.getElapsedTime() * 1.5) * 0.4;
+renderer.setAnimationLoop(() => {
   controls.update();
   renderer.render(scene, camera);
-}
-animate();
+});
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -162,149 +193,276 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });`,
       caption:
-        '4行のうちどれか1つをコメントアウトすると、影が消えます。`sun.shadow.camera.left` などを ±1 にすると、範囲からはみ出した影が四角く切り取られる様子が見えます。',
+        '**`KIND` を書き換えて 5 つとも試してください。** `ambient` は全部が同じ明るさの円になり、立体感がまったく出ません。`directional` は 7 個とも同じ明るさ。`point` と `spot` は**中央が明るく、端が暗くなります** ― これが距離による減衰です。`spot` は円錐の外にはまったく届きません。',
     },
     {
       kind: 'md',
       text: `
-## 影の正体は「光から見た写真」
+## AmbientLight が「立体感を消す」理由
 
-影は難しそうに見えますが、仕組みは単純です。
+\`AmbientLight\` を強くすると、物体が**平らな円**に見えます。
 
-1. **光の位置にカメラを置いて**、シーンを一度描く
-2. そのとき記録するのは色ではなく、**光からの距離**だけ（これが{{シャドウマップ}}です）
-3. 本番の描画で、各点について「光から見て、自分より手前に何かあったか」を調べる
-4. 何かあったなら、その点は影の中
+理由は明快で、[](#/ch/b27-lambert)の内積を**使っていない**からです。
 
-つまり影の品質は、この**「光から見たカメラ」の設定**でほぼ決まります。
-[](#/ch/10-camera)の near / far / 写す範囲が、そのまま効いてきます。
-`,
-    },
-    {
-      kind: 'formula',
-      tex: '\\text{影の中} \\iff d_{\\text{光からこの点まで}} > d_{\\text{記録された最短距離}}',
-      readAloud:
-        '光からその点までの距離が、記録されていた「その方向で最も手前にあるものまでの距離」より大きければ、あいだに何かが挟まっている、つまり影の中だ、という意味です。',
-      worked: {
-        given: '光から見て、箱までの距離 5.0 が記録されているとします。その先の床の 2 点を判定します。',
-        steps: [
-          { calc: '床の点A : 光からの距離 8.0' },
-          { calc: '  8.0 > 5.0  → 影の中', note: 'あいだに箱が挟まっている' },
-          { calc: '床の点B : 光からの距離 4.9' },
-          { calc: '  4.9 > 5.0 は偽 → 影の外', note: '箱より手前にある' },
-        ],
-        result: 'ここで**距離がぴったり同じ面**を考えてみてください。$5.0 > 5.0$ は偽ですが、計算の誤差でわずかに $5.0001$ になると、**その面が自分自身の影に入ります**（これがシャドウアクネと呼ばれる縞模様です）。だから three は `shadow.bias` で、比べる前にほんの少しずらしています。',
-      },
-    },
-    {
-      kind: 'callout',
-      tone: 'warn',
-      title: '影の範囲は狭いほどきれい',
-      text: `
-影の記録は決まった大きさの画像に収められます（既定は 512×512）。
-広い範囲を写そうとすると、そのぶん 1 ピクセルあたりが受け持つ面積が広がり、
-影のふちがギザギザになります。
+環境光は、法線がどちらを向いていようと同じ量を足します。
+つまり「向きによる明暗の差」を作らない。
+それどころか、他のライトが作った差を**薄めてしまいます。**
 
-**\`shadow.camera\` の範囲は、影が要る場所ぎりぎりまで狭めてください。**
-解像度を上げる（\`shadow.mapSize\`）より、まず範囲を狭めるほうがずっと効きます。
+だから環境光は「影の中を真っ黒にしないための底上げ」として、**弱く**使います。
+$0.3$〜$1$ くらい。それ以上入れると、シーン全体が眠たくなります。
+
+**より良い代わりが 2 つあります。**
+
+- **\`HemisphereLight\`** … 上から空の色、下から地面の色。
+  上下の差があるぶん、**わずかに立体感が残ります。** 屋外なら断然こちら
+- **環境マップ**（[](#/ch/q01-environment)）… まわりの景色を映す。いちばん自然
 `,
     },
     {
       kind: 'md',
       text: `
-## 影のよくある不具合
+## SpotLight の 2 つの角度
 
-- **影が縞模様になる（シャドウアクネ）** … 自分自身の影が誤って落ちている状態。
-  \`light.shadow.bias\` を -0.0005 くらいの小さな負の値にすると消えます
-- **影が浮いて見える（ピーターパン現象）** … bias を下げすぎたときに起きます。戻してください
-- **影のふちがギザギザ** … 範囲が広すぎます。\`shadow.camera\` を狭めるか、
-  \`shadowMap.type\` を \`THREE.PCFSoftShadowMap\` にします
-- **影が四角く切れる** … \`shadow.camera\` の範囲から物体がはみ出しています
-- **PointLight の影が重い** … 全方向に 6 枚ぶん記録するためです。数を絞ってください
+\`SpotLight\` には角度が 2 つあります。混同しやすいところです。
+
+- **\`angle\`** … 円錐の**半頂角**（中心からふちまで）。ラジアン。最大 $\\pi/2$
+- **\`penumbra\`** … ふちのぼかし具合。$0$ で切り立ち、$1$ でふんわり
+
+\`angle\` は「全体の広がり」ではなく**半分**なので、
+$\\pi/4$（$45°$）と書けば全体では $90°$ 広がります。
+
+もう 1 つ、**\`target\` を忘れないでください。**
+\`SpotLight\` は \`target\` の方向を照らしますが、
+**\`target\` もシーンに追加しないと動きません**（既定は原点にあります）。
 `,
     },
     {
-      kind: 'md',
-      text: `
-## 影を使わないという選択
+      kind: 'code',
+      title: 'SpotLight の設定',
+      code: `import * as THREE from 'three';
 
-影は重い処理です。**本当に必要かは一度立ち止まって考える価値があります。**
+const spot = new THREE.SpotLight(0xffffff, 60);
+spot.position.set(0, 6, 2);
 
-- 床に半透明の黒い円を置くだけの「丸影」で足りる場面は多い
-- 動かないものの影は、あらかじめテクスチャに焼き込める
-- 環境光を上下で変える（HemisphereLight）だけでも、接地感はかなり出る
+spot.angle = Math.PI / 8;      // 半頂角 22.5 度 → 全体で 45 度
+spot.penumbra = 0.35;          // ふちを少しぼかす
+spot.decay = 2;                // 距離の 2 乗で減衰（物理的に正しい既定値）
+spot.distance = 0;             // 0 なら無限まで届く
 
-実際、モバイル向けでは影を切ってしまうことも珍しくありません。
-`,
+// target を動かすなら、シーンに追加する必要がある
+spot.target.position.set(0, 0, 0);
+scene.add(spot, spot.target);
+
+// 追いかけさせるなら、target を対象に付ける
+player.add(spot.target);       // これで自動的に player を照らし続ける
+
+// 目で見るヘルパー（範囲を決めるときに便利）
+scene.add(new THREE.SpotLightHelper(spot));`,
     },
     {
       kind: 'callout',
       tone: 'tip',
       title: '光の強さの目安',
       text: `
-Three.js は物理的に正しい単位で光を扱います。
-DirectionalLight なら 2〜4、環境光は 0.3〜1 くらいから始めると、たいてい妥当な明るさになります。
-値を大きくして白飛びするようなら、\`renderer.toneMapping = THREE.ACESFilmicToneMapping\` を
-試してみてください。明るい部分の階調が保たれます。
+three は物理的に正しい単位で光を扱います。目安はこのあたりです。
+
+DirectionalLight … 2 〜 4
+HemisphereLight / AmbientLight … 0.3 〜 1
+PointLight … 10 〜 60（距離の 2 乗で割られるので大きめ）
+SpotLight … 20 〜 100
+
+値を大きくして白飛びするようなら、強さを上げる前に
+renderer.toneMapping = THREE.ACESFilmicToneMapping を試してください。
+明るい部分の階調が保たれます（第5部で詳しく扱います）。
 `,
+    },
+    {
+      kind: 'md',
+      text: `
+## 3 点照明 ― 迷ったときの型
+
+写真や映画で使われる型が、そのまま 3D でも使えます。
+
+- **キーライト** … 主役。斜め前上から。いちばん強い（$3$ くらい）
+- **フィルライト** … 反対側から弱く。影の中を持ち上げる（キーの $\\frac{1}{3}$ ほど）
+- **リムライト** … 後ろから。輪郭を光らせて背景から浮かせる（キーと同程度）
+
+**この 3 つで、たいていのものは「それらしく」見えます。**
+そして**ライト 3 個は、費用としてもちょうどよい上限**です（次の章）。
+`,
+    },
+    {
+      kind: 'code',
+      title: '3 点照明',
+      code: `import * as THREE from 'three';
+
+// キー：主役を作る
+const key = new THREE.DirectionalLight(0xffffff, 3);
+key.position.set(4, 5, 4);
+key.castShadow = true;
+
+// フィル：影の中を持ち上げる。色は少し寒色に
+const fill = new THREE.DirectionalLight(0x99bbff, 1.0);
+fill.position.set(-5, 1, 2);
+// 影は落とさない（2 枚焼くのは高い）
+
+// リム：後ろから輪郭を光らせる
+const rim = new THREE.DirectionalLight(0xffeecc, 2.5);
+rim.position.set(-2, 3, -5);
+
+scene.add(key, fill, rim);
+
+// 底上げ。これは「4 つ目のライト」だが、計算がほぼ無いので安い
+scene.add(new THREE.HemisphereLight(0x99bbff, 0x332211, 0.4));`,
     },
   ],
   exercises: [
     {
-      prompt: `サンドボックスから、\`renderer.shadowMap.enabled\` \`floor.receiveShadow\` \`box.castShadow\` \`sun.castShadow\` を
-**1 つずつ**消して、そのたびに影がどうなるか確かめてください（消したら戻してから次へ）。`,
-      hint: '4 つのどれを消しても、結果は同じになります。',
-      answer: `**どれ 1 つ欠けても、影はまったく出ません。**
-影は「レンダラで有効にする」「落とす側」「受ける側」「作るライト」の 4 つがそろって初めて出ます。
-どれか 1 つの欠けが 4 通りの同じ症状になるので、**上から順に 4 つとも確かめる**のが最短の直し方です。`,
+      prompt: `サンドボックスの \`KIND\` を \`'ambient'\` にしてください。
+球はどう見えますか。**なぜそう見えるのか**を、内積の言葉で説明してください。`,
+      hint: '環境光は、法線をどう扱っていますか。',
+      answer: `**平らな円**に見えます。7 個とも、まったく同じ単色の円です。
+
+**理由は「内積を使っていないから」です。**
+
+[](#/ch/b27-lambert)でやったとおり、ふつうのライトの明るさは
+
+$\\text{明るさ} = \\max(0,\\; \\mathbf{n} \\cdot \\mathbf{l})$
+
+法線 $\\mathbf{n}$ が光の向き $\\mathbf{l}$ を向いているほど明るい。
+**だから球の表面で明暗の差が生まれ、丸く見えます。**
+
+**\`AmbientLight\` は、この計算をしません。**
+法線がどちらを向いていようと、同じ量を足すだけです。
+
+$\\text{明るさ} = I_{\\text{ambient}}$
+
+差が生まれないので、球のどこも同じ明るさ ―
+つまり**シルエットしか見えない**状態になります。
+
+**さらに悪いことに、他のライトの効果も薄めます。**
+キーライトが作った $0.2$ と $0.9$ の差に、環境光 $0.5$ を足すと
+$0.7$ と $1.4$。**比では $4.5$ 倍だったものが $2$ 倍に**縮みます。
+
+**だから環境光は弱く使う。** $0.3$〜$1$ が目安です。
+**上下で色を変える \`HemisphereLight\` なら、わずかに立体感が残ります。**`,
     },
     {
-      prompt: '\`sun.shadow.camera\` の \`left\` \`right\` \`top\` \`bottom\` を、すべて ±1 に狭めてください。何が起きますか。\`CameraHelper\` の枠と見比べてください。',
-      hint: '影を描くのに使う、もう 1 つのカメラの写る範囲です。',
-      answer: `枠の外に出た影が**ばっさり切れます**。
-影の計算はこの枠の中だけで行われ、外は「影が無い」ものとして扱われるからです。
-逆に、範囲を広げすぎると同じ解像度をより広い面積に配ることになり、**影がぼやけてギザギザになります**。
-「必要な範囲ぴったりまで狭める」のが、影をきれいにするいちばん効く手です。`,
+      prompt: `強さ $P = 50$ の \`PointLight\` があります。
+**距離 $3$ の点の明るさ**を求めてください。
+また、同じ明るさを距離 $6$ で得るには、$P$ をいくつにすればよいですか。`,
+      hint: '$I = P / d^2$ です。',
+      answer: `**距離 $3$ で $5.56$。距離 $6$ で同じにするには $P = 200$** です。
+
+**距離 $3$ の明るさ**
+
+$I = \\dfrac{50}{3^2} = \\dfrac{50}{9} = 5.56$
+
+**距離 $6$ で $5.56$ を得るには**
+
+$5.56 = \\dfrac{P}{6^2} = \\dfrac{P}{36}$
+
+$P = 5.56 \\times 36 = 200$
+
+**距離が 2 倍になると、必要な強さは 4 倍**です。
+
+**実務での意味**
+
+これは「光源を少し動かすだけで、明るさが激変する」ということです。
+
+- 距離 $3 \\to 3.5$（$17\\%$ 遠ざける）→ 明るさは $73\\%$ に
+- 距離 $3 \\to 2$（$33\\%$ 近づける）→ 明るさは $2.25$ 倍に
+
+**だから手順が大事です。**
+
+1. **光源を、置きたい場所に置く**（部屋の天井、ランプの中）
+2. **そこから強さを調整する**
+
+逆順にすると、「ちょうどいい明るさになる位置」を探すことになり、
+その位置は物理的におかしな場所（壁の中、床の下）になりがちです。
+
+**\`distance\` を設定すると別の減り方になります。**
+$0$ 以外にすると、そこで完全に $0$ になるよう補正が入ります。
+物理的ではありませんが、**影響範囲を切れるので速くなります** ―
+遠くのものについてこの光源の計算を省けるからです。`,
     },
     {
-      prompt: '\`sun.shadow.mapSize.set(1024, 1024)\` を \`(256, 256)\` にしてください。影のふちはどうなりますか。上の課題と合わせて、影をきれいにする手は 2 つあります。',
-      hint: '影は、ライトから見た深度を記録した「画像」です。',
-      answer: `ふちが階段状にギザギザになります。影は画像なので、解像度が足りなければ粗くなります。
-きれいにする手は 2 つ。**解像度を上げる**（重くなる）か、**範囲を狭める**（同じ解像度が密になる）か。
-先に試すべきは**範囲を狭めるほう**です。ただで効きます。`,
+      prompt: `\`SpotLight\` を作って \`angle = Math.PI / 6\` にしました。
+**照らされる円錐は、全体で何度**広がりますか。
+そして、真下 $5$ の高さから床を照らすと、**明るい円の半径**はいくつですか。`,
+      hint: '`angle` は半頂角です。半径は $\\tan$ で出ます。',
+      answer: `**全体で $60°$。床の円の半径は $2.89$** です。
+
+**広がり**
+
+\`angle\` は**半頂角**（中心軸からふちまでの角度）です。
+
+$\\pi/6 = 30°$ なので、**全体では $60°$**。
+
+ここは間違えやすいところで、「$60°$ に広げたい」と思って
+\`angle = Math.PI / 3\` と書くと、実際には $120°$ になります。
+
+**床の円の半径**
+
+高さ $5$ から $30°$ の角度で広がるので、
+
+$r = 5 \\times \\tan(30°) = 5 \\times 0.5774 = 2.89$
+
+**直径 $5.77$ の明るい円**ができます。
+
+**逆算もよく使います。** 「半径 $4$ の円を照らしたい、高さは $5$」なら
+
+$\\tan(\\theta) = 4/5 = 0.8$ → $\\theta = \\arctan(0.8) = 38.7°= 0.675$ ラジアン
+
+\`spot.angle = 0.675\` です。
+
+**\`penumbra\` はふちのぼかし。** $0$ だと円の境界がくっきり切れて、
+安っぽく見えます。$0.2$〜$0.5$ くらい入れると自然になります。
+
+**\`target\` の追加を忘れないこと。** \`scene.add(spot, spot.target)\` の
+2 つ目が抜けていると、\`target.position\` を変えても向きが変わりません。`,
+      answerCode: `import * as THREE from 'three';
+
+const HEIGHT = 5;
+const WANT_RADIUS = 4;
+
+const spot = new THREE.SpotLight(0xffffff, 60);
+spot.position.set(0, HEIGHT, 0);
+
+// 照らしたい半径から、角度を逆算する
+spot.angle = Math.atan(WANT_RADIUS / HEIGHT);   // 0.675 ラジアン = 38.7 度
+spot.penumbra = 0.35;
+
+spot.target.position.set(0, 0, 0);
+scene.add(spot, spot.target);                    // target も追加する`,
     },
   ],
   quiz: [
     {
-      q: '影を落とせる**ない**ライトはどれですか。',
+      q: '影を落とせ**ない**ライトはどれですか。',
       choices: ['AmbientLight', 'DirectionalLight', 'PointLight', 'SpotLight'],
       answer: 0,
       explain:
         'AmbientLight は全体を一律に明るくするだけで、向きも位置も持ちません。影は「光から見て手前に何があるか」で作られるので、向きが無いライトでは作れません。HemisphereLight も同様です。',
     },
     {
-      q: '影が出ません。設定すべき3か所として正しい組み合わせはどれですか。',
+      q: '`DirectionalLight` を物体に近づけたのに、明るくなりません。なぜですか。',
       choices: [
-        'renderer.shadowMap.enabled / 落とす側の castShadow / 受ける側の receiveShadow',
-        'ライトの intensity / マテリアルの色 / カメラの fov',
-        'geometry の分割数 / material.side / scene.background',
-        'renderer.setSize / camera.aspect / controls.update',
+        '太陽を表すライトなので、position は向きだけを決めていて、距離は関係ないから',
+        'intensity が 0 だから',
+        'castShadow を設定していないから',
+        'マテリアルが Basic だから',
       ],
       answer: 0,
       explain:
-        'この3つに加えて、そのライト自身の `castShadow` も必要です。「影が出ない」の原因はほぼこの4つのどれかです。',
+        '無限に遠いものとして扱われるため、position は「どちらから照らすか」の指定でしかありません。距離で暗くなるのは PointLight と SpotLight だけです。',
     },
     {
-      q: '影のふちがギザギザになっています。**まず**試すべきことはどれですか。',
-      choices: [
-        '`shadow.camera` の範囲を、影が要る場所まで狭める',
-        'ライトの数を増やす',
-        'カメラの far を大きくする',
-        'マテリアルを Basic に変える',
-      ],
+      q: '`PointLight` の明るさは、距離が 2 倍になるとどうなりますか。',
+      choices: ['4 分の 1', '2 分の 1', '変わらない', '8 分の 1'],
       answer: 0,
       explain:
-        '影は決まった大きさの画像に記録されるので、広い範囲を写すほど粗くなります。解像度を上げるより、範囲を狭めるほうが効果も効率も上です。',
+        '光は球状に広がるので、距離が 2 倍なら同じ量が 4 倍の面積に散ります。$I = P/d^2$ です。だから「光源を置きたい場所に置いてから、強さを調整する」の順で作業してください。',
     },
   ],
 };

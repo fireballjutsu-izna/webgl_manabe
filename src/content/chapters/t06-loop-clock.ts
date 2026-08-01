@@ -3,120 +3,171 @@ import type { Chapter } from '../types.ts';
 export const chapterT06: Chapter = {
   slug: 't06-loop-clock',
   part: 'threejs',
-  number: 6,
-  title: '動かす ― ループと時間',
-  goal: 'フレームレートに左右されない動かし方が身につき、どの端末でも同じ速さで動くアニメーションを書けるようになります。',
-  requires: ['t01-first-scene', '08-interp'],
+  number: 24,
+  title: '時間の刻み方 ― $dt$ の落とし穴',
+  goal: '経過時間と差分を使い分けられるようになり、タブ復帰の飛びや誤差の蓄積を防げるようになります。',
+  requires: ['w23-fill-light', 'w02-render-loop'],
   threeApis: [
     'Clock',
     'Clock.getDelta',
     'Clock.getElapsedTime',
-    'MathUtils.lerp',
-    'Vector3.lerp',
-    'Object3D.rotation',
+    'Clock.running',
+    'Clock.start',
+    'Clock.stop',
   ],
   mathRecall: [
-    { slug: '05-trig', note: 'sin と cos で往復と円運動を作る' },
-    { slug: '08-interp', note: 'lerp とイージング。t は「進み具合」' },
+    { slug: 'b22-wave', note: '繰り返す動きは、経過時間から直接決める' },
+    { slug: 'b06-float', note: '足し続けると、誤差が積もる' },
   ],
   blocks: [
     {
       kind: 'md',
       text: `
-## 1フレームぶんの時間を使う
+## 時間の使い方は、2 通りある
 
-いちばんよく見かける書き方が \`mesh.rotation.y += 0.01\` です。
+[](#/ch/w02-render-loop)で $dt$ を掛ける理由をやりました。
+ここからは、その先の話です。
 
-短くて分かりやすいのですが、**端末によって速さが変わります**。
-60fps の画面では毎秒 0.6 ラジアン回りますが、144fps の画面では 1.44 ラジアン——
-2 倍以上の速さで回ってしまいます。
+three の \`Clock\` は 2 つの値をくれます。
 
-直し方は簡単で、**「1 フレームぶんの時間」を掛ける**だけです。
+- **\`getDelta()\`** … 前のフレームからの経過秒。だいたい $0.0167$
+- **\`getElapsedTime()\`** … 始まってからの通算秒。$0, 0.0167, 0.033, \\ldots$
+
+**この 2 つは、使い分けが決まっています。**
+
+- **繰り返す動き**（往復・円運動・波・点滅）→ **経過時間**から**直接決める**
+- **積み上げる動き**（移動・回転・入力に応じた変化）→ **差分**を**足していく**
+
+理由は誤差です。
 `,
     },
     {
-      kind: 'formula',
-      tex: '\\Delta\\theta = \\omega \\times \\Delta t',
-      readAloud:
-        '回る量は、毎秒あたりの速さ（ω、オメガ）に、前のフレームからの経過秒数（Δt、デルタ t）を掛けたものになる、という意味です。距離＝速さ×時間と同じ形です。',
-      worked: {
-        given: '毎秒 1.2 ラジアン回したい（$\\omega = 1.2$）。60fps の端末と 120fps の端末で比べます。',
-        steps: [
-          { calc: '60fps  : dt = 1/60  = 0.0167 秒' },
-          { calc: '         1.2 x 0.0167 = 0.02 ラジアン / フレーム' },
-          { calc: '120fps : dt = 1/120 = 0.0083 秒' },
-          { calc: '         1.2 x 0.0083 = 0.01 ラジアン / フレーム', note: '1 フレームぶんは半分' },
-          { calc: '1 秒ぶんを足すと' },
-          { calc: '  60  x 0.02 = 1.2', note: 'フレーム数が半分でも' },
-          { calc: '  120 x 0.01 = 1.2', note: '1 回あたりが半分なので、合計は同じ' },
-        ],
-        result: '**どちらも 1.2。** これが `dt` を掛ける理由です。`+= 0.02` と固定で書いていたら、120fps の端末では 2.4 ラジアン ― **倍の速さ**で回ってしまいます。',
-      },
+      kind: 'callout',
+      tone: 'analogy',
+      title: '時計を見るか、歩数を数えるか',
+      text: `
+「10 時にどこにいるか」を知りたいなら、時計を見ればいい。
+何時間歩いたか覚えていなくても、時計は正しい時刻を教えてくれます。
+
+「いまどこにいるか」を歩数から計算すると、
+1 歩ごとのわずかな誤差が積もっていきます。
+
+繰り返す動きは時計を見る。
+積み上がる動きは歩数を数える。それ以外に方法がありません。
+`,
     },
     {
       kind: 'md',
       text: `
-この Δt を教えてくれるのが \`THREE.Clock\` です。
-\`getDelta()\` は「前に呼んでからの秒数」、\`getElapsedTime()\` は「開始からの秒数」を返します。
+## 繰り返す動きは、経過時間から直接
 
-**\`getDelta()\` は呼ぶたびに計測をリセットします。**
-1 フレームに 2 回呼ぶと、2 回目はほぼ 0 になります。
-**必ずループの先頭で 1 回だけ呼び、その値を使い回してください。**
+$\\sin$ で上下させる動きを、2 通りに書いてみます。
+
+**差分で書くと** … \`phase += dt * speed; y = Math.sin(phase)\`
+
+これは動きますが、\`phase\` に**毎フレーム誤差が加わります。**
+[](#/ch/b06-float)でやったとおり、浮動小数の足し算は正確ではありません。
+
+$1$ 時間動かせば $21$ 万回の足し算。ずれは目に見えるほどになります。
+
+**経過時間で書くと** … \`y = Math.sin(clock.getElapsedTime() * speed)\`
+
+**誤差が積もりません。** 経過時間は毎回「開始からの差」として計算し直されるので、
+過去のずれを引きずらないからです。
+
+さらに大きな利点があります。**いつでも「$t$ 秒後の状態」を計算できる。**
+巻き戻しも、早送りも、複数のものを同じ式で位相だけずらすのも自由です。
 `,
     },
     {
+      kind: 'formula',
+      tex: '\\text{誤差}_{\\text{差分}} \\;\\approx\\; \\varepsilon \\sqrt{N}, \\qquad \\text{誤差}_{\\text{経過時間}} \\;\\approx\\; \\varepsilon',
+      readAloud:
+        '差分を足し続けたときの誤差は、足した回数の平方根に比例して増えます。経過時間から直接求めれば、回数によらず一定です。$\\varepsilon$ は 1 回ぶんの丸め誤差です。',
+      worked: {
+        given:
+          '$60$fps で **1 時間**動かします。float32 の丸め誤差を $\\varepsilon \\approx 6 \\times 10^{-8}$ として、両者の誤差を比べます。',
+        steps: [
+          { calc: 'フレーム数 N = 60 x 3600 = 216,000' },
+          { calc: '【差分を足す】' },
+          { calc: '  sqrt(216000) = 464.8' },
+          { calc: '  6e-8 x 464.8 = 2.79e-5' },
+          { calc: '【経過時間から】' },
+          { calc: '  6e-8 のまま', note: '回数によらない' },
+          { calc: '比 : 2.79e-5 / 6e-8 = 465 倍' },
+        ],
+        result:
+          '**$465$ 倍の差**です。とはいえ $2.8 \\times 10^{-5}$ ラジアンは、$1$ 周の $200$ 万分の 1 ― **見た目には出ません。** では何が問題か。**問題は誤差の大きさではなく、$\\Delta t$ が「一定でない」こと**です。重い処理が入った瞬間、あるいはタブから戻った瞬間、$\\Delta t$ が大きく揺れます。差分で書いていると**その揺れがそのまま位相のずれとして残り、二度と戻りません。** 経過時間で書けば、次のフレームには正しい位置に戻ります。',
+      },
+    },
+    {
       kind: 'sandbox',
-      title: 'フレームレートに左右されない動かし方',
+      title: '差分と経過時間 ― タブを離れて戻ってみる',
       code: `import * as THREE from 'three';
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0a12);
 
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 1.5, 7);
-camera.lookAt(0, 0, 0);
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0.5, 9);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const key = new THREE.DirectionalLight(0xffffff, 2.6);
-key.position.set(3, 4, 5);
-scene.add(key, new THREE.HemisphereLight(0x99bbff, 0x101020, 0.6));
-
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const bad = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0xff7ad9 }));
-const good = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0x4fd6ff }));
-bad.position.set(-1.6, 0.8, 0);
-good.position.set(1.6, 0.8, 0);
-scene.add(bad, good);
-
-// 上下にゆれる球。sin に「経過時間」を渡すと、時間の進みがそのまま波になる
-const bob = new THREE.Mesh(
-  new THREE.SphereGeometry(0.45, 32, 20),
-  new THREE.MeshStandardMaterial({ color: 0xffd166 }),
+scene.add(
+  new THREE.DirectionalLight(0xffffff, 2.6).translateY(4).translateZ(4),
+  new THREE.HemisphereLight(0x99bbff, 0x101020, 0.6),
 );
-bob.position.set(0, 0.8, 0);
-scene.add(bob);
+
+const geometry = new THREE.SphereGeometry(0.42, 32, 20);
+
+// A: 差分を足していく（誤差と揺れが積もる）
+const byDelta = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0xff6b8a }));
+byDelta.position.x = -1.6;
+
+// B: 経過時間から直接決める（積もらない）
+const byTime = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0x4fd6ff }));
+byTime.position.x = 1.6;
+
+scene.add(byDelta, byTime);
+
+// 基準になる目盛り。ここに戻ってくるはず
+for (const y of [-2, 0, 2]) {
+  const line = new THREE.Mesh(
+    new THREE.BoxGeometry(6, 0.02, 0.02),
+    new THREE.MeshBasicMaterial({ color: 0x3a3a5c }),
+  );
+  line.position.y = y;
+  scene.add(line);
+}
 
 const clock = new THREE.Clock();
+const SPEED = 1.4;
 
-function animate() {
-  requestAnimationFrame(animate);
+let phase = 0;      // A が持ち歩く状態
 
-  // getDelta はループの先頭で1回だけ。呼ぶたびに計測がリセットされる
+renderer.setAnimationLoop(() => {
+  // ここを Math.min(..., 0.05) で頭打ちにすると、飛びが小さくなります
   const dt = clock.getDelta();
-  const time = clock.getElapsedTime();
+  const t = clock.getElapsedTime();
 
-  bad.rotation.y += 0.02;          // フレームレート次第で速さが変わる書き方
-  good.rotation.y += 1.2 * dt;     // 毎秒 1.2 ラジアン。どの端末でも同じ速さ
+  // A : 位相を積み上げる
+  phase += dt * SPEED;
+  byDelta.position.y = Math.sin(phase) * 2;
 
-  bob.position.y = 0.8 + Math.sin(time * 2) * 0.5;
+  // B : 経過時間から、その場で決める
+  byTime.position.y = Math.sin(t * SPEED) * 2;
+
+  // ずれを監視する
+  const gap = byDelta.position.y - byTime.position.y;
+  if (Math.abs(gap) > 0.01) {
+    console.log('ずれ', gap.toFixed(3), '/ このフレームの dt', dt.toFixed(3));
+  }
 
   renderer.render(scene, camera);
-}
-animate();
+});
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -124,172 +175,344 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });`,
       caption:
-        'ピンクの箱（フレーム依存）と水色の箱（時間ベース）が並んでいます。いまは同じ速さに見えるかもしれませんが、120Hz の画面ではピンクだけが倍速になります。`0.02` を `2.0 * dt` に直すのが正解です。',
+        '**2 つの球は最初ぴったり揃っています。** 別のタブに切り替えて数秒たってから戻ってきてください ― **ピンク（差分）だけがずれたまま戻りません。** 裏に回っているあいだ `requestAnimationFrame` は止まりますが時計は進むので、復帰したフレームの `dt` が数秒ぶんになります。水色（経過時間）は次のフレームで正しい位置に戻ります。',
     },
     {
       kind: 'callout',
       tone: 'warn',
-      title: 'タブを離れて戻ると、一気に飛ぶことがあります',
+      title: 'タブから戻ると、一気に飛びます',
       text: `
-タブが裏に回ると \`requestAnimationFrame\` は止まりますが、時計は進み続けます。
-戻ってきた瞬間の \`getDelta()\` が数秒ぶんになり、物体が一気に飛びます。
+タブが裏に回ると requestAnimationFrame は止まりますが、時計は進み続けます。
 
-対策は上限を設けることです。\`const dt = Math.min(clock.getDelta(), 0.05);\` のように
-1 フレームぶんを 50ms 程度で頭打ちにしておくと、飛びが起きません。
+戻ってきた瞬間の getDelta() が数秒ぶんになり、
+差分で動かしているものが一気に飛びます。
+
+物理計算なら、壁をすり抜けたり、速度が発散したりします。
+
+対策は上限を設けること。
+const dt = Math.min(clock.getDelta(), 0.05);
+
+1 フレームぶんを 50ms 程度で頭打ちにすると、飛びが起きません。
+「実時間より遅れる」ことになりますが、飛ぶよりはるかにましです。
 `,
     },
     {
       kind: 'md',
       text: `
-## 時間の使い方は2通り
+## $dt$ の上限は、必ず入れる
 
-- **経過時間を使う**（\`getElapsedTime\`）… 位置を**直接決める**。
-  \`y = sin(time)\` のように書くので、**何があっても軌道が狂いません**。
-  往復・円運動・波など、繰り返す動きに向いています
-- **差分を使う**（\`getDelta\`）… 現在の値に**足していく**。
-  入力で向きが変わるものや、物理的な動きに向いています。
-  誤差が積もる可能性はありますが、柔軟です
+上のカードは「そういう場合もある」ではなく、**必ず入れるべき 1 行**です。
 
-**繰り返す動きなら経過時間、積み上げる動きなら差分**、と覚えておくと迷いません。
+$dt$ が跳ねる場面は、思ったより多くあります。
+
+- **タブを離れて戻った**（数秒〜数分）
+- **重い処理が入った**（モデルの読み込み、シェーダのコンパイル）
+- **端末がスリープから復帰した**
+- **開発者ツールを開いた瞬間**
+
+そして跳ねた $dt$ は、差分で書いたものすべてを壊します。
+
+**上限の目安は $0.05$ 秒**（$20$fps 相当）。
+これより遅いフレームは「そういうことにする」と割り切ります。
 `,
-    },
-    {
-      kind: 'md',
-      text: `
-## 追いかける動き ― lerp の落とし穴
-
-カメラを目標へなめらかに寄せるとき、\`camera.position.lerp(target, 0.1)\` という書き方をよく見ます。
-
-「毎フレーム、残り距離の 10% を詰める」という意味で、勝手に減速してくれるので見栄えがします。
-ですが**これもフレームレート依存**です。120fps では 60fps の 2 倍の回数呼ばれるので、
-2 倍の速さで寄ります。
-
-直すには、割合そのものを時間から計算します。
-`,
-    },
-    {
-      kind: 'formula',
-      tex: 'k = 1 - r^{\\,\\Delta t}',
-      readAloud:
-        'r は「1 秒たったときに残っている割合」です。たとえば r = 0.001 なら、1 秒で 99.9% 詰まります。これを Δt 乗することで、1 フレームぶんの正しい割合 k が求まります。',
-      worked: {
-        given: '「1 秒で 99.9% 詰める」追従を書きます（$r = 0.001$ ＝ 1 秒後に残る割合）。',
-        steps: [
-          { calc: '60fps  : k = 1 - 0.001^0.0167 = 0.1087' },
-          { calc: '120fps : k = 1 - 0.001^0.0083 = 0.0559', note: 'フレームが倍なので、1 回あたりは小さくなる' },
-          { calc: '確かめ : 60fps で 60 回ぶん残る量' },
-          { calc: '  (1 - 0.1087) の 60 乗 = 0.001', note: 'ちゃんと 0.1% まで詰まった' },
-          { calc: '  (1 - 0.0559) の 120 乗 = 0.001', note: '120fps でも同じところに着く' },
-        ],
-        result: '**どちらも 1 秒後に 0.001。** `lerp(target, 0.1)` と固定で書くと、120fps では倍の回数だけ詰めるので、はるかに速く着いてしまいます。追いかける動きは、この式で `dt` から作り直してください。',
-      },
     },
     {
       kind: 'code',
-      title: 'フレームレートに左右されない追従',
-      code: `// だめな例：呼ばれる回数で速さが変わる
-camera.position.lerp(target, 0.1);
+      title: '$dt$ を安全に取る',
+      code: `import * as THREE from 'three';
 
-// よい例：1秒あたりの「残る割合」から、そのフレームぶんの割合を出す
-const remainPerSecond = 0.001;              // 1秒で 99.9% 詰まる
-const k = 1 - Math.pow(remainPerSecond, dt);
-camera.position.lerp(target, k);
+const clock = new THREE.Clock();
+const MAX_DT = 0.05;      // 20fps 相当。これ以上は頭打ちにする
 
-// 時間を決めて動かすなら、進み具合を自分で数える
-let elapsed = 0;
-const duration = 1.2;
+renderer.setAnimationLoop(() => {
+  // 1 フレームに 1 回だけ呼ぶ。2 回目はほぼ 0 が返る
+  const dt = Math.min(clock.getDelta(), MAX_DT);
+  const t = clock.getElapsedTime();
 
-function animate(dt) {
-  elapsed = Math.min(elapsed + dt, duration);
-  const t = elapsed / duration;             // 0 → 1
-  const eased = t * t * (3 - 2 * t);        // smoothstep
-  mesh.position.lerpVectors(start, end, eased);
+  update(dt, t);
+  renderer.render(scene, camera);
+});
+
+// 一時停止したいとき
+function pause() {
+  clock.stop();            // getElapsedTime も止まる
+}
+function resume() {
+  clock.start();           // ただし elapsedTime が 0 に戻るので注意
+}
+
+// 経過時間を保ったまま止めたいなら、自分で積む
+let time = 0;
+let paused = false;
+
+function update(dt) {
+  if (!paused) time += dt;   // 止まっているあいだは進まない
+  wave.position.y = Math.sin(time * 2);
 }`,
+    },
+    {
+      kind: 'callout',
+      tone: 'warn',
+      title: 'Clock.start() は経過時間を 0 に戻します',
+      text: `
+名前から「再開」に見えますが、three の Clock.start() は
+elapsedTime を 0 にリセットします。
+
+一時停止して再開したいなら、Clock だけでは足りません。
+自分で time += dt と積んでおき、止めたいあいだは足さない、
+という形にしてください。
+
+これなら「巻き戻し」「早送り」「スローモーション」も
+係数を掛けるだけで作れます。
+`,
     },
     {
       kind: 'md',
       text: `
-## 描かなくていいときは描かない
+## 固定タイムステップ ― 物理が要るとき
 
-\`requestAnimationFrame\` は、タブが裏に回ると自動で止まります。これは助かります。
-ですが**画面に何も動きがないときも描き続けている**のは、単なる電池の無駄です。
+物理シミュレーションや、当たり判定が絡む動きでは、
+**$dt$ が揺れること自体が問題**になります。
 
-動きが止まっているあいだは描画を省く、という作りにできます。
-\`OrbitControls\` の \`change\` イベントで描き直す、といった形です。
-静的なモデルビューアなどでは、これだけで消費電力が大きく変わります。
+$dt$ が $0.016$ のときと $0.05$ のときで、**計算結果が変わってしまう**からです。
+速い弾が壁をすり抜ける、積み上げた箱が震える ― どれも $dt$ の揺れが原因です。
+
+解決は「**時間を一定の刻みでしか進めない**」ことです。
+
+1. 実時間の経過を、貯める（accumulator）
+2. 貯まった量が $1/60$ 秒を超えたら、$1/60$ 秒ぶん進める
+3. 超えているあいだ、繰り返す
+4. 端数は次のフレームへ持ち越す
+
+こうすれば、**物理は常に $1/60$ 秒刻みで動きます。**
+描画のフレームレートとは無関係になります。
 `,
     },
     {
-      kind: 'callout',
-      tone: 'tip',
-      title: 'renderer.setAnimationLoop も使えます',
+      kind: 'code',
+      title: '固定タイムステップ',
+      code: `const FIXED = 1 / 60;          // 物理はこの刻みでしか進めない
+const MAX_STEPS = 5;           // 1 フレームで進める上限（暴走を防ぐ）
+
+let accumulator = 0;
+
+renderer.setAnimationLoop(() => {
+  accumulator += Math.min(clock.getDelta(), 0.25);
+
+  let steps = 0;
+  while (accumulator >= FIXED && steps < MAX_STEPS) {
+    stepPhysics(FIXED);        // 常に同じ dt で呼ばれる
+    accumulator -= FIXED;
+    steps++;
+  }
+
+  // 端数ぶんを補間して描くと、なめらかに見える
+  const alpha = accumulator / FIXED;
+  render(alpha);
+});
+
+function render(alpha) {
+  // 前の状態と現在の状態を alpha で混ぜる
+  mesh.position.lerpVectors(prevPos, currPos, alpha);
+  renderer.render(scene, camera);
+}
+
+// MAX_STEPS が無いと「重い → 進める量が増える → もっと重い」の悪循環になる`,
+    },
+    {
+      kind: 'md',
       text: `
-\`renderer.setAnimationLoop(fn)\` は \`requestAnimationFrame\` とほぼ同じですが、
-**VR / AR に対応するときは必須**です（ヘッドセットは別の更新周期で動くため）。
-将来 WebXR に進む予定があるなら、最初からこちらで書いておくと移行が楽になります。
-停止は \`setAnimationLoop(null)\` です。
+## どれを使うか ― 判断の表
+
+| 動き | 使うもの | 理由 |
+|---|---|---|
+| 往復・円運動・波・点滅 | **経過時間** | 誤差も揺れも積もらない |
+| 一定速度の移動・回転 | **差分** | 向きが変わるので、積むしかない |
+| 入力に応じた動き | **差分** | 同上 |
+| 追いかける・減衰する | **差分**（次の章） | 前の値が必要 |
+| 物理・当たり判定 | **固定タイムステップ** | $dt$ の揺れ自体が問題 |
+| 決まった秒数のアニメ | **自分で積んだ時間** | 進み具合を $0$〜$1$ で持つ |
+
+**迷ったら経過時間。** 積む必要が本当にあるときだけ、差分にしてください。
 `,
     },
   ],
   exercises: [
     {
-      prompt: `\`bad\` の箱は \`rotation.y += 0.02\` で回っています。これを \`good\` と同じ「毎秒 1.2 ラジアン」にしてください。
-そのうえで、**なぜ 0.02 のままだといけないのか**を説明してください。`,
-      hint: '0.02 は「1 フレームあたり」の値です。1 秒あたり何フレーム来るかは、端末によって違います。',
-      answer: `\`dt\` を掛けます。\`0.02\` は「1 フレームでこれだけ回す」という意味なので、
-60fps の端末では毎秒 1.2 ラジアン、120fps の端末では毎秒 2.4 ラジアンと、**倍の速さになってしまいます**。
-\`dt\` は「前のフレームから何秒経ったか」なので、掛けておけば速さが端末に左右されません。`,
-      answerCode: `// フレーム数に依存する
-bad.rotation.y += 0.02;
+      prompt: `サンドボックスで、別のタブに $5$ 秒ほど切り替えてから戻ってきてください。
+**何が起きますか。** そして \`clock.getDelta()\` を
+\`Math.min(clock.getDelta(), 0.05)\` に変えると、どう変わりますか。`,
+      hint: '裏に回っているあいだ、ループは止まりますが時計は進みます。',
+      answer: `**ピンク（差分）だけが、ずれたまま戻りません。**
 
-// 毎秒 1.2 ラジアン。どの端末でも同じ速さ
-bad.rotation.y += 1.2 * dt;`,
+**何が起きたか**
+
+タブが裏に回ると \`requestAnimationFrame\` は止まりますが、
+\`Clock\` の内部で使われている時刻は進み続けます。
+
+戻ってきた最初のフレームで \`getDelta()\` が **$5$ 秒ぶん**を返します。
+
+- **ピンク** … \`phase += 5 * 1.4 = 7\` ラジアンが一度に加わる。
+  $7 / 2\\pi = 1.11$ 周ぶん飛んで、**そのずれが永久に残ります**
+- **水色** … \`Math.sin(t * 1.4)\` を計算し直すだけ。
+  $t$ には $5$ 秒が正しく含まれているので、**正しい位置に着きます**
+
+**\`Math.min(..., 0.05)\` を入れると**
+
+ピンクの飛びが $0.05 \\times 1.4 = 0.07$ ラジアンに抑えられます。
+ほとんど気づかない量です。
+
+**そのかわり、ピンクは水色より $5$ 秒ぶん遅れます。**
+実時間より遅れることになりますが、**飛ぶよりはるかにまし**です。
+
+**これは必ず入れる 1 行です。**
+
+$dt$ が跳ねる場面は、タブの切り替え以外にもあります。
+
+- モデルの読み込みやシェーダのコンパイルで、1 フレームが数百ミリ秒かかる
+- 端末がスリープから復帰した
+- 開発者ツールを開いた瞬間
+
+**物理計算が絡むと、跳ねた $dt$ は致命的です。** 弾が壁をすり抜けたり、
+速度が発散して物体が飛んでいったりします。`,
     },
     {
-      prompt: '\`animate\` の中で \`clock.getDelta()\` をもう 1 回呼び、その値も使ってみてください。動きはどうなりますか。',
-      hint: 'getDelta は「前に呼んだときから何秒経ったか」を返し、そのたびに計測をやり直します。',
-      answer: `2 回目はほぼ 0 を返すので、それを使った動きは**ほとんど止まります**。
-\`getDelta()\` は読み出すたびに計測をリセットするので、**1 フレームに 1 回だけ、ループの先頭で呼ぶ**のが約束です。
-複数の場所で必要なら、先頭で取った \`dt\` を渡し回してください。
-なお、経過時間そのものが欲しいときは \`getElapsedTime()\` で、こちらは何回呼んでも安全です。`,
+      prompt: `$60$fps で **$10$ 分間**、\`phase += dt * 2\` と積み上げます。
+**足し算は何回**行われますか。そして、途中で $1$ 回だけ $0.3$ 秒のフレームがあったとき、
+**位相はどれだけずれますか。**`,
+      hint: '正常なフレームは $0.0167$ 秒です。',
+      answer: `**足し算は $36{,}000$ 回。ずれは $0.567$ ラジアン ― 一周の $9\\%$ です。**
+
+**足し算の回数**
+
+$60 \\times 60 \\times 10 = 36{,}000$ 回
+
+**$0.3$ 秒のフレームによるずれ**
+
+正常なフレームなら、$0.3$ 秒のあいだに $18$ 回のフレームが来て、
+それぞれ $0.0167 \\times 2 = 0.0333$ ラジアンずつ進みます。
+
+$18 \\times 0.0333 = 0.6$ ラジアン ― **これが「本来進むべき量」です。**
+
+いっぽう $0.3$ 秒のフレームが $1$ 回来ると、$0.3 \\times 2 = 0.6$ ラジアン。
+
+**同じです。** つまり $dt$ を掛けているかぎり、**遅いフレームでもずれません。**
+
+**ではなぜ問題になるのか。**
+
+$dt$ を **$0.05$ で頭打ち**にしていた場合です。
+
+$0.05 \\times 2 = 0.1$ ラジアンしか進まない。
+本来 $0.6$ 進むべきところが $0.1$ なので、**$0.5$ ラジアン遅れます。**
+
+$0.5 / 2\\pi = 8\\%$ 一周ぶん。**そしてこの遅れは永久に残ります。**
+
+**経過時間で書いていれば**
+
+$\\sin(t \\times 2)$ は、$t$ が正しければ常に正しい位置を返します。
+遅いフレームがあっても、**次のフレームで正しい位置に戻ります。**
+
+**これが「繰り返す動きは経過時間で」の理由です。**
+
+$dt$ の頭打ちは飛びを防ぐために必要ですが、
+**その副作用として、差分で積むものは実時間から遅れていきます。**
+繰り返す動きにその遅れを持ち込む理由はありません。`,
+    },
+    {
+      prompt: `一時停止と再開ができるアニメーションを作りたい。
+\`clock.stop()\` と \`clock.start()\` を使ったところ、**再開した瞬間に動きが飛びました。**
+なぜですか。どう直しますか。`,
+      hint: 'three の `Clock.start()` は、名前どおりの動きをしますか。',
+      answer: `**\`Clock.start()\` は「再開」ではなく「最初から」だからです。**
+
+three の \`Clock.start()\` は、内部の \`elapsedTime\` を **$0$ にリセット**します。
+
+だから \`getElapsedTime()\` で位置を決めていると、
+再開した瞬間に **$t = 0$ の位置へ飛びます。**
+
+$10$ 秒動かして止めて再開すると、**$10$ 秒前の状態に戻る**わけです。
+
+**直し方 ― 時間を自分で持つ**
+
+\`Clock\` は $dt$ を得るためだけに使い、**通算時間は自分で積みます。**
+下の解答例のように \`time += dt\` とし、止めたいあいだは足さない、という形です。
+
+「経過時間で書け」と言ったのに積んでいるじゃないか、と思うかもしれません。
+**ここで積んでいるのは「アニメーションの時計」であって、位相ではありません。**
+
+位相は毎回 \`time * 2\` として計算し直されるので、
+**誤差は $\\sin$ の中には入りません。**
+
+**この形にすると、おまけが 3 つ手に入ります。**
+
+- **スローモーション** … \`time += dt * 0.3\`
+- **早送り** … \`time += dt * 3\`
+- **巻き戻し** … \`time -= dt\`
+
+どれも 1 行です。\`Clock\` に頼っていると、どれもできません。
+
+**さらに、決まった秒数のアニメも同じ形で書けます。**
+\`const progress = Math.min(time / duration, 1)\` で $0$〜$1$ の進み具合が得られ、
+そこにイージング（[](#/ch/b35-easing)）を掛ければ完成です。`,
+      answerCode: `import * as THREE from 'three';
+
+const clock = new THREE.Clock();
+const MAX_DT = 0.05;
+
+let time = 0;          // アニメーションの時計。自分で持つ
+let speed = 1;         // 1: 通常 / 0: 停止 / 0.3: スロー / -1: 巻き戻し
+
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), MAX_DT);
+  time += dt * speed;
+
+  // 位相は毎回 time から計算し直す。誤差は積もらない
+  mesh.position.y = Math.sin(time * 2) * 2;
+  mesh.rotation.y = time * 0.8;
+
+  renderer.render(scene, camera);
+});
+
+pauseButton.onclick = () => { speed = speed === 0 ? 1 : 0; };
+slowButton.onclick  = () => { speed = 0.25; };`,
     },
   ],
   quiz: [
     {
-      q: '`mesh.rotation.y += 0.01` という書き方の問題はどれですか。',
+      q: '往復する動きを書くとき、推奨されるのはどちらですか。',
       choices: [
-        '画面のリフレッシュレートによって回る速さが変わる',
-        '回転が累積して誤差が出る',
-        'ジンバルロックが起きる',
-        'メモリを消費し続ける',
+        '`Math.sin(clock.getElapsedTime() * speed)` ― 経過時間から直接決める',
+        '`phase += dt * speed` ― 位相を積み上げる',
+        'フレーム数を数える',
+        '`setInterval` を使う',
       ],
       answer: 0,
       explain:
-        '1フレームあたりの量を直接足しているので、呼ばれる回数が増えるぶんだけ速くなります。`+= 速さ * dt` と書けば、どの端末でも同じ速さになります。',
+        '経過時間なら誤差も揺れも積もりません。重いフレームやタブ復帰で $dt$ が跳ねても、次のフレームには正しい位置に戻ります。積み上げる書き方だと、そのずれが永久に残ります。',
     },
     {
-      q: '`clock.getDelta()` を1つのフレームの中で2回呼ぶと、どうなりますか。',
+      q: '`const dt = Math.min(clock.getDelta(), 0.05)` の上限は、何のために必要ですか。',
       choices: [
-        '2回目はほぼ 0 が返る',
-        '同じ値が2回返る',
-        '2倍の値が返る',
-        'エラーになる',
+        'タブ復帰などで $dt$ が数秒になったとき、物体が一気に飛ぶのを防ぐため',
+        'フレームレートを固定するため',
+        '精度を上げるため',
+        'メモリを節約するため',
       ],
       answer: 0,
       explain:
-        '`getDelta()` は呼ぶたびに計測を測り直します。ループの先頭で1回だけ呼び、その値を使い回してください。',
+        'タブが裏に回るとループは止まりますが時計は進みます。戻った瞬間の $dt$ が数秒ぶんになり、物理計算なら壁をすり抜けたり速度が発散したりします。必ず入れる 1 行です。',
     },
     {
-      q: '上下に往復する動きを作るとき、より安全なのはどちらですか。',
+      q: 'three の `Clock.start()` は何をしますか。',
       choices: [
-        '`y = Math.sin(clock.getElapsedTime())` のように経過時間から位置を決める',
-        '`y += 0.01` を続け、端に着いたら符号を反転する',
-        '毎フレーム乱数を足す',
-        'setInterval で位置を更新する',
+        '経過時間を 0 にリセットして計測を始める（「再開」ではない）',
+        '止めた時点から再開する',
+        'フレームレートを計測する',
+        '`getDelta` を有効にする',
       ],
       answer: 0,
       explain:
-        '経過時間から位置を直接決めると、フレームが飛んでも軌道が狂いません。積み上げる方式は誤差がたまり、タブを離れて戻ったときに範囲を飛び出すこともあります。',
+        '名前から「再開」に見えますが、`elapsedTime` は 0 に戻ります。一時停止と再開が要るなら、`time += dt` と自分で積んでください。スローや巻き戻しも同じ形で書けます。',
     },
   ],
 };
