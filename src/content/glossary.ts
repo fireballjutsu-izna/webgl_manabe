@@ -553,6 +553,6 @@ export const glossary: GlossaryEntry[] = [
     term: '潮汐固定',
     reading: 'ちょうせきこてい',
     def: '公転の周期と自転の周期が一致し、いつも同じ面を相手に向け続ける状態。月が地球に対してこうなっている。',
-    chapter: 'p04-planet-orbits',
+    chapter: 'x16-orbit-motion',
   },
 ];
