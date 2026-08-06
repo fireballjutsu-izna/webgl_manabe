@@ -503,13 +503,13 @@ export const glossary: GlossaryEntry[] = [
   },
   {
     term: '加算ブレンド',
-    def: 'すでに描かれている色に足す描き方。黒い部分は何も起きないので、光・炎・大気の表現に向く。暗くはできない。',
-    chapter: 'p03-planet-atmosphere',
+    def: 'すでに描かれている色に足す描き方。黒い部分は何も起きないので、光・炎・大気の表現に向く。暗くはできない。足し算なので、描く順番で結果が変わらない。',
+    chapter: 'x12-additive',
   },
   {
     term: 'トーンマッピング',
     def: '計算上の明るさを画面に出せる範囲へ収める変換。白飛びを抑えて、明るい部分の階調を残す。',
-    chapter: 'p03-planet-atmosphere',
+    chapter: 'x12-additive',
   },
   /* ---- 第4部 仕上げ編 ---- */
   {

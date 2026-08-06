@@ -147,6 +147,10 @@ import { chapterX07 } from './chapters/x07-fbm-terrain.ts';
 import { chapterX08 } from './chapters/x08-sphere-seam.ts';
 import { chapterX09 } from './chapters/x09-surface-bake.ts';
 import { chapterP03 } from './chapters/p03-planet-atmosphere.ts';
+import { chapterX11 } from './chapters/x11-atmosphere-rim.ts';
+import { chapterX12 } from './chapters/x12-additive.ts';
+import { chapterX13 } from './chapters/x13-clouds.ts';
+import { chapterX14 } from './chapters/x14-terminator.ts';
 import { chapterP04 } from './chapters/p04-planet-orbits.ts';
 import { chapterP05 } from './chapters/p05-city-layout.ts';
 import { chapterP06 } from './chapters/p06-city-buildings.ts';
@@ -309,6 +313,10 @@ export const chapters: Chapter[] = [
   chapterX08,
   chapterX09,
   chapterP03,
+  chapterX11,
+  chapterX12,
+  chapterX13,
+  chapterX14,
   chapterP04,
   chapterP05,
   chapterP06,

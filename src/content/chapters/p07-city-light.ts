@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterP07: Chapter = {
   slug: 'p07-city-light',
   part: 'project',
-  number: 14,
+  number: 18,
   title: 'ローポリの街 ― 朝から夜へ',
   goal: '時刻という1つの数値から光・空・影・窓の明かりを導けるようになり、影の粗さを自分で解決できるようになります。',
   requires: ['p06-city-buildings', 't05-light-shadow', '08-interp'],
@@ -593,7 +593,7 @@ window.addEventListener('resize', () => {
 
 - **光っている板を置く。** \`MeshBasicMaterial\` の小さな面。周りを照らさないが、**光源そのものは見える**
 - **地面に丸い明かりを描く。** 半透明の円を伏せて置くだけ。照らされているように見える
-- **{{加算ブレンド}}で光の芯を足す。** [](#/ch/p03-planet-atmosphere)の大気と同じやり方
+- **{{加算ブレンド}}で光の芯を足す。** [](#/ch/x12-additive)でやった、光を足す描き方
 
 **「照らす」ことと「光って見える」ことは別**だと割り切るのが、この手の節約の勘所です。
 夜景の写真を思い出すと、実際に見えているのは**光源と、その周りのにじみ**だけです。
