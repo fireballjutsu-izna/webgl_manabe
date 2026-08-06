@@ -157,6 +157,10 @@ import { chapterX17 } from './chapters/x17-pick-drag.ts';
 import { chapterX18 } from './chapters/x18-camera-approach.ts';
 import { chapterX19 } from './chapters/x19-labels-finish.ts';
 import { chapterP05 } from './chapters/p05-city-layout.ts';
+import { chapterX21 } from './chapters/x21-seeded-random.ts';
+import { chapterX22 } from './chapters/x22-subdivision.ts';
+import { chapterX23 } from './chapters/x23-roads.ts';
+import { chapterX24 } from './chapters/x24-eye-level.ts';
 import { chapterP06 } from './chapters/p06-city-buildings.ts';
 import { chapterP07 } from './chapters/p07-city-light.ts';
 import { chapterP08 } from './chapters/p08-city-motion.ts';
@@ -327,6 +331,10 @@ export const chapters: Chapter[] = [
   chapterX18,
   chapterX19,
   chapterP05,
+  chapterX21,
+  chapterX22,
+  chapterX23,
+  chapterX24,
   chapterP06,
   chapterP07,
   chapterP08,

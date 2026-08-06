@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterP07: Chapter = {
   slug: 'p07-city-light',
   part: 'project',
-  number: 22,
+  number: 26,
   title: 'ローポリの街 ― 朝から夜へ',
   goal: '時刻という1つの数値から光・空・影・窓の明かりを導けるようになり、影の粗さを自分で解決できるようになります。',
   requires: ['p06-city-buildings', 't05-light-shadow', '08-interp'],

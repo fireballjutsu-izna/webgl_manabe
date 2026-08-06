@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterP06: Chapter = {
   slug: 'p06-city-buildings',
   part: 'project',
-  number: 21,
+  number: 25,
   title: 'ローポリの街 ― 建物を生やす',
   goal: '数百棟の建物を1回のドローコールで描けるようになり、まとめたあとでも1棟ずつ色を変えられるようになります。',
   requires: ['p05-city-layout', 't11-performance', 't02-geometry'],
