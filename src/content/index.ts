@@ -167,6 +167,10 @@ import { chapterX27 } from './chapters/x27-instancing.ts';
 import { chapterX28 } from './chapters/x28-window-uv.ts';
 import { chapterX29 } from './chapters/x29-city-day.ts';
 import { chapterP07 } from './chapters/p07-city-light.ts';
+import { chapterX31 } from './chapters/x31-sun-height.ts';
+import { chapterX32 } from './chapters/x32-shadow-range.ts';
+import { chapterX33 } from './chapters/x33-sky-fog.ts';
+import { chapterX34 } from './chapters/x34-street-lights.ts';
 import { chapterP08 } from './chapters/p08-city-motion.ts';
 
 import { chapterQ01 } from './chapters/q01-environment.ts';
@@ -345,6 +349,10 @@ export const chapters: Chapter[] = [
   chapterX28,
   chapterX29,
   chapterP07,
+  chapterX31,
+  chapterX32,
+  chapterX33,
+  chapterX34,
   chapterP08,
 
   chapterQ01,
