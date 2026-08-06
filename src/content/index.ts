@@ -162,6 +162,10 @@ import { chapterX22 } from './chapters/x22-subdivision.ts';
 import { chapterX23 } from './chapters/x23-roads.ts';
 import { chapterX24 } from './chapters/x24-eye-level.ts';
 import { chapterP06 } from './chapters/p06-city-buildings.ts';
+import { chapterX26 } from './chapters/x26-merge-geometry.ts';
+import { chapterX27 } from './chapters/x27-instancing.ts';
+import { chapterX28 } from './chapters/x28-window-uv.ts';
+import { chapterX29 } from './chapters/x29-city-day.ts';
 import { chapterP07 } from './chapters/p07-city-light.ts';
 import { chapterP08 } from './chapters/p08-city-motion.ts';
 
@@ -336,6 +340,10 @@ export const chapters: Chapter[] = [
   chapterX23,
   chapterX24,
   chapterP06,
+  chapterX26,
+  chapterX27,
+  chapterX28,
+  chapterX29,
   chapterP07,
   chapterP08,
 
