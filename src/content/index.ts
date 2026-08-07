@@ -196,6 +196,9 @@ import { chapterQ05R3F } from './chapters/q05-r3f.ts';
 import { chapterY17 } from './chapters/y17-r3f-map.ts';
 import { chapterY18 } from './chapters/y18-r3f-decide.ts';
 import { chapterQ06 } from './chapters/q05-ship-it.ts';
+import { chapterY20 } from './chapters/y20-loading.ts';
+import { chapterY21 } from './chapters/y21-reach.ts';
+import { chapterY22 } from './chapters/y22-publish.ts';
 
 /** 学ぶ順に並べた全章。目次・前提知識マップ・検索索引はここから作られる。 */
 export const chapters: Chapter[] = [
@@ -395,6 +398,9 @@ export const chapters: Chapter[] = [
   chapterY17,
   chapterY18,
   chapterQ06,
+  chapterY20,
+  chapterY21,
+  chapterY22,
 ];
 
 const bySlug = new Map(chapters.map((chapter) => [chapter.slug, chapter]));
