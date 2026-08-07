@@ -1602,6 +1602,53 @@
   marker-end: url(#map-arrow);
 }
 
+/* 両端とも読み終わった辺。読んだ範囲が、ひと続きに見えるようにする */
+.map-edge[data-done='true'] {
+  stroke: var(--neon-lime);
+  stroke-width: 1.6;
+  marker-end: url(#map-arrow-done);
+}
+
+/*
+ * どれか 1 つの章に触れているあいだは、その章に出入りする線だけを残す。
+ * 60 本を超える辺を同時に目で追うのは無理なので、関係ないものを引く。
+ */
+.map-svg[data-focus]:not([data-focus='']) .map-edge {
+  opacity: 0.12;
+}
+
+.map-svg[data-focus]:not([data-focus='']) .map-node {
+  opacity: 0.3;
+}
+
+.map-edge[data-live='true'] {
+  opacity: 1;
+  stroke: var(--neon-cyan);
+  stroke-width: 2.2;
+  marker-end: url(#map-arrow-live);
+}
+
+.map-node[data-live='true'] {
+  opacity: 1;
+}
+
+.map-node[data-live='true'] rect {
+  stroke: var(--neon-cyan);
+}
+
+/* 動きを減らす設定でも、濃さの差だけは残す（それが情報そのものなので） */
+.map-edge,
+.map-node {
+  transition: opacity 0.12s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-edge,
+  .map-node {
+    transition: none;
+  }
+}
+
 /* ---- 汎用 ---- */
 
 .lede {
