@@ -128,7 +128,7 @@ const wall = new THREE.Mesh(
 wall.position.z = -3;
 scene.add(wall);
 
-/* ---- 街灯を 3 x 3 に置く。明るさは 0.2126R + 0.7152G + 0.0722B = 2.4047 ---- */
+/* ---- 街灯を置く。明るさは 0.2126R + 0.7152G + 0.0722B = 2.4047 ---- */
 
 const lampMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 2.3, 1.1) });
 const lampGeometry = new THREE.SphereGeometry(0.22, 24, 16);

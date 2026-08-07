@@ -193,6 +193,8 @@ import { chapterY13 } from './chapters/y13-film-grade.ts';
 import { chapterY14 } from './chapters/y14-uv-offset.ts';
 import { chapterY15 } from './chapters/y15-pass-order.ts';
 import { chapterQ05R3F } from './chapters/q05-r3f.ts';
+import { chapterY17 } from './chapters/y17-r3f-map.ts';
+import { chapterY18 } from './chapters/y18-r3f-decide.ts';
 import { chapterQ06 } from './chapters/q05-ship-it.ts';
 
 /** 学ぶ順に並べた全章。目次・前提知識マップ・検索索引はここから作られる。 */
@@ -390,6 +392,8 @@ export const chapters: Chapter[] = [
   chapterY14,
   chapterY15,
   chapterQ05R3F,
+  chapterY17,
+  chapterY18,
   chapterQ06,
 ];
 
