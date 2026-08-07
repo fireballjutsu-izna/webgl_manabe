@@ -516,7 +516,7 @@ export const glossary: GlossaryEntry[] = [
     term: 'IBL',
     reading: 'イメージベースドライティング',
     def: 'まわりの景色そのものを光源として使う考え方。環境マップを置くと、ライトを増やさずに自然な陰影と映り込みが得られる。',
-    chapter: 'q01-environment',
+    chapter: 'y02-pmrem',
   },
   {
     term: 'リニアワークフロー',

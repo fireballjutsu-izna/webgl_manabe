@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterQ04: Chapter = {
   slug: 'q04-custom-pass',
   part: 'polish',
-  number: 4,
+  number: 7,
   title: '自分でパスを書く',
   goal: '画面全体に自分の効果をかけられるようになり、フラグメントシェーダの知識をそのまま画面加工に使えるようになります。',
   requires: ['q03-postprocess', 't14-fragment-shader'],

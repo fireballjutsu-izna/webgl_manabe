@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterQ02: Chapter = {
   slug: 'q02-color',
   part: 'polish',
-  number: 2,
+  number: 5,
   title: '色の通り道',
   goal: '指定した色が画面に出るまでの道筋が分かり、「色が思ったとおりに出ない」を自分で切り分けられるようになります。',
   requires: ['q01-environment', 't04-texture'],

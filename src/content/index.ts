@@ -178,6 +178,9 @@ import { chapterX38 } from './chapters/x38-chunked-merge.ts';
 import { chapterX39 } from './chapters/x39-city-finish.ts';
 
 import { chapterQ01 } from './chapters/q01-environment.ts';
+import { chapterY02 } from './chapters/y02-pmrem.ts';
+import { chapterY03 } from './chapters/y03-env-background.ts';
+import { chapterY04 } from './chapters/y04-env-intensity.ts';
 import { chapterQ02 } from './chapters/q02-color.ts';
 import { chapterQ03 } from './chapters/q03-postprocess.ts';
 import { chapterQ04 } from './chapters/q04-custom-pass.ts';
@@ -364,6 +367,9 @@ export const chapters: Chapter[] = [
   chapterX39,
 
   chapterQ01,
+  chapterY02,
+  chapterY03,
+  chapterY04,
   chapterQ02,
   chapterQ03,
   chapterQ04,

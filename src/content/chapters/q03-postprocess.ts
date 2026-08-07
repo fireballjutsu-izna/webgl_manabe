@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterQ03: Chapter = {
   slug: 'q03-postprocess',
   part: 'polish',
-  number: 3,
+  number: 6,
   title: 'ポストプロセス入門',
   goal: '描き上がった画面に効果をかけられるようになり、色が壊れる・輪郭がギザギザになるという定番の落とし穴を避けられるようになります。',
   requires: ['q02-color', 't11-performance'],

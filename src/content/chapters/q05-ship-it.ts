@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterQ06: Chapter = {
   slug: 'q05-ship-it',
   part: 'polish',
-  number: 6,
+  number: 9,
   title: 'アプリにする',
   goal: '端末に合わせて品質を落とせるようになり、作ったものを人に見せられる形で公開できるようになります。',
   requires: ['q04-custom-pass', 'p08-city-motion'],
