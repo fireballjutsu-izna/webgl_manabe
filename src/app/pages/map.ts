@@ -68,23 +68,41 @@ function buildGraph(list: Chapter[]): SVGElement {
     'aria-label': '章の前提関係を表した図',
   });
 
-  const marker = svgEl(
-    'marker',
-    {
-      id: 'map-arrow',
-      viewBox: '0 0 10 10',
-      refX: '9',
-      refY: '5',
-      markerWidth: '7',
-      markerHeight: '7',
-      orient: 'auto-start-reverse',
-    },
-    // marker の中では currentColor が参照元から継承されないので、色を直接指定する
-    svgEl('path', { d: 'M 0 0 L 10 5 L 0 10 z', fill: 'var(--border-lit)' }),
+  // marker の中では currentColor が参照元から継承されないので、色ごとに 1 つずつ作る
+  const arrow = (id: string, fill: string): SVGElement =>
+    svgEl(
+      'marker',
+      {
+        id,
+        viewBox: '0 0 10 10',
+        refX: '9',
+        refY: '5',
+        markerWidth: '7',
+        markerHeight: '7',
+        orient: 'auto-start-reverse',
+      },
+      svgEl('path', { d: 'M 0 0 L 10 5 L 0 10 z', fill }),
+    );
+  svg.appendChild(
+    svgEl(
+      'defs',
+      {},
+      arrow('map-arrow', 'var(--border-lit)'),
+      arrow('map-arrow-done', 'var(--neon-lime)'),
+      arrow('map-arrow-live', 'var(--neon-cyan)'),
+    ),
   );
-  svg.appendChild(svgEl('defs', {}, marker));
 
-  // 辺を先に描いて、ノードの下に潜らせる
+  /*
+   * 辺を先に描いて、ノードの下に潜らせる。
+   *
+   * 両端とも読み終わった辺は、ノードと同じ緑にする。
+   * 箱だけを塗ると「読んだ章」は分かっても「どこまで通ってきたか」が見えず、
+   * 緑の箱が地図の上に散らばるだけになる。線までつなげば、読んだ範囲がひと続きの
+   * かたまりとして浮かび上がり、その先端がそのまま「次に読める章」になる。
+   */
+  const edges: SVGElement[] = [];
+  const nodes: SVGElement[] = [];
   const edgeLayer = svgEl('g', { color: 'var(--border-lit)' });
   for (const chapter of list) {
     const to = pos.get(chapter.slug);
@@ -99,12 +117,16 @@ function buildGraph(list: Chapter[]): SVGElement {
       const x2 = to.x - 7;
       const y2 = to.y + NODE_H / 2;
       const mid = (x1 + x2) / 2;
-      edgeLayer.appendChild(
-        svgEl('path', {
-          class: 'map-edge',
-          d: `M ${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}`,
-        }),
-      );
+      const done = getProgress(required).read && getProgress(chapter.slug).read;
+      const edge = svgEl('path', {
+        class: 'map-edge',
+        'data-done': String(done),
+        'data-from': required,
+        'data-to': chapter.slug,
+        d: `M ${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}`,
+      });
+      edges.push(edge);
+      edgeLayer.appendChild(edge);
     }
   }
   svg.appendChild(edgeLayer);
@@ -118,6 +140,7 @@ function buildGraph(list: Chapter[]): SVGElement {
       class: 'map-node',
       href: `#/ch/${chapter.slug}`,
       'data-done': String(done),
+      'data-slug': chapter.slug,
     });
     node.appendChild(svgEl('rect', { x: at.x, y: at.y, width: NODE_W, height: NODE_H }));
     node.appendChild(
@@ -132,6 +155,42 @@ function buildGraph(list: Chapter[]): SVGElement {
     node.appendChild(svgEl('text', { x: at.x + 10, y: at.y + 34 }, shortTitle));
     node.appendChild(svgEl('title', {}, chapter.title));
     svg.appendChild(node);
+    nodes.push(node);
+  }
+
+  /*
+   * 触れた章の線だけを浮かせる。
+   *
+   * 辺が 60 本以上あると、どれがどこへ向かっているのか目で追えない。
+   * 1 つの章に注目したら、その章に出入りする辺と相手の章だけを残し、
+   * ほかは薄くする。指では hover が起きないので、キーボードの focus でも同じにする。
+   */
+  const setFocus = (slug: string | null): void => {
+    svg.setAttribute('data-focus', slug ?? '');
+
+    const near = new Set<string>();
+    for (const edge of edges) {
+      const from = edge.getAttribute('data-from');
+      const to = edge.getAttribute('data-to');
+      const live = slug !== null && (from === slug || to === slug);
+      edge.setAttribute('data-live', String(live));
+      if (live) {
+        if (from) near.add(from);
+        if (to) near.add(to);
+      }
+    }
+    for (const node of nodes) {
+      const at = node.getAttribute('data-slug') ?? '';
+      node.setAttribute('data-live', String(slug !== null && near.has(at)));
+    }
+  };
+
+  for (const node of nodes) {
+    const slug = node.getAttribute('data-slug');
+    node.addEventListener('mouseenter', () => setFocus(slug));
+    node.addEventListener('focus', () => setFocus(slug));
+    node.addEventListener('mouseleave', () => setFocus(null));
+    node.addEventListener('blur', () => setFocus(null));
   }
 
   return svg;
