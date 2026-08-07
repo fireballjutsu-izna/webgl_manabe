@@ -164,25 +164,69 @@ function renderList(root: HTMLElement, onlySlug: string | undefined): void {
 
   /* 進み具合と、通しで解く入口 */
 
+  const partChips = el('div', { class: 'drill-parts' });
+  const list = el('div', { class: 'drill-list' });
+  let scope: Part | 'all' = 'all';
+
+  /** いま並べるべき問。部で絞られていれば、その部だけ。 */
+  const inScope = (): Item[] =>
+    scope === 'all' ? focused : focused.filter((i) => i.chapter.part === scope);
+
   const summary = el('p', { class: 'lede lede--wide drill-count' });
   const syncSummary = (): void => {
-    const done = focused.filter((i) => isExerciseDone(i.chapter.slug, i.index)).length;
-    summary.textContent = `${done} / ${focused.length} 問`;
+    const items = inScope();
+    const done = items.filter((i) => isExerciseDone(i.chapter.slug, i.index)).length;
+    summary.textContent = `${done} / ${items.length} 問`;
   };
 
-  const partChips = el('div', { class: 'drill-parts' });
-  let scope: Part | 'all' = 'all';
-  const sections: { part: Part; node: HTMLElement }[] = [];
+  const startSection = (chapter: Chapter): HTMLElement =>
+    el(
+      'section',
+      { class: 'drill-ch' },
+      el(
+        'h2',
+        { class: 'drill-ch__title' },
+        el('a', { href: `#/ch/${chapter.slug}` }, `${chapterLabel(chapter)}　${chapter.title}`),
+      ),
+    );
+
+  /*
+   * 部を選び直したら、並んでいるものを作り直す。
+   *
+   * 以前は section を hidden にして隠していたが、それだと全章ぶんの DOM が残り続ける。
+   * 195 章・585 問の時点で 10 万ノード・10 万 px を超えていて、
+   * 絞り込んでも軽くならなかった。作り直せば、見えているぶんしか持たない。
+   */
+  const buildList = (): void => {
+    const next = document.createDocumentFragment();
+    let current: { slug: string; node: HTMLElement } | null = null;
+
+    for (const item of inScope()) {
+      if (current === null || current.slug !== item.chapter.slug) {
+        const section = startSection(item.chapter);
+        current = { slug: item.chapter.slug, node: section };
+        next.appendChild(section);
+      }
+
+      current.node.appendChild(
+        createExerciseItem(item.exercise, {
+          label: String(item.index + 1),
+          mark: { slug: item.chapter.slug, index: item.index },
+        }),
+      );
+    }
+
+    list.replaceChildren(next);
+  };
 
   const applyScope = (): void => {
-    for (const section of sections) {
-      section.node.hidden = scope !== 'all' && section.part !== scope;
-    }
     for (const chip of partChips.querySelectorAll('button')) {
       chip.setAttribute('aria-pressed', String(chip.dataset.part === scope));
     }
     const run = root.querySelector<HTMLAnchorElement>('.drill-run-link');
     if (run) run.href = `#/drill/run/${scope}`;
+    buildList();
+    syncSummary();
   };
 
   for (const [id, label] of [['all', 'すべて'], ...PARTS.map((p) => [p.id, p.title.replace(/　/, ' ')])] as [
@@ -214,36 +258,8 @@ function renderList(root: HTMLElement, onlySlug: string | undefined): void {
 
   /* 章ごとに並べる */
 
-  const list = el('div', { class: 'drill-list' });
-  let current: { slug: string; node: HTMLElement } | null = null;
-  const startSection = (chapter: Chapter): HTMLElement =>
-    el(
-      'section',
-      { class: 'drill-ch' },
-      el(
-        'h2',
-        { class: 'drill-ch__title' },
-        el('a', { href: `#/ch/${chapter.slug}` }, `${chapterLabel(chapter)}　${chapter.title}`),
-      ),
-    );
-
-  for (const item of focused) {
-    if (current === null || current.slug !== item.chapter.slug) {
-      const section = startSection(item.chapter);
-      current = { slug: item.chapter.slug, node: section };
-      sections.push({ part: item.chapter.part, node: section });
-      list.appendChild(section);
-    }
-
-    current.node.appendChild(
-      createExerciseItem(item.exercise, {
-        label: String(item.index + 1),
-        mark: { slug: item.chapter.slug, index: item.index },
-      }),
-    );
-  }
-
   root.appendChild(list);
+  buildList();
   syncSummary();
   if (!onlySlug) applyScope();
 
