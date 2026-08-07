@@ -325,10 +325,46 @@ for (const chapter of withoutExercises) {
   warnings.push(`${chapter.slug}: 演習が 1 問もありません`);
 }
 
+/*
+ * 正解の位置が、特定の番号に偏っていないか。
+ *
+ * 各章は正解を先頭に書く約束で、そのままだと全問の正解が 1 番目に並ぶ。
+ * `src/content/index.ts` が出す直前に混ぜているので、ここで見えるのは混ぜたあとの並び。
+ * つまりこの検査は「混ぜる処理が生きているか」の見張りでもある。
+ */
+const answerAt = new Map<number, number>();
+let quizCount = 0;
+for (const chapter of chapters) {
+  for (const question of chapter.quiz) {
+    answerAt.set(question.answer, (answerAt.get(question.answer) ?? 0) + 1);
+    quizCount++;
+  }
+}
+const widest = Math.max(...chapters.flatMap((c) => c.quiz.map((q) => q.choices.length)));
+if (quizCount >= 20) {
+  const even = 1 / widest;
+  for (const [at, count] of [...answerAt].sort((a, b) => a[0] - b[0])) {
+    const share = count / quizCount;
+    // 均等なら 1/選択肢数。その 1.8 倍を超えたら、偏りとみなす
+    if (share > even * 1.8) {
+      errors.push(
+        `確認クイズの正解が ${at + 1} 番目に偏っています` +
+          `（${count} / ${quizCount} 問 = ${(share * 100).toFixed(1)}%、均等なら ${(even * 100).toFixed(1)}%）`,
+      );
+    }
+  }
+}
+
+const answerShare = [...answerAt]
+  .sort((a, b) => a[0] - b[0])
+  .map(([at, count]) => `${at + 1}番目 ${((count / quizCount) * 100).toFixed(0)}%`)
+  .join(' / ');
+
 console.log(
   `章: ${chapters.length}　デモ: ${demoIds.size}　用語: ${terms.size}　数式: ${formulaCount}` +
     `　演習: ${exerciseCount}　逆引き: ${symptoms.length}`,
 );
+console.log(`確認クイズ: ${quizCount}問　正解の位置 ${answerShare}`);
 
 for (const warning of warnings) console.warn(`  warn  ${warning}`);
 
