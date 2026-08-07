@@ -182,6 +182,9 @@ import { chapterY02 } from './chapters/y02-pmrem.ts';
 import { chapterY03 } from './chapters/y03-env-background.ts';
 import { chapterY04 } from './chapters/y04-env-intensity.ts';
 import { chapterQ02 } from './chapters/q02-color.ts';
+import { chapterY06 } from './chapters/y06-hex-colorspace.ts';
+import { chapterY07 } from './chapters/y07-tonemapping.ts';
+import { chapterY08 } from './chapters/y08-color-debug.ts';
 import { chapterQ03 } from './chapters/q03-postprocess.ts';
 import { chapterQ04 } from './chapters/q04-custom-pass.ts';
 import { chapterQ05R3F } from './chapters/q05-r3f.ts';
@@ -371,6 +374,9 @@ export const chapters: Chapter[] = [
   chapterY03,
   chapterY04,
   chapterQ02,
+  chapterY06,
+  chapterY07,
+  chapterY08,
   chapterQ03,
   chapterQ04,
   chapterQ05R3F,
