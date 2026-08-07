@@ -3,519 +3,387 @@ import type { Chapter } from '../types.ts';
 export const chapterP05: Chapter = {
   slug: 'p05-city-layout',
   part: 'project',
-  number: 5,
-  title: 'ローポリの街 ― 街路をひく',
-  goal: '同じ種から必ず同じ街が出る乱数を書けるようになり、再帰的な分割で街区を切り出せるようになります。',
-  requires: ['p04-planet-orbits', '13-random', 't10-scene-graph'],
-  threeApis: [
-    'BoxGeometry',
-    'Mesh',
-    'Group',
-    'MeshStandardMaterial',
-    'PlaneGeometry',
-    'Object3D.position',
-    'Object3D.scale',
-    'Fog',
-  ],
+  number: 20,
+  title: '街をどう作るか ― 500 棟を、置く前に決める',
+  goal: '「たくさんを安く作る」という後半の主題を、描画回数と生成方針の $2$ つの見積もりから設計できるようになります。',
+  requires: ['x19-labels-finish', 'w42-draw-calls', '13-random'],
+  threeApis: ['WebGLRenderer.info', 'InstancedMesh', 'BufferGeometryUtils'],
   mathRecall: [
-    { slug: '13-random', note: 'シード ― 同じ種なら同じ並び' },
-    { slug: '01-space', note: 'x と z が地面、y が高さ' },
-    { slug: 't10-scene-graph', note: 'Group でまとめて片付ける' },
-    { slug: 't11-performance', note: 'ドローコール ― ここから本番になります' },
+    { slug: 'w42-draw-calls', note: '回数 × 単価。命令の回数で CPU が決まる' },
+    { slug: 'b39-seed', note: '同じ種から、同じばらつきを再現する' },
+    { slug: 'm40-subdivision', note: '同じ手順を、半分の大きさで' },
   ],
   blocks: [
     {
       kind: 'md',
       text: `
-## 惑星とは、まったく違う難しさ
+## 惑星とは、難しさの種類が違う
 
-前半の 4 章は「**1 つのものを丁寧に作る**」でした。後半は逆です。
+$19$ 章かけて作った惑星は「**$1$ つのものを、丁寧に作る**」話でした。
+層は $4$ 枚、月は $1$ つ。数はどれも片手で数えられます。
 
-街には建物が 500 も 1000 もあります。1 つずつ丁寧に置いていたら終わりませんし、
-そのまま描いたら[](#/ch/t11-performance)でやったとおり{{ドローコール}}で潰れます。
+街は逆です。**建物が $500$ も $1000$ もあります。**
+
+$1$ つずつ丁寧に置いていたら終わりませんし、
+そのまま描いたら[](#/ch/w42-draw-calls)でやったとおり{{ドローコール}}で潰れます。
+
 つまり後半の主題は「**たくさんのものを、安く、それらしく作る**」です。
-
-段取りはこうします。
-
-- **この章** … 街区を切り出す。決め打ちの乱数と、再帰的な分割
-- **[](#/ch/p06-city-buildings)** … 建物を生やして、1 回で描く
-- **[](#/ch/p07-city-light)** … 朝から夜へ。影と窓の明かり
-- **[](#/ch/p08-city-motion)** … 車を走らせて仕上げる
 `,
     },
     {
       kind: 'md',
       text: `
-## まず、乱数を決め打ちにする
+## 置く前に、値段を見る
 
-手続き的に何かを生成するとき、**\`Math.random()\` をそのまま使うのは事故です。**
-理由は 3 つあり、どれも実際に困ります。
-
-- **さっきの街が二度と出ない。** 「あの配置が良かった」と思っても戻れません
-- **不具合を再現できない。** 「たまに建物が道路に食い込む」を追えません
-- **見せられない。** 同じ URL を開いた人に、同じものが見えません
-
-なので、**種（{{シード}}）を渡したら必ず同じ並びを返す乱数**を自分で持ちます。
-短くて速いもので十分です。次の 8 行が、この章から最後まで街の骨格を決めます。
-`,
-    },
-    {
-      kind: 'code',
-      title: '決め打ちの疑似乱数（mulberry32）',
-      code: `function makeRandom(seed) {
-  let state = seed >>> 0;
-  return function () {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-const rand = makeRandom(20260730);
-rand();  // 0〜1。同じ種からは、必ず同じ並びが出る`,
-    },
-    {
-      kind: 'callout',
-      tone: 'tip',
-      title: '中身を理解しなくても、使えます',
-      text: `
-かけ算と排他的論理和を混ぜて、値をよく散らばらせているだけです。
-仕組みを追う必要はありません。**性質だけ覚えてください。**
-
-- 同じ種 → 必ず同じ並び
-- 種を 1 増やすと、まったく別の並び
-- 速い（\`Math.random()\` と同程度）
-
-「暗号には使えない」という注意書きが付きますが、
-街を作るぶんには何の問題もありません。
-`,
-    },
-    {
-      kind: 'md',
-      text: `
-## 街区の切り方 ― 大きな土地を割っていく
-
-街路の作り方には、大きく 2 つあります。
-
-**（A）格子。** 等間隔に縦横の線を引く。京都やマンハッタン。素直ですが、**すぐ単調に見えます。**
-
-**（B）再帰的に割る。** 土地を 1 本の道で 2 つに割り、できた土地をそれぞれまた割る。
-小さくなったらやめる。こちらは**大小の街区が自然に混ざる**ので、それらしく見えます。
-
-B を採ります。書き方も短く、10 行ほどで済みます。
-
-コツは 2 つあります。**長い辺の側を割る**こと（そうしないと細長い街区ばかりになる）と、
-**真ん中ではなく 35〜65 パーセントの位置で割る**こと（真ん中で割ると格子に戻ってしまう）。
+いちばん素直な書き方 ― 建物ごとに \`new THREE.Mesh(...)\` ― が
+いくらかかるかを、**コードを書く前に**見積もっておきます。
 `,
     },
     {
       kind: 'formula',
-      tex: '\\text{切る位置} = w \\cdot (0.35 + 0.3\\,\\xi), \\quad \\xi \\sim U(0,1)',
+      tex: 't_{\\text{CPU}} \\;\\approx\\; N \\times c',
       readAloud:
-        '幅 w の 35 パーセントから 65 パーセントのあいだのどこかで切る、と読みます。ξ（クサイ）は 0 から 1 の一様乱数です。範囲を狭めると格子に近づき、広げると極端に細い街区が出ます。',
+        '$1$ フレームの CPU の時間は、ドローコールの回数 $N$ と $1$ 回あたりの費用 $c$ の掛け算でおおよそ決まります。$c$ は端末によりますが $0.005$〜$0.02$ ミリ秒くらいです。',
       worked: {
-        given: '幅 $w = 100$ の街区を切ります。乱数 $\\xi$ の値ごとに、切れる位置を見ます。',
+        given: '建物 $500$ 棟＋地面 $1$ 枚。$c = 0.012$ ミリ秒（[](#/ch/w42-draw-calls)で測った値）で見ます。',
         steps: [
-          { calc: 'ξ = 0   : 100 x (0.35 + 0)    = 35', note: 'いちばん左寄り' },
-          { calc: 'ξ = 0.5 : 100 x (0.35 + 0.15) = 50', note: 'ちょうど真ん中' },
-          { calc: 'ξ = 1   : 100 x (0.35 + 0.3)  = 65', note: 'いちばん右寄り' },
+          { calc: '1 棟ずつ Mesh にする場合' },
+          { calc: '  N = 501' },
+          { calc: '  t = 501 x 0.012 = 6.01 ms' },
+          { calc: '60fps の予算 16.7 ms に対して' },
+          { calc: '  6.01 / 16.7 = 36%', note: '描く前に 3 分の 1 が消える' },
+          { calc: 'まとめて 1 回にする場合' },
+          { calc: '  N = 2、t = 0.024 ms' },
         ],
-        result: '切れるのは **35〜65 のあいだだけ**。もし $0$〜$1$ の乱数をそのまま使うと、幅 2 の街区と幅 98 の街区が生まれ、**極端に細長い土地**ができてしまいます。範囲を狭めると格子に、広げると雑然とした街になります。**この 2 つの数字が、街の性格そのものです。**',
+        result:
+          '**$6.01$ ミリ秒と $0.024$ ミリ秒。$250$ 倍の差**です。しかも**三角形の数はまったく同じ** ― 減るのは命令の回数だけです。$36\\%$ を「まだ余裕がある」と読むこともできますが、これは**建物を置いただけ**の値です。影・車・空が乗る前に $3$ 分の $1$ を使っているので、ここで払わない判断をします。',
       },
     },
     {
       kind: 'md',
       text: `
-## 道路は「作らない」
+## 後半 4 章の段取り
 
-ここが気持ちのいいところです。**道路をモデリングしません。**
+見積もりから、作る順番が決まります。
 
-土地を 2 つに割るとき、境目に**道路の幅だけ隙間をあけて**割ります。
-すると、残った街区の**あいだが自動的に道路になります。**
+| 章 | やること | 効く数字 |
+|---|---|---|
+| [](#/ch/x21-seeded-random) | 決め打ちの乱数 | 同じ種 → 同じ街 |
+| [](#/ch/x22-subdivision) | 土地を再帰的に割る | 街区 $54$ 個 |
+| [](#/ch/x23-roads) | 隙間を道路にする | 道路率 $31.3\\%$ |
+| [](#/ch/x24-eye-level) | 目線を下ろす | ここまでの見え方を確かめる |
+| [](#/ch/p06-city-buildings) | 建物を生やして $1$ 回で描く | $501 \\to 2$ 回 |
+| [](#/ch/p07-city-light) | 朝から夜へ | 時刻 $1$ つから全部 |
+| [](#/ch/p08-city-motion) | 車を走らせて仕上げる | 曲線に沿う動き |
 
-道路の形を計算する必要も、交差点を特別扱いする必要もありません。
-「街区を置いていったら、隙間が道になっていた」という順番です。
+**街の形を決めるのが $4$ 章、それを安く描くのが $1$ 章**という配分です。
 `,
-    },
-    {
-      kind: 'sandbox',
-      title: '街区を切り出す（真上から）',
-      guide: { focus: ['土地を再帰的に割る'] },
-      code: `import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-const CITY = 120;        // 街全体の一辺
-const ROAD = 3.2;        // 道路の幅
-const MIN_LOT = 9;       // この2倍＋道路幅より小さい土地は、もう割らない
-
-/* ---- 決め打ちの乱数 ---- */
-
-function makeRandom(seed) {
-  let state = seed >>> 0;
-  return function () {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/* ---- 土地を再帰的に割る ---- */
-// rect は { x, z, w, d }。x, z は角の座標、w, d は幅と奥行き
-
-function splitLots(rect, rand, out) {
-  const canSplitX = rect.w > MIN_LOT * 2 + ROAD;
-  const canSplitZ = rect.d > MIN_LOT * 2 + ROAD;
-
-  if (!canSplitX && !canSplitZ) {
-    out.push(rect);
-    return out;
-  }
-
-  // 長い辺の側を割る。どちらも割れるなら長いほうを選ぶ
-  const alongX = canSplitX && (!canSplitZ || rect.w >= rect.d);
-  const length = alongX ? rect.w : rect.d;
-  const cut = length * (0.35 + rand() * 0.3);
-
-  if (alongX) {
-    splitLots({ x: rect.x, z: rect.z, w: cut - ROAD / 2, d: rect.d }, rand, out);
-    splitLots(
-      { x: rect.x + cut + ROAD / 2, z: rect.z, w: rect.w - cut - ROAD / 2, d: rect.d },
-      rand, out,
-    );
-  } else {
-    splitLots({ x: rect.x, z: rect.z, w: rect.w, d: cut - ROAD / 2 }, rand, out);
-    splitLots(
-      { x: rect.x, z: rect.z + cut + ROAD / 2, w: rect.w, d: rect.d - cut - ROAD / 2 },
-      rand, out,
-    );
-  }
-  return out;
-}
-
-/* ---- シーン ---- */
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0a12);
-
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 800);
-camera.position.set(0, 165, 1);   // ほぼ真上から
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-
-const sun = new THREE.DirectionalLight(0xffffff, 2.2);
-sun.position.set(20, 80, 30);
-scene.add(sun, new THREE.AmbientLight(0xffffff, 0.7));
-
-// 地面（＝道路。街区の隙間がそのまま道になる）
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(CITY + 20, CITY + 20),
-  new THREE.MeshStandardMaterial({ color: 0x1a1a24 }),
-);
-ground.rotation.x = -Math.PI / 2;
-scene.add(ground);
-
-/* ---- 街区を並べる ---- */
-
-const city = new THREE.Group();
-scene.add(city);
-
-const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
-const readout = document.createElement('div');
-readout.style.cssText =
-  'position:absolute; left:12px; bottom:12px; color:#e8e8f2; font:12px monospace;' +
-  'pointer-events:none; white-space:pre;';
-document.body.appendChild(readout);
-
-let seed = 20260730;
-let blockCount = 0;
-
-function build() {
-  // 前の街を片付ける（2-10 の dispose）
-  for (const child of city.children.slice()) {
-    city.remove(child);
-    child.material.dispose();
-  }
-
-  const rand = makeRandom(seed);
-  const lots = splitLots(
-    { x: -CITY / 2, z: -CITY / 2, w: CITY, d: CITY },
-    rand, [],
-  );
-
-  for (const lot of lots) {
-    const material = new THREE.MeshStandardMaterial({
-      // 大きい街区ほど明るくして、大小が混ざっているのを見えるようにする
-      color: new THREE.Color().setHSL(0.58, 0.25, 0.2 + Math.min(0.45, lot.w * lot.d / 900)),
-    });
-    const block = new THREE.Mesh(blockGeometry, material);
-    block.scale.set(lot.w, 0.6, lot.d);
-    block.position.set(lot.x + lot.w / 2, 0.3, lot.z + lot.d / 2);
-    city.add(block);
-  }
-
-  blockCount = lots.length;
-}
-
-/* ---- ボタン ---- */
-
-function addButton(text, left, onClick) {
-  const button = document.createElement('button');
-  button.textContent = text;
-  button.style.cssText =
-    'position:absolute; bottom:82px; left:' + left + 'px; padding:6px 10px;' +
-    'background:#12121f; color:#e8e8f2; border:1px solid #3a3a5c; border-radius:6px;' +
-    'font:12px sans-serif; cursor:pointer;';
-  button.addEventListener('click', onClick);
-  document.body.appendChild(button);
-}
-
-addButton('同じシードで作り直す', 12, () => build());
-addButton('次のシードへ', 176, () => { seed += 1; build(); });
-
-build();
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
-
-  // 数えるのではなく、実際に測る（2-11）
-  readout.textContent =
-    'シード ' + seed + '\\n街区 ' + blockCount + ' 区画\\n' +
-    'ドローコール ' + renderer.info.render.calls;
-}
-animate();
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});`,
-      caption:
-        '「同じシードで作り直す」を何度押しても、まったく同じ街区が出ます。「次のシードへ」を押すと別の街になります。この違いが、手続き的生成で最初に手に入れるべきものです。`MIN_LOT` を 20 にすると大きな街区ばかりになり、5 にすると細切れになります。`0.35 + rand() * 0.3` を `0.5` に固定すると、街が格子に戻るのが見えます。',
-    },
-    {
-      kind: 'md',
-      text: `
-## 目線を下ろす
-
-真上から見ると「地図」ですが、カメラを下ろすと**まだ何も無い**ことが分かります。
-街区の板が並んでいるだけです。
-
-それでも、この段階で確かめておきたいことがあります。
-
-- **道路の幅は歩ける広さか。** 上から見て良さそうでも、目線では狭すぎることがよくあります
-- **街区の大小は混ざっているか。** 同じ大きさばかりなら、割り方の乱数が効いていません
-- **街の外周はどうするか。** 何もないと、世界の果てが見えてしまいます
-
-3 つめには{{フォグ}}を使います。遠くを背景色に溶かしてしまえば、
-「この先も街が続いているが、霞んで見えない」という顔になります。
-**世界を広げるより、見えなくするほうがずっと安い**という、よく使われる手です。
-`,
-    },
-    {
-      kind: 'sandbox',
-      title: '目線の高さから見る（まだ建物はありません）',
-      code: `import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-const CITY = 120;
-const ROAD = 3.2;
-const MIN_LOT = 9;
-const SIDEWALK = 0.9;   // 街区のふちに残す歩道の幅
-
-function makeRandom(seed) {
-  let state = seed >>> 0;
-  return function () {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function splitLots(rect, rand, out) {
-  const canSplitX = rect.w > MIN_LOT * 2 + ROAD;
-  const canSplitZ = rect.d > MIN_LOT * 2 + ROAD;
-  if (!canSplitX && !canSplitZ) { out.push(rect); return out; }
-
-  const alongX = canSplitX && (!canSplitZ || rect.w >= rect.d);
-  const length = alongX ? rect.w : rect.d;
-  const cut = length * (0.35 + rand() * 0.3);
-
-  if (alongX) {
-    splitLots({ x: rect.x, z: rect.z, w: cut - ROAD / 2, d: rect.d }, rand, out);
-    splitLots({ x: rect.x + cut + ROAD / 2, z: rect.z, w: rect.w - cut - ROAD / 2, d: rect.d }, rand, out);
-  } else {
-    splitLots({ x: rect.x, z: rect.z, w: rect.w, d: cut - ROAD / 2 }, rand, out);
-    splitLots({ x: rect.x, z: rect.z + cut + ROAD / 2, w: rect.w, d: rect.d - cut - ROAD / 2 }, rand, out);
-  }
-  return out;
-}
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x161a26);
-// 遠くを背景色に溶かす。世界の果てを隠す、いちばん安い方法
-scene.fog = new THREE.Fog(0x161a26, 40, 190);
-
-const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.5, 600);
-camera.position.set(-26, 6.5, 34);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.target.set(0, 3, 0);
-controls.maxPolarAngle = Math.PI * 0.495;   // 地面より下へ回り込めないようにする
-
-const sun = new THREE.DirectionalLight(0xffe8c4, 2.4);
-sun.position.set(60, 80, 40);
-scene.add(sun, new THREE.HemisphereLight(0x9db8ff, 0x2a2a33, 0.8));
-
-// 道路になる地面
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(600, 600),
-  new THREE.MeshStandardMaterial({ color: 0x474b56, roughness: 0.95 }),
-);
-ground.rotation.x = -Math.PI / 2;
-scene.add(ground);
-
-const lots = splitLots({ x: -CITY / 2, z: -CITY / 2, w: CITY, d: CITY }, makeRandom(20260730), []);
-
-// 歩道の高さぶん持ち上げた板を、街区ごとに置く
-const slabGeometry = new THREE.BoxGeometry(1, 1, 1);
-const slabMaterial = new THREE.MeshStandardMaterial({ color: 0x5f6472, roughness: 0.9 });
-
-for (const lot of lots) {
-  const slab = new THREE.Mesh(slabGeometry, slabMaterial);
-  slab.scale.set(lot.w, 0.35, lot.d);
-  slab.position.set(lot.x + lot.w / 2, 0.175, lot.z + lot.d / 2);
-  scene.add(slab);
-
-  // 建物が建つ範囲（歩道を残した内側）。次の章で使う
-  const inner = new THREE.Mesh(
-    slabGeometry,
-    new THREE.MeshStandardMaterial({ color: 0x4b5060, roughness: 0.9 }),
-  );
-  const w = Math.max(0.5, lot.w - SIDEWALK * 2);
-  const d = Math.max(0.5, lot.d - SIDEWALK * 2);
-  inner.scale.set(w, 0.38, d);
-  inner.position.set(lot.x + lot.w / 2, 0.19, lot.z + lot.d / 2);
-  scene.add(inner);
-}
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
-}
-animate();
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});`,
-      caption:
-        '道路の網目が地面の隙間として見えます。少し暗い内側の四角が、次の章で建物が建つ範囲です。`scene.fog` の行を消すと、街の端がぶつりと途切れて世界の果てが見えます。`controls.maxPolarAngle` を消すと地面の下へ回り込めてしまい、街が浮いていることがばれます。',
     },
     {
       kind: 'callout',
-      tone: 'warn',
-      title: 'この時点で、すでにドローコールは危ない',
+      tone: 'tip',
+      title: '「あとで速くする」は、たいてい手遅れになります',
       text: `
-街区が 60 区画あると、板と内側で 120 個のメッシュ。地面を足して 121 回のドローコールです。
-まだ建物が 1 つも無いのに、[](#/ch/t11-performance)で「気にしはじめる」と言った 100 を超えました。
+$500$ 個の \`Mesh\` を作ってから \`InstancedMesh\` に移すのは、
+**書き直しになります。** 位置の持ち方も、色の付け方も、当たり判定も変わるからです。
 
-このまま建物を 1 棟ずつメッシュにすると、**軽く 1000 回**を超えます。
-次の章の最初の仕事は、これを **1 回**にすることです。
+一方、最初から「まとめて描く」前提で組むと、
+**街区のデータ（矩形の配列）を作る部分は、どちらでも同じ**です。
+
+だからこの $4$ 章では、**位置と大きさを決めるところまでを、描画から切り離して**作ります。
+出てくるのは \`{ x, z, w, d }\` の配列だけ。
+それをどう描くかは、次の章の仕事です。
+
+**「何を作るか」と「どう描くか」を分けておけば、描き方は後から選べます。**
 `,
     },
     {
       kind: 'md',
       text: `
-## 分割の作法
+## 素材は、やはり 1 つも用意しません
 
-再帰で書くときに、必ず入れておくものが 2 つあります。
+惑星と同じ方針です。画像もモデルも使いません。
 
-- **止まる条件を先に書く。** 「これ以上割れない」を関数の頭に置きます。
-  忘れると、道路の幅を引き続けて**幅が負の街区**が生まれ、
-  裏返ったジオメトリとして描かれます（見た目が壊れるまで気づけません）
-- **割れない場合に何を返すかを決める。** ここでは「割らずにそのまま結果へ入れる」です
+街で必要になるのは $3$ つだけです。
 
-これは[](#/ch/13-random)のノイズと同じで、
-**手続き的生成の不具合は「例外」ではなく「妙な見た目」として出ます。**
-だから止まる条件は、動かす前に書いておくほうが早いのです。
+- **決め打ちの乱数**（[](#/ch/x21-seeded-random)）… 同じ街を何度でも出す
+- **再帰的な分割**（[](#/ch/x22-subdivision)）… 大小の街区が自然に混ざる
+- **箱**（[](#/ch/p06-city-buildings)）… 建物は直方体だけ
+
+**ローポリにするのは、手を抜くためではありません。**
+形が単純なほど、$1$ 棟あたりの頂点が減り、$1000$ 棟置けるようになります。
+そして $1000$ 棟あることのほうが、$1$ 棟が精巧であることより**街に見えます。**
+`,
+    },
+    {
+      kind: 'sandbox',
+      title: '同じ土地を、2 通りで割ってみる',
+      guide: { focus: ['格子で割る', '再帰的に割る'] },
+      code: `import * as THREE from 'three';
+
+// 街路の作り方は大きく 2 つ。まず見比べてから、片方を選ぶ
+
+const CITY = 60;
+const ROAD = 2.0;
+
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-70, 70, 42, -42, 0.1, 100);
+camera.position.set(0, 40, 0);
+camera.lookAt(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+function makeRandom(seed) {
+  let state = seed >>> 0;
+  return function () {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ---- 格子で割る ---- */
+// 等間隔。京都やマンハッタン。書くのはいちばん簡単
+
+function gridLots(n) {
+  const out = [];
+  const step = CITY / n;
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      out.push({
+        x: -CITY / 2 + i * step,
+        z: -CITY / 2 + j * step,
+        w: step - ROAD,
+        d: step - ROAD,
+      });
+    }
+  }
+  return out;
+}
+
+/* ---- 再帰的に割る ---- */
+// 1 本の道で 2 つに割り、できた土地をそれぞれまた割る
+
+function splitLots(rect, rand, out, minLot) {
+  const canX = rect.w > minLot * 2 + ROAD;
+  const canZ = rect.d > minLot * 2 + ROAD;
+  if (!canX && !canZ) { out.push(rect); return out; }
+
+  const alongX = canX && (!canZ || rect.w >= rect.d);   // 長い辺の側を割る
+  const length = alongX ? rect.w : rect.d;
+  const cut = length * (0.35 + rand() * 0.3);           // 真ん中では割らない
+
+  if (alongX) {
+    splitLots({ x: rect.x, z: rect.z, w: cut - ROAD / 2, d: rect.d }, rand, out, minLot);
+    splitLots({ x: rect.x + cut + ROAD / 2, z: rect.z, w: rect.w - cut - ROAD / 2, d: rect.d }, rand, out, minLot);
+  } else {
+    splitLots({ x: rect.x, z: rect.z, w: rect.w, d: cut - ROAD / 2 }, rand, out, minLot);
+    splitLots({ x: rect.x, z: rect.z + cut + ROAD / 2, w: rect.w, d: rect.d - cut - ROAD / 2 }, rand, out, minLot);
+  }
+  return out;
+}
+
+function show(lots, offsetX, color, label) {
+  for (const lot of lots) {
+    if (lot.w <= 0 || lot.d <= 0) continue;
+    const plane = new THREE.Mesh(
+      new THREE.PlaneGeometry(lot.w, lot.d),
+      new THREE.MeshBasicMaterial({ color: color }),
+    );
+    plane.rotation.x = -Math.PI / 2;
+    plane.position.set(offsetX + lot.x + lot.w / 2, 0, lot.z + lot.d / 2);
+    scene.add(plane);
+  }
+
+  const div = document.createElement('div');
+  div.textContent = label + '（' + lots.length + ' 区画）';
+  div.style.cssText =
+    'position:absolute; bottom:18px; transform:translateX(-50%);' +
+    'color:#e8e8f2; font:12px sans-serif; pointer-events:none; white-space:nowrap;';
+  div.style.left = (offsetX < 0 ? 25 : 75) + '%';
+  document.body.appendChild(div);
+}
+
+show(gridLots(6), -35, 0x2f4f6f, '格子 ― 単調');
+show(splitLots({ x: -CITY / 2, z: -CITY / 2, w: CITY, d: CITY }, makeRandom(20260730), [], 5),
+  35, 0x3f6f4f, '再帰的に割る ― 大小が混ざる');
+
+renderer.render(scene, camera);
+
+window.addEventListener('resize', () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});`,
+      caption:
+        '左は格子、右は再帰的に割ったものです。**同じ広さの土地なのに、印象がまるで違います。** 左は $36$ 区画すべてが同じ大きさで、$1$ 秒見れば規則が分かってしまいます。右は大小が混ざり、道の途切れ方も一定ではありません。`gridLots(6)` を `gridLots(9)` にすると細かくなりますが、**単調さは変わりません** ― 分割数の問題ではなく、規則の問題だからです。',
+    },
+    {
+      kind: 'md',
+      text: `
+## 格子ではなく、割っていくほうを採る
+
+$2$ つの作り方を比べました。
+
+- **格子** … 等間隔に縦横の線を引く。書くのは簡単だが、**すぐ単調に見える**
+- **再帰的に割る** … 土地を $1$ 本の道で $2$ つに割り、できた土地をそれぞれまた割る
+
+後者を採ります。書く量もほとんど変わりません（$10$ 行ほど）。
+
+**大小の街区が自然に混ざる**のが決め手です。
+現実の街も、区画整理された地区と古い地区が混ざっていて、
+その不揃いさが「街らしさ」の正体になっています。
+
+次の章から、この $10$ 行を組み立てていきます。
 `,
     },
   ],
   exercises: [
     {
-      prompt: '\`MIN_LOT\` を 20 と 5 にしてください。街区の数と大きさはどう変わりますか。\`ROAD\` を 8 にするとどうでしょう。',
-      hint: 'MIN_LOT は「これ以上は割らない」大きさ、ROAD は割るときに空ける隙間です。',
-      answer: `\`MIN_LOT\` を上げると**大きな街区が少数**、下げると**小さな街区が大量**にできます（5 にすると再帰が深くなり、生成に時間がかかります）。
-\`ROAD\` を 8 にすると道が広くなり、そのぶん街区が痩せて、街全体が**スカスカ**になります。
-どちらも数字ひとつで街の性格が変わるので、**まずこの 2 つを振ってみる**のがこの街の遊び方です。`,
+      prompt: `建物を $2000$ 棟に増やしたい。$1$ 棟ずつ \`Mesh\` にすると、CPU の時間はどれだけになりますか。
+
+$c = 0.012$ ミリ秒として計算し、$60$ fps の予算と比べてください。`,
+      hint: '回数 × 単価です。予算は $16.7$ ミリ秒。',
+      answer: `**$24.0$ ミリ秒。予算を $1.4$ 倍超えます。**
+
+**計算**
+
+$2001 \\times 0.012 = 24.0$ ミリ秒
+
+$24.0 \\div 16.7 = 1.44$
+
+**描く前から予算オーバー**
+
+これは「ドローコールを出すだけ」の時間です。
+
+- 三角形はまだ $1$ つも描かれていません
+- 影も、車も、空も乗っていません
+- $30$ fps（$33.3$ ミリ秒）ですら、残りは $9$ ミリ秒しかありません
+
+**まとめれば $0.024$ ミリ秒**
+
+$2$ 回にまとめれば $1000$ 分の $1$ です。
+
+そして**三角形の数はまったく同じ** ― GPU の仕事は $1$ ミリ秒も減っていません。
+
+**この差が、後半の設計をほぼ決めています。**
+
+「$500$ 棟か $2000$ 棟か」を自由に選べるのは、
+**まとめて描く前提で組んであるから**です。
+$1$ 棟ずつ描く作りにしてしまうと、棟数が設計の制約になります。`,
     },
     {
-      prompt: 'この作り方では、道路を 1 本も引いていません。それでも道路が見えるのはなぜでしょう。',
-      hint: '地面はもともと何色ですか。街区は何をしていますか。',
-      answer: `**道路は「引いた」のではなく「街区を置かなかった隙間」**だからです。
-地面を一面の道路の色で敷き、その上に街区の板を置いているので、
-街区どうしのあいだに残った隙間が、そのまま道路に見えます。
-「作りたいものの補集合を作る」という考え方で、**道の交差点の処理という難所がまるごと消えます**。`,
+      prompt: `「街区のデータを作る部分」と「それを描く部分」を分けておく利点を、$2$ つ挙げてください。`,
+      hint: 'あとから変えたくなるのは、どちらでしょう。',
+      answer: `**描き方をあとから選べること、そして街区のデータを描画なしで検査できることです。**
+
+**1. 描き方を選べる**
+
+街区が \`{ x, z, w, d }\` の配列で出てくるなら、それをどう描くかは自由です。
+
+- $1$ つずつ \`Mesh\`（デバッグ中はこれが楽）
+- 合体して $1$ つのジオメトリ
+- \`InstancedMesh\`
+
+**どれに変えても、街を作るコードは $1$ 行も変わりません。**
+
+**2. 描かずに検査できる**
+
+配列が出てくるだけなら、**画面を見なくても確かめられます。**
+
+- 街区の数は？（$54$ 個）
+- 面積の合計は？（道路率 $31.3\\%$）
+- 重なっている街区はないか？
+- 負の幅を持つ街区は出ていないか？
+
+これらは全部、ただの配列の計算です。
+$3$ 次元の描画は、**確かめるのがいちばん高くつく手段**なので、
+その前に配列で確かめられることは配列で確かめます。
+
+**一般則**
+
+**「何を作るか」を、データとして取り出せる形にしておく。**
+
+そうすれば、描画・検査・保存・書き出しが全部あとから足せます。
+逆に \`Mesh\` の中にしか情報が無いと、数えるだけでシーンを走査することになります。`,
+    },
+    {
+      prompt: `格子の分割数を増やしても「単調さ」が消えないのはなぜですか。
+
+再帰的な分割では、何が単調さを消しているのでしょう。`,
+      hint: '目が読み取っているのは、区画の大きさそのものでしょうか。',
+      answer: `**目が読んでいるのは「規則」であって、大きさではないからです。**
+
+**格子の場合**
+
+$6 \\times 6$ でも $9 \\times 9$ でも、規則は $1$ つです。
+
+「**すべての区画が同じ大きさで、$1$ 直線に並ぶ**」
+
+この規則は $1$ 秒で読み取れます。読み取ったあとは、
+**どこを見ても新しい情報がありません。**
+
+細かくすることは、同じ規則をより多く見せることでしかありません。
+
+**再帰的な分割の場合**
+
+規則はやはり $1$ つですが、性質が違います。
+
+「**大きい土地を割った、その片方をまた割った**」
+
+この規則は、**結果を見ても読み取れません。**
+できあがった区画の大小には、生成の履歴が残っているだけで、
+目に見える周期がないからです。
+
+**「$35$〜$65$ パーセント」がしていること**
+
+真ん中（$50\\%$ 固定）で割ると、結果は格子に戻ります。
+**規則が結果に現れてしまう**からです。
+
+$35$〜$65$ の幅は、その規則を隠すために入れています。
+[](#/ch/b40-distribution)でやった「一様に散らすのは難しい」の逆で、
+ここでは**規則を見えなくするために乱数を使っています。**`,
     },
   ],
   quiz: [
     {
-      q: '手続き的生成で `Math.random()` をそのまま使うと、いちばん困るのはどれですか。',
+      q: '建物 500 棟を 1 棟ずつ Mesh にすると、CPU の時間はおよそどれくらいですか（c = 0.012 ms）。',
       choices: [
-        '良かった結果を二度と再現できず、不具合も追えない',
-        '速度が遅い',
-        '偏りがある',
-        '負の数が出る',
+        '約 6 ms。60fps の予算 16.7 ms の 36% を、描く前に使う',
+        '約 0.06 ms。ほとんど無視できる',
+        '約 60 ms。まったく動かない',
+        '棟数では決まらない',
       ],
       answer: 0,
       explain:
-        '品質そのものは十分です。問題は「同じものが二度と出ない」こと。種を渡せば同じ並びを返す乱数に替えるだけで、良い配置を保存でき、不具合も再現できるようになります。',
+        '501 × 0.012 = 6.01 ms です。まとめて 2 回にすれば 0.024 ms で、250 倍の差になります。三角形の数はどちらも同じ ― 減るのは命令の回数だけです。影や車が乗る前に 3 分の 1 を使うので、ここで払わない判断をします。',
     },
     {
-      q: '土地を再帰的に割るとき、切る位置をつねに 50 パーセントにするとどうなりますか。',
+      q: '街区のデータを `{ x, z, w, d }` の配列として作り、描画と分けておく利点はどれですか。',
       choices: [
-        '街区の大きさが揃って、格子状の単調な街になる',
-        '街区が細長くなる',
-        '道路が消える',
-        '再帰が止まらなくなる',
+        '描き方をあとから選べて、しかも描画せずに数や面積を検査できる',
+        '描画が速くなる',
+        'メモリが減る',
+        '乱数が不要になる',
       ],
       answer: 0,
       explain:
-        '毎回半分に割れば、同じ深さの街区はすべて同じ大きさになります。35〜65 パーセントのあいだで散らすと、大小が混ざって街らしくなります。ここは「乱数を入れる場所」として効きが大きい箇所です。',
+        '配列で出てくるなら、Mesh にするか合体するか InstancedMesh にするかは後から選べます。しかも街区の数・面積・重なりはただの配列の計算で確かめられます。3 次元の描画は確かめるのがいちばん高くつく手段なので、その前に配列で確かめられることは配列で確かめます。',
     },
     {
-      q: 'この章では道路をモデリングしていません。道路はどうやって現れていますか。',
+      q: '格子ではなく再帰的な分割を選ぶ理由はどれですか。',
       choices: [
-        '街区を割るときに道路の幅だけ隙間をあけたので、街区のあいだが道路になっている',
-        '地面のテクスチャに描いている',
-        '道路用のメッシュを別に生成している',
-        'フォグで隠している',
+        '大小の街区が自然に混ざり、生成の規則が結果から読み取れなくなるから',
+        '格子より描画が速いから',
+        '格子ではコードが長くなるから',
+        '格子では道路が作れないから',
       ],
       answer: 0,
       explain:
-        '隙間をあけて割るだけで、交差点も含めて道路網が自動的にできます。「描くものを増やす」のではなく「描かない場所を残す」ほうが、コードも描画も安くなる典型例です。',
+        '格子は「すべて同じ大きさで一直線に並ぶ」という規則が 1 秒で読み取れてしまい、分割数を増やしても単調さは変わりません。再帰的な分割では、できた区画の大小に生成の履歴が残るだけで目に見える周期がありません。真ん中で割ると格子に戻るので、35〜65 パーセントの幅で規則を隠しています。',
     },
   ],
 };

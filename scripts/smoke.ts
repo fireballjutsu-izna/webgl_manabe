@@ -194,7 +194,20 @@ async function main(): Promise<void> {
       await page.goto(`${BASE}${path}`);
       await settle(page);
       await page.waitForTimeout(400);
-      await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true });
+
+      // 演習ページは全問を DOM に持つので 10 万 px を超える。
+      // まるごと撮ると継ぎはぎに時間がかかりすぎるため、上のほうだけ残す
+      const height = await page.evaluate(() => document.documentElement.scrollHeight);
+      const CLIP_ABOVE = 20000;
+      if (height > CLIP_ABOVE) {
+        await page.screenshot({
+          path: `${OUT}/${name}.png`,
+          clip: { x: 0, y: 0, width: 1280, height: CLIP_ABOVE },
+        });
+      } else {
+        await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true });
+      }
+
       if (recorder.errors.length > 0) fail(`${name}: ${recorder.errors.join(' / ')}`);
       else ok(`${name} を表示`);
     }

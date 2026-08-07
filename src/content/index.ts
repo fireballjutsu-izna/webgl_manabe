@@ -138,20 +138,67 @@ import { chapterW49 } from './chapters/w49-onbeforecompile.ts';
 import { chapterW50 } from './chapters/w50-small-forest.ts';
 
 import { chapterP01 } from './chapters/p01-planet-setup.ts';
+import { chapterX02 } from './chapters/x02-depth-precision.ts';
+import { chapterX03 } from './chapters/x03-uniform-sphere.ts';
+import { chapterX04 } from './chapters/x04-star-look.ts';
 import { chapterP02 } from './chapters/p02-planet-surface.ts';
+import { chapterX06 } from './chapters/x06-value-noise.ts';
+import { chapterX07 } from './chapters/x07-fbm-terrain.ts';
+import { chapterX08 } from './chapters/x08-sphere-seam.ts';
+import { chapterX09 } from './chapters/x09-surface-bake.ts';
 import { chapterP03 } from './chapters/p03-planet-atmosphere.ts';
+import { chapterX11 } from './chapters/x11-atmosphere-rim.ts';
+import { chapterX12 } from './chapters/x12-additive.ts';
+import { chapterX13 } from './chapters/x13-clouds.ts';
+import { chapterX14 } from './chapters/x14-terminator.ts';
 import { chapterP04 } from './chapters/p04-planet-orbits.ts';
+import { chapterX16 } from './chapters/x16-orbit-motion.ts';
+import { chapterX17 } from './chapters/x17-pick-drag.ts';
+import { chapterX18 } from './chapters/x18-camera-approach.ts';
+import { chapterX19 } from './chapters/x19-labels-finish.ts';
 import { chapterP05 } from './chapters/p05-city-layout.ts';
+import { chapterX21 } from './chapters/x21-seeded-random.ts';
+import { chapterX22 } from './chapters/x22-subdivision.ts';
+import { chapterX23 } from './chapters/x23-roads.ts';
+import { chapterX24 } from './chapters/x24-eye-level.ts';
 import { chapterP06 } from './chapters/p06-city-buildings.ts';
+import { chapterX26 } from './chapters/x26-merge-geometry.ts';
+import { chapterX27 } from './chapters/x27-instancing.ts';
+import { chapterX28 } from './chapters/x28-window-uv.ts';
+import { chapterX29 } from './chapters/x29-city-day.ts';
 import { chapterP07 } from './chapters/p07-city-light.ts';
+import { chapterX31 } from './chapters/x31-sun-height.ts';
+import { chapterX32 } from './chapters/x32-shadow-range.ts';
+import { chapterX33 } from './chapters/x33-sky-fog.ts';
+import { chapterX34 } from './chapters/x34-street-lights.ts';
 import { chapterP08 } from './chapters/p08-city-motion.ts';
+import { chapterX36 } from './chapters/x36-curve-orientation.ts';
+import { chapterX37 } from './chapters/x37-car-instancing.ts';
+import { chapterX38 } from './chapters/x38-chunked-merge.ts';
+import { chapterX39 } from './chapters/x39-city-finish.ts';
 
 import { chapterQ01 } from './chapters/q01-environment.ts';
+import { chapterY02 } from './chapters/y02-pmrem.ts';
+import { chapterY03 } from './chapters/y03-env-background.ts';
+import { chapterY04 } from './chapters/y04-env-intensity.ts';
 import { chapterQ02 } from './chapters/q02-color.ts';
+import { chapterY06 } from './chapters/y06-hex-colorspace.ts';
+import { chapterY07 } from './chapters/y07-tonemapping.ts';
+import { chapterY08 } from './chapters/y08-color-debug.ts';
 import { chapterQ03 } from './chapters/q03-postprocess.ts';
+import { chapterY10 } from './chapters/y10-bloom.ts';
+import { chapterY11 } from './chapters/y11-postprocess-cost.ts';
 import { chapterQ04 } from './chapters/q04-custom-pass.ts';
+import { chapterY13 } from './chapters/y13-film-grade.ts';
+import { chapterY14 } from './chapters/y14-uv-offset.ts';
+import { chapterY15 } from './chapters/y15-pass-order.ts';
 import { chapterQ05R3F } from './chapters/q05-r3f.ts';
+import { chapterY17 } from './chapters/y17-r3f-map.ts';
+import { chapterY18 } from './chapters/y18-r3f-decide.ts';
 import { chapterQ06 } from './chapters/q05-ship-it.ts';
+import { chapterY20 } from './chapters/y20-loading.ts';
+import { chapterY21 } from './chapters/y21-reach.ts';
+import { chapterY22 } from './chapters/y22-publish.ts';
 
 /** 学ぶ順に並べた全章。目次・前提知識マップ・検索索引はここから作られる。 */
 export const chapters: Chapter[] = [
@@ -293,20 +340,67 @@ export const chapters: Chapter[] = [
   chapterW50,
 
   chapterP01,
+  chapterX02,
+  chapterX03,
+  chapterX04,
   chapterP02,
+  chapterX06,
+  chapterX07,
+  chapterX08,
+  chapterX09,
   chapterP03,
+  chapterX11,
+  chapterX12,
+  chapterX13,
+  chapterX14,
   chapterP04,
+  chapterX16,
+  chapterX17,
+  chapterX18,
+  chapterX19,
   chapterP05,
+  chapterX21,
+  chapterX22,
+  chapterX23,
+  chapterX24,
   chapterP06,
+  chapterX26,
+  chapterX27,
+  chapterX28,
+  chapterX29,
   chapterP07,
+  chapterX31,
+  chapterX32,
+  chapterX33,
+  chapterX34,
   chapterP08,
+  chapterX36,
+  chapterX37,
+  chapterX38,
+  chapterX39,
 
   chapterQ01,
+  chapterY02,
+  chapterY03,
+  chapterY04,
   chapterQ02,
+  chapterY06,
+  chapterY07,
+  chapterY08,
   chapterQ03,
+  chapterY10,
+  chapterY11,
   chapterQ04,
+  chapterY13,
+  chapterY14,
+  chapterY15,
   chapterQ05R3F,
+  chapterY17,
+  chapterY18,
   chapterQ06,
+  chapterY20,
+  chapterY21,
+  chapterY22,
 ];
 
 const bySlug = new Map(chapters.map((chapter) => [chapter.slug, chapter]));

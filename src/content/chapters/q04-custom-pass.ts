@@ -3,23 +3,15 @@ import type { Chapter } from '../types.ts';
 export const chapterQ04: Chapter = {
   slug: 'q04-custom-pass',
   part: 'polish',
-  number: 4,
-  title: '自分でパスを書く',
-  goal: '画面全体に自分の効果をかけられるようになり、フラグメントシェーダの知識をそのまま画面加工に使えるようになります。',
-  requires: ['q03-postprocess', 't14-fragment-shader'],
-  threeApis: [
-    'ShaderPass',
-    'EffectComposer',
-    'RenderPass',
-    'OutputPass',
-    'ShaderMaterial',
-    'Uniform',
-    'Vector2',
-  ],
+  number: 12,
+  title: '自分でパスを書く ― 材料が「絵」になっただけ',
+  goal: '`ShaderPass` に自前のシェーダを渡せるようになり、そこへ届く色が $sRGB$ ではなくリニアであることを、係数の決め方に結びつけられるようになります。',
+  requires: ['y11-postprocess-cost', 't14-fragment-shader'],
+  threeApis: ['ShaderPass', 'EffectComposer', 'ShaderMaterial', 'Uniform'],
   mathRecall: [
     { slug: 't14-fragment-shader', note: '画素ごとに色を決める。ここでは材料が「絵」になる' },
-    { slug: 't12-shader-intro', note: 'uniform で値を渡す' },
-    { slug: 'q03-postprocess', note: 'パスの順番と OutputPass' },
+    { slug: 't12-shader-intro', note: '$\\mathrm{uniform}$ で値を渡す' },
+    { slug: 'q02-color', note: 'リニアと $sRGB$。係数の決め方が変わります' },
   ],
   blocks: [
     {
@@ -32,10 +24,12 @@ export const chapterQ04: Chapter = {
 とはいえ、新しく覚えることはほとんどありません。
 [](#/ch/t14-fragment-shader)で書いたものと**構造は同じ**です。
 
-- あのときは … 3D の面の上で、その画素の色を決めた
+- あのときは … $3$ 次元の面の上で、その画素の色を決めた
 - ここでは … **画面いっぱいの板**の上で、その画素の色を決める
 
 ちがうのは、材料に「**さっき描いた絵**」が \`tDiffuse\` という名前で渡ってくることだけです。
+
+$3$ 次元の話は、もう出てきません。**ここからは画像処理**です。
 `,
     },
     {
@@ -43,11 +37,15 @@ export const chapterQ04: Chapter = {
       text: `
 ## ShaderPass の型
 
-\`ShaderPass\` に渡すのは、\`uniforms\` と 2 つのシェーダを持つ**ただのオブジェクト**です。
-決まりごとは 2 つだけ。
+\`ShaderPass\` に渡すのは、\`uniforms\` と $2$ つのシェーダを持つ**ただのオブジェクト**です。
+\`ShaderMaterial\` を作るときと同じ形で、決まりごとは $2$ つだけ。
 
-- **\`uniforms\` に \`tDiffuse\` を用意する。** ここに前のパスの結果が入ってきます（値は \`null\` でよい）
+- **\`uniforms\` に \`tDiffuse\` を用意する。** ここに前のパスの結果が入ってきます。
+  値は \`null\` でよく、中身は \`ShaderPass\` が毎フレーム差し込みます
 - **頂点シェーダは \`vUv\` を渡すだけ。** どのパスでも同じ内容なので、書き写して構いません
+
+**\`tDiffuse\` は名前が決め打ち**です。綴りを変えると、何も受け取れません。
+そして受け取れなくてもエラーは出ず、**真っ黒な画面**になります。
 `,
     },
     {
@@ -71,7 +69,7 @@ export const chapterQ04: Chapter = {
     varying vec2 vUv;
     void main() {
       vec4 color = texture2D(tDiffuse, vUv);   // いまの画素の色を読む
-      gl_FragColor = color;
+      gl_FragColor = color;                    // ここを書き換えていく
     }
   \`,
 });
@@ -81,397 +79,169 @@ composer.addPass(myPass);   // RenderPass と OutputPass のあいだに挟む`,
     {
       kind: 'callout',
       tone: 'warn',
-      title: 'ここでもリニアのままです',
+      title: 'ここに届く色は、リニアです',
       text: `
 自前パスに届く色は**リニア**です（[](#/ch/q02-color)の話）。
-sRGB への変換は最後の \`OutputPass\` がやります。
+$sRGB$ への変換は最後の \`OutputPass\` がやります。
 
-だから「見た目の明るさ」を基準に係数を決めると、思ったより効きすぎます。
-**0.5 を掛けても、見た目は半分にはなりません**（見た目では 0.73 くらいになります）。
-数字は実際に見ながら決めてください。
-`,
-    },
-    {
-      kind: 'md',
-      text: `
-## 同じ画素を読む効果 ― ビネット・色調・走査線
+だから「見た目の明るさ」を基準に係数を決めると、**必ず外します。**
 
-まずは**その画素の色だけ**を材料にする効果です。3 つ組み合わせます。
+- **\`color.rgb *= 0.5\` と書く** … 光の量を半分にした
+- **見た目は半分にならない** … $27\\%$ しか暗くなりません
 
-- **ビネット** … 画面の中心からの距離で暗くする。視線を中央に集める
-- **彩度** … 灰色（明るさだけの色）との混ぜ具合を変える。1 を超えると鮮やかに
-- **走査線** … \`sin\` で細かい横縞を作る。古い画面の質感
+$1$ を超える値が来ることもあります。
+ブルームより前に置いたパスには、**街灯の $2.40$ がそのまま届きます。**
+\`clamp(color.rgb, 0.0, 1.0)\` と書いた瞬間、その情報を捨てることになります。
 
-どれも 1〜2 行です。**距離は \`distance(vUv, vec2(0.5))\`、明るさは \`dot(color.rgb, 重み)\`。**
-[](#/ch/02-vector)と[](#/ch/03-dot)がここでも顔を出します。
+**数字は、実際に見ながら決めてください。**
 `,
     },
     {
       kind: 'formula',
-      tex: 'Y = 0.2126\\,R + 0.7152\\,G + 0.0722\\,B',
+      tex: 'c_{\\text{sRGB}} = 1.055\\,c_{\\text{linear}}^{\\,1/2.4} - 0.055',
       readAloud:
-        '色から明るさを取り出す式です。緑がいちばん重く、青がいちばん軽い。人間の目が緑に敏感だからです。単純に3で割った平均にすると、赤や青が不自然に明るくなります。彩度を変えるときは、この明るさとの混ぜ具合をいじります。',
+        'リニアの値を $sRGB$ に戻す式です。$2.4$ 分の $1$ 乗なので、小さい値ほど大きく持ち上がります。パスの中で掛けた係数が、画面ではどれだけの変化に見えるかは、この式を通した後で比べる必要があります。',
       worked: {
-        given: '純粋な赤・緑・青の明るさを、それぞれ計算します。',
+        given: 'パスの中で \`color.rgb *= 0.5\` と書きました。画面ではどれだけ暗くなるでしょうか。',
         steps: [
-          { calc: '赤 (1,0,0) : 0.2126 x 1 = 0.2126' },
-          { calc: '緑 (0,1,0) : 0.7152 x 1 = 0.7152' },
-          { calc: '青 (0,0,1) : 0.0722 x 1 = 0.0722' },
-          { calc: '単純な平均なら、どれも 0.333' },
+          { calc: 'もとの画素がリニアで 0.5 だったとする' },
+          { calc: '画面に出るときは sRGB で 0.7354' },
+          { calc: '0.5 を掛けるとリニアで 0.25' },
+          { calc: '画面に出るときは sRGB で 0.5371' },
+          { calc: '0.7354 → 0.5371 の変化を見る' },
+          { calc: '1 - 0.5371 / 0.7354 = 0.270' },
         ],
-        result: '**緑は青の約 10 倍明るく見えます。** 単純平均で白黒にすると、青い空が不自然に明るく、緑の草が沈んだ写真になります。彩度を変えるときも同じで、この $Y$ と元の色を混ぜる割合をいじります ― $0$ でこの $Y$ そのもの（白黒）、$1$ で元の色、$2$ で派手になります。',
+        result:
+          '**光の量は半分にしたのに、画面では $27\\%$ しか暗くなりません。** 「半分の暗さ」にしたければ、リニアでは $0.5$ ではなく $\\mathbf{0.223}$ を掛ける必要があります。$sRGB$ の $0.7354$ の半分は $0.3677$、それをリニアに戻すと $0.1113$ ― もとの $0.5$ に対して $0.223$ 倍です。**「見た目で半分」と「光の量で半分」は別物**で、パスの中にいるあいだは後者の世界にいます。',
       },
-    },
-    {
-      kind: 'sandbox',
-      title: '自分の効果を1つ書く',
-      guide: { focus: ['自前のパス'] },
-      code: `import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-
-/* ---- ここを書き換えて試してください ---- */
-const VIGNETTE = 0.8;    // 周辺を暗くする量（0 で無効）
-const SATURATION = 1.3;  // 1 でそのまま、0 で白黒、2 で派手
-const SCANLINE = 0.10;   // 走査線の濃さ（0 で無効）
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x10131c);
-
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, 100);
-camera.position.set(2.5, 2.2, 6);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-document.body.appendChild(renderer.domElement);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-
-const sun = new THREE.DirectionalLight(0xfff0dd, 3);
-sun.position.set(4, 6, 3);
-scene.add(sun, new THREE.HemisphereLight(0x9db8ff, 0x2a2a33, 0.7));
-
-const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(40, 40),
-  new THREE.MeshStandardMaterial({ color: 0x4a4f5e, roughness: 0.9 }),
-);
-floor.rotation.x = -Math.PI / 2;
-floor.position.y = -1;
-scene.add(floor);
-
-const colors = [0xff6b8a, 0x4fd6ff, 0xffd166, 0x7cf5a0, 0xb57bff];
-for (let i = 0; i < 5; i++) {
-  const box = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1 + i * 0.35, 1),
-    new THREE.MeshStandardMaterial({ color: colors[i], roughness: 0.45 }),
-  );
-  box.position.set((i - 2) * 1.5, (1 + i * 0.35) / 2 - 1, 0);
-  scene.add(box);
-}
-
-/* ---- 自前のパス ---- */
-
-const filmPass = new ShaderPass({
-  uniforms: {
-    tDiffuse: { value: null },       // 前のパスの結果。名前は固定
-    uVignette: { value: VIGNETTE },
-    uSaturation: { value: SATURATION },
-    uScanline: { value: SCANLINE },
-    uTime: { value: 0 },
-  },
-  vertexShader: [
-    'varying vec2 vUv;',
-    'void main() {',
-    '  vUv = uv;',
-    '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
-    '}',
-  ].join('\\n'),
-  fragmentShader: [
-    'uniform sampler2D tDiffuse;',
-    'uniform float uVignette;',
-    'uniform float uSaturation;',
-    'uniform float uScanline;',
-    'uniform float uTime;',
-    'varying vec2 vUv;',
-    'void main() {',
-    '  vec4 color = texture2D(tDiffuse, vUv);',
-    '',
-    '  // (1) ビネット。中心からの距離で暗くする',
-    '  float d = distance(vUv, vec2(0.5));',
-    '  color.rgb *= 1.0 - smoothstep(0.35, 0.85, d) * uVignette;',
-    '',
-    '  // (2) 彩度。明るさとの混ぜ具合を変えるだけ',
-    '  float luma = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));',
-    '  color.rgb = mix(vec3(luma), color.rgb, uSaturation);',
-    '',
-    '  // (3) 走査線。ゆっくり流す',
-    '  float scan = sin((vUv.y + uTime * 0.04) * 700.0) * 0.5 + 0.5;',
-    '  color.rgb *= 1.0 - scan * uScanline;',
-    '',
-    '  gl_FragColor = color;',
-    '}',
-  ].join('\\n'),
-});
-
-const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(
-  window.innerWidth, window.innerHeight,
-  { type: THREE.HalfFloatType, samples: 4 },
-));
-composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-composer.setSize(window.innerWidth, window.innerHeight);
-composer.addPass(new RenderPass(scene, camera));
-composer.addPass(filmPass);
-composer.addPass(new OutputPass());   // 最後は必ずこれ
-
-const clock = new THREE.Clock();
-function animate() {
-  requestAnimationFrame(animate);
-  filmPass.uniforms.uTime.value = clock.getElapsedTime();
-  controls.update();
-  composer.render();
-}
-animate();
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  composer.setSize(window.innerWidth, window.innerHeight);
-});`,
-      caption:
-        '`SATURATION` を 0 にすると白黒、2.2 にすると毒々しくなります。`VIGNETTE` を 0 にすると周辺が暗くならず、絵が締まらないのが分かります。`700.0` を 90.0 にすると走査線が太くなり、一気に「壊れたモニタ」の質感になります。3 つとも `gl_FragColor` に届くまでの 2〜3 行ずつしかありません。',
     },
     {
       kind: 'md',
       text: `
-## 別の画素を読む ― ここからが本番
+## この先の 3 章
 
-さっきの 3 つは、**いま処理している画素の色**しか読んでいませんでした。
-\`texture2D(tDiffuse, vUv)\` の \`vUv\` が固定だったからです。
+自前パスでできることは、**読む位置で $2$ つに割れます。**
 
-**ここをずらすと、できることが一気に増えます。**
+- **[](#/ch/y13-film-grade)** … その画素だけを読む。ビネット・彩度・走査線
+- **[](#/ch/y14-uv-offset)** … 別の画素も読む。色収差・放射ブラー
+- **[](#/ch/y15-pass-order)** … どこに挟むか。順番で結果が変わる
 
-- 少しずらして読む → **ぼかし・にじみ・ずれ**
-- 中心へ向かってずらす → **放射状のブラー**
-- 赤・緑・青を**別々の量だけ**ずらす → **色収差**（レンズの色ずれ）
-
-色収差は、実際のレンズが**色によって曲がり方が違う**ために起きる現象です。
-画面の端ほど強く出ます。**わずかに入れると「写真らしさ」が出る**ので、映像でよく使われます。
-`,
-    },
-    {
-      kind: 'formula',
-      tex: '\\mathbf{uv}_{c} = \\mathbf{uv} + (\\mathbf{uv} - \\mathbf{c}) \\cdot k_{c}',
-      readAloud:
-        '読む位置を、中心 c から外向きに k 倍だけずらす、と読みます。k を赤・緑・青で少しずつ変えると色収差になり、同じ k で何回も読んで平均すると放射状のブラーになります。中心から離れた画素ほどずれが大きくなるのが、この式の要点です。',
-      worked: {
-        given: '中心 $\\mathbf{c} = (0.5,\\,0.5)$、ずらし量 $k = 0.006$ で、2 か所の画素を見ます。',
-        steps: [
-          { calc: '画面の右端寄り uv = (0.9, 0.5)' },
-          { calc: '  uv - c = (0.4, 0)' },
-          { calc: '  0.4 x 0.006 = 0.0024' },
-          { calc: '  読む位置 = (0.9024, 0.5)', note: '少し外側を読む' },
-          { calc: '画面の中央 uv = (0.5, 0.5)' },
-          { calc: '  uv - c = (0, 0)  →  ずれは 0', note: '中央では何も起きない' },
-        ],
-        result: '**中心では 0、端では最大。** 実際のレンズも周辺ほど色がずれるので、この形にしておくと、強くしても「壊れた」ではなく「レンズらしい」に留まります。一様にずらすと、ただの二重写しになります。',
-      },
-    },
-    {
-      kind: 'sandbox',
-      title: '色収差 ― 読む位置を色ごとにずらす',
-      guide: { focus: ['読む位置をずらすパス'] },
-      code: `import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-
-/* ---- ここを書き換えて試してください ---- */
-const ABERRATION = 0.006;   // 色のずれ。0.03 にすると露骨になります
-const BLUR_STEPS = 6;       // 放射ブラーの回数（1 で無効）
-const BLUR_AMOUNT = 0.012;  // 放射ブラーの強さ
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0d1018);
-
-const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.5, 100);
-camera.position.set(0, 1, 7);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-document.body.appendChild(renderer.domElement);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.target.set(0, 1, 0);
-
-scene.add(new THREE.HemisphereLight(0x9db8ff, 0x22242c, 1.1));
-const key = new THREE.DirectionalLight(0xffffff, 2.2);
-key.position.set(3, 5, 4);
-scene.add(key);
-
-// 細かい模様があるほど、色のずれが見えます
-const grid = new THREE.Group();
-const colors = [0xffffff, 0x4fd6ff, 0xff6b8a, 0xffd166];
-for (let x = -4; x <= 4; x++) {
-  for (let y = -2; y <= 2; y++) {
-    const cell = new THREE.Mesh(
-      new THREE.BoxGeometry(0.7, 0.7, 0.2),
-      new THREE.MeshStandardMaterial({
-        color: colors[(x + y + 8) % colors.length],
-        roughness: 0.5,
-      }),
-    );
-    cell.position.set(x * 0.95, y * 0.95 + 1, 0);
-    grid.add(cell);
-  }
-}
-scene.add(grid);
-
-/* ---- 読む位置をずらすパス ---- */
-
-const lensPass = new ShaderPass({
-  uniforms: {
-    tDiffuse: { value: null },
-    uAberration: { value: ABERRATION },
-    uBlur: { value: BLUR_AMOUNT },
-  },
-  vertexShader: [
-    'varying vec2 vUv;',
-    'void main() {',
-    '  vUv = uv;',
-    '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
-    '}',
-  ].join('\\n'),
-  fragmentShader: [
-    'uniform sampler2D tDiffuse;',
-    'uniform float uAberration;',
-    'uniform float uBlur;',
-    'varying vec2 vUv;',
-    '',
-    'void main() {',
-    '  vec2 center = vec2(0.5);',
-    '  vec2 away = vUv - center;',     // 中心から外向きのベクトル
-    '',
-    '  // (1) 放射ブラー。中心へ向かって少しずつずらしながら、何回か読んで平均する',
-    '  vec3 blurred = vec3(0.0);',
-    '  for (int i = 0; i < ' + BLUR_STEPS + '; i++) {',
-    '    float t = float(i) / float(' + BLUR_STEPS + ');',
-    '    blurred += texture2D(tDiffuse, vUv - away * t * uBlur).rgb;',
-    '  }',
-    '  blurred /= float(' + BLUR_STEPS + ');',
-    '',
-    '  // (2) 色収差。赤・緑・青を、別々の量だけ外へずらして読む',
-    '  float r = texture2D(tDiffuse, vUv + away * uAberration).r;',
-    '  float g = texture2D(tDiffuse, vUv).g;',
-    '  float b = texture2D(tDiffuse, vUv - away * uAberration).b;',
-    '',
-    '  // 中心では効かせず、外へ行くほど効かせる',
-    '  float edge = smoothstep(0.15, 0.75, length(away));',
-    '  vec3 lens = mix(blurred, vec3(r, g, b), 0.65);',
-    '  gl_FragColor = vec4(mix(texture2D(tDiffuse, vUv).rgb, lens, edge), 1.0);',
-    '}',
-  ].join('\\n'),
-});
-
-const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(
-  window.innerWidth, window.innerHeight,
-  { type: THREE.HalfFloatType, samples: 4 },
-));
-composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-composer.setSize(window.innerWidth, window.innerHeight);
-composer.addPass(new RenderPass(scene, camera));
-composer.addPass(lensPass);
-composer.addPass(new OutputPass());
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  composer.render();
-}
-animate();
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  composer.setSize(window.innerWidth, window.innerHeight);
-});`,
-      caption:
-        '画面の端の四角に、赤と青のふちが出ています。`ABERRATION` を 0.03 にすると露骨に、0 にすると消えます。中心付近では効いていないことに注目してください ― `smoothstep(0.15, 0.75, length(away))` でそうしています。実際のレンズも中心では色ずれが出ないので、この 1 行があるかどうかで「それらしさ」が変わります。',
-    },
-    {
-      kind: 'callout',
-      tone: 'warn',
-      title: '読む回数は、そのまま重さです',
-      text: `
-上のコードは 1 画素あたり **\`BLUR_STEPS\` 回 ＋ 4 回**テクスチャを読んでいます。
-フル HD なら 200 万画素なので、**1 フレームで 2000 万回**の読み取りです。
-
-ぼかしを強くしたいからといって回数を増やすのは、いちばん高くつくやり方です。
-実際のぼかしは、**縮小した画像に対してかける**か、
-**横方向と縦方向に分けて 2 回で済ませる**のが定石です。
-\`UnrealBloomPass\` が中でやっているのも、この 2 つです。
-
-\`for\` の回数を GLSL の中で変数にできないのも、ここに理由があります。
-**GPU は「何回読むか」を先に知っていたい**のです（上のコードで回数を
-JavaScript 側の文字列として埋め込んでいるのは、そのためです）。
-`,
-    },
-    {
-      kind: 'md',
-      text: `
-## 効果を足すときの順番
-
-パスは上から順に流れるので、**順番で結果が変わります。**
-迷ったときの目安を置いておきます。
-
-- **ブルーム** … 早め。まだ「絵」がきれいなうちに、光を拾わせる
-- **色調・彩度** … 中ほど
-- **色収差・歪み・ビネット** … **遅め。** これらは「レンズと画面の癖」なので、いちばん外側
-- **\`OutputPass\`** … **必ず最後**
-
-「現実で、どの順番で起きているか」を考えると、たいてい正解に近づきます。
-光がレンズを通り、センサーに届き、最後に画面に出る ― その順です。
+$1$ つめは安く、$2$ つめから急に高くなります。
+**読む回数が、そのまま値段**だからです。
 `,
     },
   ],
   exercises: [
     {
-      prompt: `1 つ目のサンドボックスで、\`VIGNETTE\` \`SATURATION\` \`SCANLINE\` を**1 つずつ**無効（0、1、0）にして、
-それぞれが何を担っていたかを切り分けてください。`,
-      hint: '3 つ全部を一度に見ると、どれが何をしているか分かりません。',
-      answer: `\`VIGNETTE\` は周辺の暗さ、\`SATURATION\` は色の濃さ、\`SCANLINE\` は横縞です。
-1 つずつ切るのがコツで、**全部入りの絵を見ても、どれが効いているかは分かりません**。
-これはシェーダを書くとき全般に効く手順です。効果を足すたびに「0 にして戻せるか」を確かめておくと、
-おかしくなったときに原因を 1 つに絞れます。`,
+      prompt: `\`tDiffuse\` を \`tInput\` という名前にしました。
+
+何が起きますか。`,
+      hint: '値を差し込むのは誰ですか。',
+      answer: `**真っ黒な画面になります。エラーは出ません。**
+
+**なぜか**
+
+\`ShaderPass\` は、前のパスの結果を **\`tDiffuse\` という名前の uniform に入れる**と決め打ちで書かれています。
+
+\`tInput\` という名前の uniform は、誰も面倒を見てくれません。
+
+**\`{ value: null }\` のまま**です。
+
+**null のテクスチャを読むと**
+
+$GLSL$ では、割り当てられていないサンプラを読むと **$0$ が返ります。**
+
+つまり \`vec4(0, 0, 0, 1)\` ― 真っ黒です。
+
+**警告も出ない**
+
+シェーダとしては正しいので、コンパイルも通ります。
+$WebGL$ の警告が出る環境もありますが、あてにはできません。
+
+**見分け方**
+
+- **真っ黒** … \`tDiffuse\` の綴りか、\`RenderPass\` の足し忘れ
+- **何も変わらない** … \`composer.render()\` を呼んでいない
+
+**「真っ黒」と「無変化」は、原因が別**です。`,
     },
     {
-      prompt: '2 つ目のサンドボックスで \`ABERRATION\` を 0.03 にしてください。画面のどこで色ずれが目立ちますか。それはなぜでしょう。',
-      hint: 'ずらす量は、中心からの距離に比例させてあります。',
-      answer: `**画面の四隅**で目立ち、中心ではほとんど出ません。ずらす量に中心からの距離を掛けているからです。
-実際のレンズも、中心より周辺のほうが色ごとの屈折差が大きく出ます。
-その性質を真似ると、**強くしても「壊れた」ではなく「レンズらしい」**に留まります。
-一様にずらすと、ただの二重写しに見えてしまいます。`,
+      prompt: `パスの中で \`color.rgb = clamp(color.rgb, 0.0, 1.0);\` と書きました。
+
+どこに置くかで、何が変わりますか。`,
+      hint: '$1$ を超える値は、どのパスが必要としていますか。',
+      answer: `**ブルームより前に置くと、ブルームが効かなくなります。**
+
+**何を捨てているか**
+
+[](#/ch/y10-bloom)で見たとおり、街灯の明るさは $2.40$ でした。
+
+\`clamp\` を通すと **$1.0$** になります。
+
+**ブルームより前だと**
+
+しきい値 $0.95$ を越える画素はまだ残りますが、
+
+- **$2.40$ も $6.00$ も、みんな $1.0$。** 序列が消える
+- **しきい値を $1$ 以上にできない**
+- **白い壁と街灯が同じ扱い**
+
+[](#/ch/y11-postprocess-cost)で見た「$8$ ビットのターゲットを使ったとき」と、**まったく同じ症状**です。
+
+**ブルームより後ろなら**
+
+滲みはもう作られたあとなので、実害はほとんどありません。
+
+ただし \`OutputPass\` のトーンマッピングが、
+**$1$ を超えた部分を畳んで階調を作る**仕事をしています。
+
+先に \`clamp\` すると、**その階調が失われて白く潰れます。**
+
+**結論**
+
+\`clamp\` は、**書かないのが既定**です。
+
+書くなら \`OutputPass\` の直前 ― つまり、**もう誰も $1$ 超えを必要としない場所**だけ。`,
     },
     {
-      prompt: '自分でパスを書くとき、必ず用意しなければならない uniform は何ですか。それはどこから来ますか。',
-      hint: 'ShaderPass が、前のパスの結果をどこかへ入れてくれます。',
-      answer: `\`uniform sampler2D tDiffuse;\` です。
-\`ShaderPass\` は、**前のパスが描いた絵をこの名前の uniform に入れて**からシェーダを走らせます。
-名前は決め打ちなので、綴りを変えると何も受け取れません。
-あわせて \`varying vec2 vUv;\` で、画面上のどこを見ているかを受け取ります。
-この 2 つがそろえば、あとは [](#/ch/t14-fragment-shader) で書いたフラグメントシェーダとまったく同じ書き方でよくなります。`,
+      prompt: `「画面全体を、見た目で $30\\%$ 暗くする」パスを書きます。
+
+リニアで何を掛けますか。`,
+      hint: '$sRGB$ で $0.7$ 倍にしたい、ということです。',
+      answer: `**約 $0.456$ です。**
+
+**手順**
+
+見た目の基準を決めます。リニア $0.5$（$sRGB$ で $0.7354$）としましょう。
+
+$0.7354 \\times 0.7 = 0.5147$ が目標の見た目。
+
+リニアに戻すと $0.2279$。
+
+$0.2279 / 0.5 = \\mathbf{0.4559}$
+
+**$0.7$ ではない**
+
+$0.7$ を掛けると、$sRGB$ では $0.7354 \\to 0.6262$ ―
+**$14.8\\%$ しか暗くなりません。**
+
+半分以下の効きです。
+
+**厄介なのは、値によって倍率が変わること**
+
+- リニア $0.5$ を $30\\%$ 暗く見せる … $0.4559$ 倍
+- リニア $0.1$ を $30\\%$ 暗く見せる … $0.4868$ 倍
+- リニア $0.9$ を $30\\%$ 暗く見せる … $0.4490$ 倍
+
+**厳密には $1$ つの係数では作れません。**
+
+**実務的な答え**
+
+$2.2$ 乗のべき則で近似すると、$0.7^{2.2} = 0.4563$。
+
+上で求めた $0.4559$ と、ほぼぴったり重なります。
+
+**「見た目で $k$ 倍」なら、リニアでは $k^{2.2}$ 倍** ― これを覚えてください。`,
     },
   ],
   quiz: [
@@ -480,31 +250,31 @@ JavaScript 側の文字列として埋め込んでいるのは、そのためで
       choices: ['`tDiffuse`', '`tInput`', '`tPrevious`', '任意の名前でよい'],
       answer: 0,
       explain:
-        '`tDiffuse` という名前は決まっていて、`ShaderPass` が自動で値を差し込みます。宣言だけしておけば（`{ value: null }`）、あとは three が面倒を見ます。ほかの uniform は好きな名前で足せます。',
+        'tDiffuse という名前は決め打ちで、ShaderPass が毎フレーム値を差し込みます。宣言だけしておけば（{ value: null }）、あとは three が面倒を見ます。綴りを変えると値が入らず、null のサンプラは 0 を返すので真っ黒な画面になります ― しかもエラーは出ません。',
     },
     {
-      q: '色収差を「画面の端だけ」に出すには、どうしますか。',
+      q: 'パスの中で `color.rgb *= 0.5` と書きました。画面ではどれだけ暗くなりますか。',
       choices: [
-        '中心からの距離で効き具合を変える（`smoothstep(0.15, 0.75, length(uv - 0.5))` など）',
-        '別のパスをもう1つ足す',
-        'カメラの fov を変える',
-        '`tDiffuse` を2回読む',
+        '約 27%。光の量は半分だが、sRGB に戻すと 0.7354 → 0.5371 にしかならない',
+        'ちょうど半分',
+        '約 75%。倍以上暗くなる',
+        '変わらない',
       ],
       answer: 0,
       explain:
-        '実際のレンズも中心では色ずれが出ません。中心からの距離で混ぜ具合を変える 1 行を入れるだけで、それらしさが大きく変わります。距離は `distance(vUv, vec2(0.5))` でも `length(vUv - 0.5)` でも同じです。',
+        'パスに届く色はリニアで、sRGB への変換は最後の OutputPass がやります。見た目で半分にしたければ、リニアでは 0.223 を掛ける必要があります。「見た目で k 倍」はリニアで k の 2.2 乗倍、と覚えてください。',
     },
     {
-      q: 'パスを並べる順番として、もっとも自然なのはどれですか。',
+      q: '自前パスの先頭に `clamp(color.rgb, 0.0, 1.0)` を書くと、何が起きますか。',
       choices: [
-        'RenderPass → ブルーム → 色調 → ビネット → OutputPass',
-        'RenderPass → OutputPass → ブルーム → ビネット',
-        'OutputPass → RenderPass → ブルーム',
-        '順番はどれでも同じ結果になる',
+        'ブルームより前なら、1 を超えた明るさが消えてしきい値が働かなくなる',
+        '何も起きない。色は元から 0〜1 の範囲',
+        '色が sRGB になる',
+        '描画が速くなる',
       ],
       answer: 0,
       explain:
-        '現実で光が通る順に並べると、たいてい正解に近づきます。光を拾うブルームは早め、レンズや画面の癖であるビネットや色収差は遅め、そして OutputPass は必ず最後です。',
+        '街灯の 2.40 も、もっと明るいものも 1.0 に潰れます。8 ビットのレンダーターゲットを使ったときとまったく同じ症状です。OutputPass の直前なら実害は小さいものの、トーンマッピングが 1 超えから作る階調は失われます。clamp は書かないのが既定です。',
     },
   ],
 };
