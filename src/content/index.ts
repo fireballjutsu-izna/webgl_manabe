@@ -403,6 +403,61 @@ export const chapters: Chapter[] = [
   chapterY22,
 ];
 
+/*
+ * 確認クイズの選択肢を、章とその設問ごとに決まった順へ並べ替える。
+ *
+ * 各章では**正解を先頭に書く**約束にしてある。そのほうが書きやすく、読み返すときも
+ * 「どれが正解か」を探さずに済むからだが、そのまま出すと 585 問すべての正解が
+ * 1 番目に並ぶ ― 先頭を押し続ければ全問正解できてしまい、クイズの意味が無くなる。
+ *
+ * そこで、出す直前にここで混ぜる。乱数の種は章のスラグと設問の番号から作るので、
+ * **同じ設問はいつ開いても同じ並び**になる。リロードで正解が動くと、
+ * 「さっき A だったのに」と混乱するし、間違いを覚え直す妨げにもなる。
+ */
+
+function seedOf(text: string): number {
+  // FNV-1a。短い文字列から、それらしく散らばる 32 ビットを作るだけ
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash;
+}
+
+function shuffleQuiz(chapter: Chapter): Chapter {
+  if (chapter.quiz === undefined || chapter.quiz.length === 0) return chapter;
+
+  const quiz = chapter.quiz.map((question, index) => {
+    let state = seedOf(`${chapter.slug}:${index}`) || 1;
+    const next = (): number => {
+      // xorshift32
+      state ^= state << 13;
+      state ^= state >>> 17;
+      state ^= state << 5;
+      return (state >>> 0) / 4294967296;
+    };
+
+    const order = question.choices.map((_, i) => i);
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(next() * (i + 1));
+      [order[i], order[j]] = [order[j]!, order[i]!];
+    }
+
+    return {
+      ...question,
+      choices: order.map((from) => question.choices[from]!),
+      answer: order.indexOf(question.answer),
+    };
+  });
+
+  return { ...chapter, quiz };
+}
+
+for (const [index, chapter] of chapters.entries()) {
+  chapters[index] = shuffleQuiz(chapter);
+}
+
 const bySlug = new Map(chapters.map((chapter) => [chapter.slug, chapter]));
 
 export function chapterBySlug(slug: string): Chapter | undefined {
