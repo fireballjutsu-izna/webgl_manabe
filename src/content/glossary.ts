@@ -540,6 +540,11 @@ export const glossary: GlossaryEntry[] = [
     chapter: 'q03-postprocess',
   },
   {
+    term: 'エイリアシング',
+    def: '画素より細かい模様を描こうとしたときに、もとの模様とは別の粗い模様が現れること。輪郭のギザギザも、細かい縞のちらつきも、これ。',
+    chapter: 'y13-film-grade',
+  },
+  {
     term: 'レンダーターゲット',
     def: '画面ではなくテクスチャに描くための入れ物。ポストプロセスは、まずここへ描いてから加工する。',
     chapter: 'q03-postprocess',

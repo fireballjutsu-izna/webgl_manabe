@@ -189,6 +189,9 @@ import { chapterQ03 } from './chapters/q03-postprocess.ts';
 import { chapterY10 } from './chapters/y10-bloom.ts';
 import { chapterY11 } from './chapters/y11-postprocess-cost.ts';
 import { chapterQ04 } from './chapters/q04-custom-pass.ts';
+import { chapterY13 } from './chapters/y13-film-grade.ts';
+import { chapterY14 } from './chapters/y14-uv-offset.ts';
+import { chapterY15 } from './chapters/y15-pass-order.ts';
 import { chapterQ05R3F } from './chapters/q05-r3f.ts';
 import { chapterQ06 } from './chapters/q05-ship-it.ts';
 
@@ -383,6 +386,9 @@ export const chapters: Chapter[] = [
   chapterY10,
   chapterY11,
   chapterQ04,
+  chapterY13,
+  chapterY14,
+  chapterY15,
   chapterQ05R3F,
   chapterQ06,
 ];
