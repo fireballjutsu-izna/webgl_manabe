@@ -6,7 +6,11 @@ import { setQuizPassed } from '../app/progress.ts';
 import { el } from './dom.ts';
 import { renderMarkup } from './markup.ts';
 
-const MARKS = ['A', 'B', 'C', 'D', 'E'];
+/*
+ * 選択肢の番号。A・B・C ではなく 1・2・3 にしてある。
+ * 「1 つめ」「2 つめ」と口に出して数えられるほうが、本文の書き方と揃う。
+ */
+const MARKS = ['1', '2', '3', '4', '5'];
 
 /**
  * 間違えたときだけ出す戻り先。
@@ -61,7 +65,7 @@ export function createQuiz(slug: string, questions: QuizQuestion[]): HTMLElement
       const button = el(
         'button',
         { class: 'qz__choice', type: 'button' },
-        el('span', { class: 'qz__mark' }, MARKS[ci] ?? String(ci + 1)),
+        el('span', { class: 'qz__mark' }, `${MARKS[ci] ?? String(ci + 1)}.`),
         el('span', { html: renderMarkup(choice).replace(/^<p>|<\/p>$/g, '') }),
       );
 

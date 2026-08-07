@@ -117,6 +117,24 @@ body {
   font-feature-settings: 'palt' 1;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+
+  /*
+   * 折り返す場所は、src/ui/markup.ts が <wbr> で指定する。
+   * keep-all にしておかないとブラウザが語の途中でも折ってしまい、
+   * 狭い画面で「どれか／ら決めますか」のような割れ方をする。
+   * 折る場所が無い長い連なりだけ、break-word が逃げ道として引き受ける。
+   */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* コードと表は、これまでどおりの折り返しに戻す */
+pre,
+code,
+kbd,
+samp,
+.katex {
+  word-break: normal;
 }
 
 h1,

@@ -231,6 +231,12 @@ for (const chapter of chapters) {
         `${where}: 本文に章番号 "${match[1]}" が直接書かれています（[](#/ch/slug) を使ってください）`,
       );
     }
+    // 「第9章」の形も同じ理由で禁じる。本を広げたとき、この形が 26 か所すべてずれていた
+    for (const match of text.matchAll(/第\s?[0-9]+\s?章/g)) {
+      errors.push(
+        `${where}: 本文に "${match[0]}" と書かれています（番号は動くので [](#/ch/slug) を使ってください）`,
+      );
+    }
     for (const match of text.matchAll(/\{\{([^}]+)\}\}/g)) {
       const body = match[1] ?? '';
       const key = (body.includes('|') ? body.split('|', 2)[1] : body)?.trim() ?? '';

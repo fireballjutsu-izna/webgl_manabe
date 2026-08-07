@@ -18,13 +18,13 @@ export const chapterT08: Chapter = {
   ],
   mathRecall: [
     { slug: '02-vector', note: '光線は「起点＋向き」。まさにベクトル' },
-    { slug: '10-camera', note: '画面の点は、視錐台の中の1本の線に対応する' },
+    { slug: '10-camera', note: '画面の点は、視錐台の中の 1 本の線に対応する' },
   ],
   blocks: [
     {
       kind: 'md',
       text: `
-## 画面の1点は、空間の1本の線
+## 画面の 1 点は、空間の 1 本の線
 
 マウスがあるのは平らな画面の上、物体があるのは 3D 空間の中。この 2 つをどう結ぶのでしょうか。
 
