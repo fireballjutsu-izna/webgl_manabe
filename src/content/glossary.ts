@@ -532,7 +532,7 @@ export const glossary: GlossaryEntry[] = [
   {
     term: 'ブルーム',
     def: '強い光がにじんで見える効果。実際にはレンズやセンサーの癖で、目に見えている現象ではない。夜景やネオンでよく効く。',
-    chapter: 'q03-postprocess',
+    chapter: 'y10-bloom',
   },
   {
     term: 'パス',

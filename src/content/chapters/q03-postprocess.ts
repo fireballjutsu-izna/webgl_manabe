@@ -4,57 +4,57 @@ export const chapterQ03: Chapter = {
   slug: 'q03-postprocess',
   part: 'polish',
   number: 9,
-  title: 'ポストプロセス入門',
-  goal: '描き上がった画面に効果をかけられるようになり、色が壊れる・輪郭がギザギザになるという定番の落とし穴を避けられるようになります。',
-  requires: ['q02-color', 't11-performance'],
+  title: '描き終わった絵に、手を入れる ― 3 点セット',
+  goal: '$\\mathrm{EffectComposer}$ の $3$ 点セットを組めるようになり、$\\mathrm{OutputPass}$ を忘れたときに色が壊れる理由を、色の通り道から説明できるようになります。',
+  requires: ['y08-color-debug', 'w44-gpu-cost'],
   threeApis: [
     'EffectComposer',
     'RenderPass',
     'OutputPass',
-    'UnrealBloomPass',
     'WebGLRenderTarget',
-    'WebGLRenderer.info',
-    'MeshBasicMaterial',
-    'CanvasTexture',
+    'WebGLRenderer.setRenderTarget',
   ],
   mathRecall: [
-    { slug: 'q02-color', note: '出口の変換とトーンマッピング' },
-    { slug: 'p07-city-light', note: '夜の窓の明かり ― ここに効かせます' },
-    { slug: 't11-performance', note: '画面全体をもう一度処理する重さ' },
+    { slug: 'y08-color-debug', note: '出口の変換が抜けると、暗くなる' },
+    { slug: 'w44-gpu-cost', note: '画面全体をもう一度処理する重さ' },
   ],
   blocks: [
     {
       kind: 'md',
       text: `
-## 描き終わった絵に、手を入れる
+## 描き終わってから、手を入れる
 
-ここまでは「どう描くか」の話でした。**ポストプロセスは「描き終わったあとで何をするか」**です。
+ここまでは「どう描くか」の話でした。ポストプロセスは違います。
 
-やり方の骨格は単純です。
+**いったん描き終わった絵を、$1$ 枚の画像として受け取って、そこに手を入れます。**
 
-- **画面ではなく、いったんテクスチャ（{{レンダーターゲット}}）に描く**
-- **そのテクスチャを材料にして、画面いっぱいの板を 1 枚描く**
-- 板を描くときのフラグメントシェーダで、好きな加工をする
+- ブルーム（明るいものを滲ませる）
+- ビネット（周辺を落とす）
+- 色調の補正
+- 被写界深度、モーションブラー
 
-[](#/ch/t14-fragment-shader)で書いたものが、そのまま使えます。
-ちがうのは、**材料が「3D の面」ではなく「さっき描いた絵そのもの」**という点だけです。
+どれも「シーンの中身」ではなく「**できあがった絵**」に対する操作です。
+だから $3$ 次元の知識はほとんど要らず、**画像処理**の話になります。
 
-この仕組みを three で扱うのが \`EffectComposer\` です。
+その代わり、**構造が $1$ つ変わります。** 画面に直接描かなくなるのです。
+いったん{{レンダーターゲット}}（テクスチャ）へ描き、それを材料にして加工します。
 `,
     },
     {
       kind: 'md',
       text: `
-## 3点セット ― Composer / RenderPass / OutputPass
+## 3 点セット
 
-最小の構成は 3 つです。**この 3 つは必ずこの順**になります。
-加工の 1 工程を{{パス}}と呼びます。
+必要なものは $3$ つだけです。
 
-- **\`EffectComposer\`** … パスを順番に流す係
-- **\`RenderPass\`** … シーンをテクスチャに描く。**必ず最初**
-- **\`OutputPass\`** … トーンマッピングと sRGB への変換をする。**必ず最後**
+- **\`EffectComposer\`** … 加工の $1$ 工程を{{パス}}と呼びます。それを順番に通す係
+- **\`RenderPass\`** … いつもの描画を、画面ではなくテクスチャへ
+- **\`OutputPass\`** … 最後に、トーンマッピングと $sRGB$ への変換をする
 
-やりたい効果（ブルームなど）は、この 2 つのあいだに挟みます。
+$3$ つめが要点で、**忘れると必ず色が壊れます。**
+
+そして描画の呼び出しが変わります。
+\`renderer.render(scene, camera)\` ではなく \`composer.render()\` です。
 `,
     },
     {
@@ -64,17 +64,19 @@ export const chapterQ03: Chapter = {
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-const composer = new EffectComposer(renderer);
-composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-composer.setSize(window.innerWidth, window.innerHeight);
+const target = new THREE.WebGLRenderTarget(
+  window.innerWidth, window.innerHeight,
+  { type: THREE.HalfFloatType, samples: 4 },   // 1 を超える明るさを保ち、輪郭もならす
+);
 
-composer.addPass(new RenderPass(scene, camera));   // 1. シーンを描く
-// ここに効果を挟む
-composer.addPass(new OutputPass());                // 3. 色を仕上げる
+const composer = new EffectComposer(renderer, target);
+composer.addPass(new RenderPass(scene, camera));
+// ここに好きなパスを足す
+composer.addPass(new OutputPass());            // 最後に必ず 1 回
 
 function animate() {
   requestAnimationFrame(animate);
-  composer.render();          // renderer.render(...) の代わりに、これを呼ぶ
+  composer.render();        // renderer.render ではなく composer.render
 }`,
     },
     {
@@ -82,28 +84,19 @@ function animate() {
       tone: 'warn',
       title: 'OutputPass を忘れると、色が壊れます',
       text: `
-これが第4部でいちばん多い引っかかりです。しかも**エラーは出ません。**
-ただ「なんとなく白っぽい、眠い絵」になるだけなので、原因にたどり着きにくい。
+[](#/ch/y08-color-debug)で見た「**暗くて濃い**」が、そのまま出ます。
 
-[](#/ch/q02-color)でやったとおり、途中の加工は**リニアのまま**やる必要があります。
-だから \`RenderPass\` が描き込むテクスチャはリニアで、
-**sRGB への変換とトーンマッピングは最後にまとめて 1 回**行います。
-その担当が \`OutputPass\` です。
+理由も同じです。**出口の変換が $1$ 回ぶん足りない**からです。
 
-これを付けないと、リニアの数値がそのまま画面に出ます。
-**[](#/ch/q02-color) で \`outputColorSpace\` を Linear にしたときと、まったく同じ見た目**になります。
-`,
-    },
-    {
-      kind: 'md',
-      text: `
-## 見て確かめる
+- ふつうの描画 … \`renderer\` が最後に $sRGB$ へ変換して画面に出す
+- ポストプロセス … 途中はぜんぶ**リニアのまま**テクスチャに描く。
+  最後に変換する係が要る ― それが \`OutputPass\`
 
-次のコードには**「OutputPass あり」「なし」を切り替えるボタン**が付いています。
+途中をリニアで通すのは、**そうしないと合成が正しく計算できない**からです。
+ぼかしも足し算も、$sRGB$ のままやると[](#/ch/q02-color)で見たとおり狂います。
 
-ブルームもかかっているので、2 つのことが同時に見えます。
-**光っているものが本当に光って見えること**と、
-**最後の 1 パスを外すと全体が白っぽくなること**です。
+**症状で見分けられます。** ポストプロセスを入れた瞬間に画面が暗く濃くなったら、
+まず \`OutputPass\` を疑ってください。
 `,
     },
     {
@@ -224,343 +217,182 @@ window.addEventListener('resize', () => {
       caption:
         '「なし」に切り替えると、水色の箱がくすんだ白っぽい色になり、背景まで持ち上がります。エラーは 1 つも出ません ― だから気づきにくいのです。`bloomPass` を消すと、`OutputPass` が無くても正しい色に戻ります（パスが 1 つだけなら、three が画面へ直接描くため）。これが「途中に何か挟んだときだけ壊れる」という、いやらしい出方の理由です。',
     },
+
     {
       kind: 'md',
       text: `
-## {{ブルーム}} ― 明るいものを滲ませる
+## 順番が、すべてを決める
 
-\`UnrealBloomPass\` の引数は 4 つですが、覚えるのは**後ろの 3 つ**だけです。
+パスは**足した順**に実行されます。この順番には意味があります。
 
-\`new UnrealBloomPass(解像度, strength, radius, threshold)\`
+- **\`RenderPass\` は必ず最初。** 絵が無ければ、手の入れようがありません
+- **\`OutputPass\` は必ず最後。** 変換したあとに合成すると、また狂います
+- **そのあいだが、自由**
 
-- **threshold（しきい値）** … **この明るさを超えたものだけ**が滲みます。**いちばん大事**
-- **strength（強さ）** … 滲みの量
-- **radius（半径）** … 滲みの広がり
+「あいだ」に何をどの順で置くかは、効果の性質で決まります。
 
-**threshold から決めてください。** ここが低すぎると画面全体がぼんやり光り、
-「なんとなく眠い絵」になります。**0.8 前後から始めて、光らせたいものだけが越えるように**調整します。
+- **ブルーム** … 明るさを見るので、**トーンマッピングより前**（つまり \`OutputPass\` より前）
+- **ビネット・色調** … どちらでも成り立つが、リニアでやるほうが素直
+- **輪郭のならし（$SMAA$）** … 色が決まったあと、つまり**いちばん後ろ**
 
-そのために、光らせたいものは **1 を超える色**にしておきます。
-\`new THREE.Color(6, 4.6, 2.2)\` のような、16 進数では書けない明るさです。
-`,
-    },
-    {
-      kind: 'callout',
-      tone: 'tip',
-      title: 'ブルームは「光」ではなく「カメラの癖」',
-      text: `
-実際のブルームは、強い光がレンズやセンサーの中で散ることで起きます。
-つまり**目に見えている現象ではなく、撮影機材の癖**です。
-
-だから入れすぎると「頑張って加工した写真」になります。
-**入れたことに気づかれないくらい**が、たいていちょうどよい量です。
-
-夜景・ネオン・光源が画面に写る場面では効きますが、
-昼の屋外に強くかけると、ただ眠い絵になります。
+$3$ つめだけが例外で、\`OutputPass\` より後ろに置くこともあります。
+**画素の色が確定してからでないと、輪郭を見分けられない**からです。
 `,
     },
     {
       kind: 'md',
       text: `
-## 落とし穴 ― antialias が効かなくなる
+## この先の 3 章
 
-\`EffectComposer\` を入れた瞬間、**輪郭がギザギザになった**ことに気づくはずです。
+- **[](#/ch/y10-bloom)** … ブルーム。しきい値から決める
+- **[](#/ch/y11-postprocess-cost)** … 代償。$\\mathrm{antialias}$ とビット深度と帯域
+- **[](#/ch/q04-custom-pass)** … 自分でパスを書く
 
-\`new THREE.WebGLRenderer({ antialias: true })\` は
-**画面に直接描くときにしか効きません。** ポストプロセスでは
-いったんテクスチャに描くので、この設定は素通りされます。
-
-打つ手は 2 つです。
-
-- **レンダーターゲット側で MSAA を有効にする。** \`samples: 4\` を指定する（上のコードがこれ）。
-  簡単で品質もよい
-- **\`SMAAPass\` を足す。** 画像処理で輪郭をならす方式。古い環境でも動くが、少し眠くなる
-
-\`type: THREE.HalfFloatType\` も併せて指定しています。
-既定の 8 ビットだと**1 を超えた明るさが途中で切り捨てられ**、
-ブルームのしきい値が意味を失うためです。
-`,
-    },
-    {
-      kind: 'md',
-      text: `
-## 夜の街にかける
-
-[](#/ch/p07-city-light)で窓に明かりを点けました。そこにブルームを足します。
-**夜景はブルームがいちばん効く題材**です。
-
-窓の明かりを 1 を超える明るさにしておくのが要点です。
-そうしないと、しきい値を越えられず何も滲みません。
-`,
-    },
-    {
-      kind: 'sandbox',
-      title: '夜の街にブルームをかける',
-      guide: { focus: ['ポストプロセス'] },
-      code: `import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-
-/* ---- ここを書き換えて試してください ---- */
-const BLOOM_STRENGTH = 0.55;
-const BLOOM_RADIUS = 0.45;
-const BLOOM_THRESHOLD = 0.95;   // まずここを動かす
-
-function makeRandom(seed) {
-  let state = seed >>> 0;
-  return function () {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-// 3-06 と同じ、窓のテクスチャ
-function createWindowTexture() {
-  const cell = 16;
-  const grid = 8;
-  const canvas = document.createElement('canvas');
-  canvas.width = cell * grid;
-  canvas.height = cell * grid;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const rand = makeRandom(4242);
-  for (let gy = 0; gy < grid; gy++) {
-    for (let gx = 0; gx < grid; gx++) {
-      if (rand() > 0.55) continue;
-      const level = 170 + Math.floor(rand() * 85);
-      ctx.fillStyle = 'rgb(' + level + ',' + Math.floor(level * 0.85) + ',' + Math.floor(level * 0.55) + ')';
-      ctx.fillRect(gx * cell + cell * 0.22, gy * cell + cell * 0.2, cell * 0.56, cell * 0.5);
-    }
-  }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.magFilter = THREE.NearestFilter;
-  return texture;
-}
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b0f1c);
-scene.fog = new THREE.Fog(0x0b0f1c, 60, 220);
-
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, 300);
-camera.position.set(-48, 25, 60);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-document.body.appendChild(renderer.domElement);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.target.set(0, 8, 0);
-controls.maxPolarAngle = Math.PI * 0.495;
-
-scene.add(new THREE.HemisphereLight(0x3a4a7a, 0x101018, 0.5));
-
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(400, 400),
-  new THREE.MeshStandardMaterial({ color: 0x23252e, roughness: 0.95 }),
-);
-ground.rotation.x = -Math.PI / 2;
-scene.add(ground);
-
-/* ---- 建物を並べる ---- */
-
-const windows = createWindowTexture();
-const rand = makeRandom(20260730);
-
-const buildingMaterial = new THREE.MeshStandardMaterial({
-  color: 0x2b303c,
-  roughness: 0.85,
-  emissive: 0xffffff,
-  emissiveMap: windows,
-  // 1 を超える明るさにしておく。ここがブルームのしきい値を越える
-  emissiveIntensity: 1.5,
-});
-
-for (let i = 0; i < 26; i++) {
-  const w = 3 + rand() * 3;
-  const d = 3 + rand() * 3;
-  const h = 6 + rand() * 26;
-
-  const geometry = new THREE.BoxGeometry(w, h, d);
-  // 3-06 でやった、面の実寸に合わせた UV の割り付け
-  const uv = geometry.getAttribute('uv');
-  const cols = (size) => Math.max(1, Math.round(size / 2.4)) / 8;
-  const rows = Math.max(1, Math.round(h / 3.4)) / 8;
-  const faces = [
-    { u: cols(d), v: rows }, { u: cols(d), v: rows },
-    null, null,
-    { u: cols(w), v: rows }, { u: cols(w), v: rows },
-  ];
-  for (let f = 0; f < 6; f++) {
-    for (let k = 0; k < 4; k++) {
-      const at = f * 4 + k;
-      if (faces[f] === null) uv.setXY(at, 0.06, 0.06);
-      else uv.setXY(at, uv.getX(at) * faces[f].u, uv.getY(at) * faces[f].v);
-    }
-  }
-
-  const building = new THREE.Mesh(geometry, buildingMaterial);
-  building.position.set((rand() - 0.5) * 60, h / 2, (rand() - 0.5) * 60);
-  scene.add(building);
-}
-
-// 街灯。小さくて強いものほど、ブルームがよく効く
-const lampMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 2.3, 1.1) });
-const lampGeometry = new THREE.SphereGeometry(0.35, 16, 10);
-for (let i = 0; i < 16; i++) {
-  const lamp = new THREE.Mesh(lampGeometry, lampMaterial);
-  lamp.position.set((rand() - 0.5) * 60, 3.2, (rand() - 0.5) * 60);
-  scene.add(lamp);
-}
-
-/* ---- ポストプロセス ---- */
-
-const size = new THREE.Vector2(window.innerWidth, window.innerHeight);
-const target = new THREE.WebGLRenderTarget(size.x, size.y, {
-  type: THREE.HalfFloatType,   // 1 を超える明るさを保つ
-  samples: 4,                  // 合成すると antialias が効かないので、ここで MSAA
-});
-
-const composer = new EffectComposer(renderer, target);
-composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-composer.setSize(size.x, size.y);
-composer.addPass(new RenderPass(scene, camera));
-composer.addPass(new UnrealBloomPass(size, BLOOM_STRENGTH, BLOOM_RADIUS, BLOOM_THRESHOLD));
-composer.addPass(new OutputPass());
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  composer.render();
-}
-animate();
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  composer.setSize(window.innerWidth, window.innerHeight);
-});`,
-      caption:
-        '`BLOOM_THRESHOLD` を 0.2 にすると建物の壁まで滲みはじめ、街全体がぼんやりします。1.4 にすると街灯だけが光ります。`emissiveIntensity` を 0.8（1 未満）に下げると、窓は点いているのに**まったく滲みません** ― しきい値を越えていないからです。`samples: 4` を消すと、建物の輪郭がギザギザになるのが分かります。',
-    },
-    {
-      kind: 'md',
-      text: `
-## 重さの話
-
-[](#/ch/t11-performance)で「ポストプロセスを疑え」と書きました。理由はこうです。
-
-- **画面ぜんぶをもう一度処理する。** フル HD なら 1 パスあたり 200 万画素
-- **ブルームはさらに重い。** 縮小しながら何段もぼかすので、実質 5〜6 回ぶん
-- **パスが増えるほどメモリも増える。** テクスチャを 2 枚以上持ち続ける
-
-現実的な使い方はこうです。
-
-- **効果は 2〜3 個まで。** 足し算で重くなる
-- **モバイルでは切る。** この部の最後で、品質設定として切り替えられるようにします
-- **\`composer.setPixelRatio\` を抑える。** レンダラと同じく 2 で頭打ちに
-
-そして、**入れる前と後をスクリーンショットで見比べてください。**
-重さに見合う変化が無いなら、入れない判断も立派な選択です。
-`,
-    },
-    {
-      kind: 'callout',
-      tone: 'tip',
-      title: 'ほかにどんなパスがあるか',
-      text: `
-\`three/addons/postprocessing/\` には 20 以上のパスが入っています。よく使うものだけ挙げます。
-
-- **\`OutlinePass\`** … 選んだ物体に輪郭線を出す。選択の表現に
-- **\`SSAOPass\` / \`GTAOPass\`** … 隙間に自然な影を落とす。重いが効果は大きい
-- **\`BokehPass\`** … 被写界深度。手前や奥をぼかす
-- **\`SMAAPass\` / \`FXAAPass\`** … 輪郭をならす
-- **\`AfterimagePass\`** … 残像。動きのあるものに
-
-どれも「Composer に \`addPass\` する」という形は同じです。
-順番だけ注意してください ― **\`OutputPass\` は必ず最後**です。
+$2$ つめは、入れる前に読んでおく価値があります。
+**ポストプロセスは、思っているより高い**からです。
 `,
     },
   ],
   exercises: [
     {
-      prompt: `1 つ目のサンドボックスで「OutputPass なし」を押してください。何が壊れますか。
-そのうえで、**composer を使わずに素で描いたときは、なぜ同じ問題が起きないのか**を説明してください。`,
-      hint: 'レンダラは、画面に出すときに sRGB へ戻す仕事をしています。',
-      answer: `色が浅く、白っぽくなります（トーンマッピングと sRGB への変換が飛ぶため）。
-素で \`renderer.render()\` したときは、**レンダラが画面に出す最後の瞬間にその変換をしています**。
-ところが composer を挟むと、途中の描き先はレンダーターゲットであって画面ではないので、変換が行われません。
-そのぶんを最後に肩代わりするのが \`OutputPass\` です。
-**composer を使ったら最後に OutputPass**、を組で覚えてください。`,
+      prompt: `\`composer.render()\` に変えるのを忘れて、\`renderer.render(scene, camera)\` のままにしました。
+
+何が起きますか。`,
+      hint: 'パスは誰が実行しますか。',
+      answer: `**ポストプロセスがまったく効きません。絵は正しく出ます。**
+
+**なぜエラーにならないのか**
+
+\`EffectComposer\` を作って \`addPass\` しただけでは、**何も起きません。**
+パスを実行するのは \`composer.render()\` だからです。
+
+\`renderer.render(scene, camera)\` は、これまでどおり画面に直接描きます。
+
+つまり、
+
+- **絵は正しい**（色も、輪郭も）
+- **ブルームもビネットも効かない**
+- **エラーも警告も出ない**
+
+**いちばん見つけにくい種類の不具合**です。
+
+**気づき方**
+
+パスのパラメータを極端な値にしてみてください。
+ブルームの \`strength\` を $10$ にしても何も変わらないなら、**呼んでいません。**
+
+**逆のミスもある**
+
+\`composer.render()\` に変えたのに \`RenderPass\` を足し忘れると、
+**真っ黒な画面**になります ― こちらはすぐ気づきます。
+
+**「何も変わらない」と「真っ黒」は、どちらも $1$ 行の書き忘れ**です。`,
     },
     {
-      prompt: '\`samples: 4\` を \`0\` にしてください。輪郭はどうなりますか。\`antialias: true\` は指定してあるのに、なぜ効かないのでしょう。',
-      hint: 'antialias は「画面に直接描くとき」の設定です。',
-      answer: `輪郭が**ギザギザ**になります。
-\`antialias: true\` は画面用のバッファに効く設定で、composer が描く先はレンダーターゲットなので通り道が違います。
-そこで、レンダーターゲット自身に \`samples\` を指定して MSAA を効かせます。
-使えない環境もあるので、\`SMAAPass\` を最後のほうに挟むという手もあります。
-**「合成を入れたらギザギザになった」は、この 1 行で直ります。**`,
+      prompt: `\`OutputPass\` を $2$ 回足すと、どうなりますか。`,
+      hint: '変換の回数を数えてください。',
+      answer: `**[](#/ch/y08-color-debug)で見た「白っぽくて薄い」になります。**
+
+**なぜか**
+
+\`OutputPass\` はリニア $\\to sRGB$ の変換をします。
+
+$2$ 回通れば、**変換が $1$ 回多い**状態です。
+
+$0.0782$（リニア）が $0.31$ になり、それがもう $1$ 回変換されて $0.58$ ―
+$\\#4fd6ff$ が $\\#97ecff$ あたりになります。
+
+**入口の変換が抜けたときと、同じ症状**です。
+
+**つまり $3$ 通りが同じ見た目になる**
+
+- 入口の変換が抜けた
+- \`OutputPass\` が $2$ 回
+- 出口の変換を手で足した
+
+どれも「リニア $\\to sRGB$ が $1$ 回多い」です。
+
+**だから、数えるのがいちばん速い**
+
+症状から原因を当てるのではなく、
+**変換が何回かかっているかを数えてください。**
+
+- 入口 … テクスチャと色の \`colorSpace\`
+- 出口 … \`outputColorSpace\` か \`OutputPass\`、**どちらか $1$ つだけ**
+
+$2$ つが両方効いていないか、確かめてください。`,
     },
     {
-      prompt: 'ブルームの \`BLOOM_THRESHOLD\` を 0.95 から 0.2 に下げてください。何が起きますか。ブルームが「光っているもの」だけに効くのはなぜでしょう。',
-      hint: 'しきい値は「これより明るい画素だけを滲ませる」境目です。',
-      answer: `**画面全体が滲んで、街が霞みます**。しきい値を下げたことで、光っていない部分まで対象になったからです。
-ブルームは「しきい値を超えた画素だけ取り出してぼかし、元に足す」処理なので、
-しきい値の位置が効きの全部を決めます。
-そして \`HalfFloatType\` が要るのは、**1 を超える明るさを保つため**です。
-8 ビットだと 1 で頭打ちになり、「特別に明るいもの」と「ただの白」の区別が消えてしまいます。`,
+      prompt: `$SMAA$（輪郭をならすパス）を \`OutputPass\` より前に置くのと、後ろに置くのでは何が違いますか。`,
+      hint: '$SMAA$ は何を見て輪郭を判定しますか。',
+      answer: `**後ろのほうが正しく判定できます。**
+
+**$SMAA$ がしていること**
+
+隣り合う画素の**色の差**を見て、輪郭を推定し、そこをならします。
+
+**リニアで見ると、差が正しく読めない**
+
+$sRGB$ は暗い側に目盛りが厚い ―
+つまり**人が「差がある」と感じる量**に近い目盛りです。
+
+リニアのままでは、暗い部分の差が小さく見えます。
+
+- リニア $0.02$ と $0.05$ … 差は $0.03$。ほとんど無いように見える
+- $sRGB$ に直すと $0.16$ と $0.24$ … 差は $0.08$。**$2.7$ 倍に見える**
+
+暗い部分の輪郭を、リニアのままでは**見落とします。**
+
+**だから後ろに置く**
+
+\`OutputPass\` のあと、つまり $sRGB$ になってから輪郭を探すほうが、
+**人が見ている輪郭に近いものを検出できます。**
+
+**ブルームは逆**
+
+ブルームは「明るさがしきい値を超えたか」を見るので、
+**リニアでないと意味がありません。** $sRGB$ に直したあとでは、
+$1$ を超えた情報がもう失われています。
+
+**「その効果は、どの目盛りで意味を持つか」で置き場所が決まります。**`,
     },
   ],
   quiz: [
     {
-      q: '`EffectComposer` を使うとき `OutputPass` を最後に付けないと、何が起きますか。',
+      q: 'ポストプロセスを入れると、描画の呼び出しはどう変わりますか。',
       choices: [
-        'エラーは出ないまま、全体が白っぽく眠い色になる',
-        'エラーが出て何も描かれない',
-        '描画が重くなる',
-        '輪郭がギザギザになる',
+        '`renderer.render(scene, camera)` ではなく `composer.render()` を呼ぶ',
+        '両方を呼ぶ',
+        '変わらない',
+        'renderer.render を毎フレーム 2 回呼ぶ',
       ],
       answer: 0,
       explain:
-        '途中の加工はリニアのまま行う必要があるため、sRGB への変換とトーンマッピングは最後に一度だけ行います。その担当が OutputPass です。付け忘れるとリニアの数値がそのまま画面に出て、`outputColorSpace` を Linear にしたときと同じ見た目になります。',
+        'EffectComposer を作って addPass しただけでは何も起きません。パスを実行するのは composer.render() です。renderer.render のままにしても絵は正しく出て、エラーも警告も出ないまま効果だけが効かないので、いちばん見つけにくい不具合になります。',
     },
     {
-      q: '`UnrealBloomPass` を入れたのに何も滲みません。まず確認すべきはどれですか。',
+      q: '`OutputPass` を忘れると、なぜ色が壊れるのですか。',
       choices: [
-        '光らせたいものの明るさが threshold を超えているか',
-        'radius が小さすぎないか',
-        'カメラの far が足りているか',
-        'ライトの数',
+        '途中はリニアのまま処理するので、最後に sRGB へ戻す係がいなくなるから',
+        'ブルームが二重にかかるから',
+        'レンダーターゲットが 8 ビットだから',
+        'antialias が効かなくなるから',
       ],
       answer: 0,
       explain:
-        'ブルームは「しきい値を超えた明るさ」だけを滲ませます。`emissiveIntensity` を上げるか、`new THREE.Color(6, 4.6, 2.2)` のように 1 を超える色にして、threshold を越えさせてください。逆に threshold が低すぎると画面全体がぼんやりします。',
+        '合成をリニアでやるのは、sRGB のまま足すと計算が狂うからです。そのぶん、最後に変換する係が要ります。忘れると「出口の変換が 1 回足りない」状態になり、色の章で見た「暗くて濃い」がそのまま出ます。逆に 2 回足すと「白っぽくて薄い」になります。',
     },
     {
-      q: '`EffectComposer` を導入したら輪郭がギザギザになりました。理由はどれですか。',
+      q: 'ブルームと SMAA（輪郭をならすパス）は、`OutputPass` の前と後ろ、どちらに置きますか。',
       choices: [
-        '`antialias: true` は画面に直接描くときにしか効かず、テクスチャへ描く経路では素通りされるから',
-        'ピクセル比が下がったから',
-        'トーンマッピングのせい',
-        'ブルームが輪郭を削ったから',
+        'ブルームは前、SMAA は後ろ。前者は明るさ、後者は人が見る色の差を見るから',
+        'どちらも前',
+        'どちらも後ろ',
+        'ブルームが後ろ、SMAA が前',
       ],
       answer: 0,
       explain:
-        'レンダーターゲットに `samples: 4` を指定して MSAA を効かせるか、`SMAAPass` を足します。あわせて `type: THREE.HalfFloatType` も指定しておくと、1 を超える明るさが保たれてブルームのしきい値が正しく働きます。',
+        'ブルームは「しきい値を超えた明るさ」を見るので、1 を超えた情報が残っているリニアの段階でないと意味がありません。SMAA は隣の画素との色の差で輪郭を推定するので、人の感覚に近い sRGB のほうが暗部の輪郭を拾えます。その効果がどの目盛りで意味を持つかで、置き場所が決まります。',
     },
   ],
 };

@@ -186,6 +186,8 @@ import { chapterY06 } from './chapters/y06-hex-colorspace.ts';
 import { chapterY07 } from './chapters/y07-tonemapping.ts';
 import { chapterY08 } from './chapters/y08-color-debug.ts';
 import { chapterQ03 } from './chapters/q03-postprocess.ts';
+import { chapterY10 } from './chapters/y10-bloom.ts';
+import { chapterY11 } from './chapters/y11-postprocess-cost.ts';
 import { chapterQ04 } from './chapters/q04-custom-pass.ts';
 import { chapterQ05R3F } from './chapters/q05-r3f.ts';
 import { chapterQ06 } from './chapters/q05-ship-it.ts';
@@ -378,6 +380,8 @@ export const chapters: Chapter[] = [
   chapterY07,
   chapterY08,
   chapterQ03,
+  chapterY10,
+  chapterY11,
   chapterQ04,
   chapterQ05R3F,
   chapterQ06,

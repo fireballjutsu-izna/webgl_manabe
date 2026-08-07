@@ -3,7 +3,7 @@ import type { Chapter } from '../types.ts';
 export const chapterQ05R3F: Chapter = {
   slug: 'q05-r3f',
   part: 'polish',
-  number: 11,
+  number: 13,
   title: 'React Three Fiber ― もうひとつの書き方',
   goal: 'R3F のコードを読めるようになり、自分の作品に入れるべきか・入れなくてよいかを、理由を持って判断できるようになります。',
   requires: ['t10-scene-graph', 't06-loop-clock', 'q04-custom-pass'],
