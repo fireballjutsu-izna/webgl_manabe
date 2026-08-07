@@ -19,13 +19,13 @@ export const chapterT14: Chapter = {
       text: `
 ## 画素ごとに、自分がどこにいるかを知っている
 
-フラグメントシェーダの仕事は 1 つだけ——**この画素を何色にするか**を決めることです。
+フラグメントシェーダの仕事は 1 つだけ――**この画素を何色にするか**を決めることです。
 
 手がかりになるのは、頂点シェーダから \`varying\` で届いた値です。
 なかでも **UV**（[](#/ch/t04-texture)）が主役になります。
 「面の中で自分がどこにいるか」が 0〜1 で分かるので、そこから模様を組み立てます。
 
-**画像を貼るのではなく、計算で模様を作る**——これがシェーダの醍醐味です。
+**画像を貼るのではなく、計算で模様を作る**――これがシェーダの醍醐味です。
 拡大しても粗くならず、ファイルも要りません。
 `,
     },
@@ -51,7 +51,7 @@ export const chapterT14: Chapter = {
       kind: 'formula',
       tex: '\\mathrm{smoothstep}(a, b, x) = t^2(3 - 2t), \\quad t = \\mathrm{clamp}\\!\\left(\\tfrac{x-a}{b-a}, 0, 1\\right)',
       readAloud:
-        'x が a のとき 0、b のとき 1 になり、そのあいだをなめらかに繋ぐ関数です。第1部の第8章で出てきたイージングの式と同じものが、ここでも使われています。ふちのギザギザを消すのに欠かせません。',
+        'x が a のとき 0、b のとき 1 になり、そのあいだをなめらかに繋ぐ関数です。[](#/ch/b36-smoothstep)で出てきた式と同じものが、ここでも使われています。ふちのギザギザを消すのに欠かせません。',
       worked: {
         given: '$a = 0.3$、$b = 0.5$ として、3 つの $x$ を通します。',
         steps: [
@@ -171,7 +171,7 @@ GPU は「隣とまとめて同じ計算をする」ことで速さを稼いで�
       kind: 'formula',
       tex: '\\text{明るさ} = \\max\\!\\left(0,\\; \\mathbf{n}\\cdot\\mathbf{l}\\right)',
       readAloud:
-        '第1部の第11章で出てきた式と、一字一句同じものです。GLSL では max(dot(n, l), 0.0) と書きます。dot がそのまま内積の関数として用意されています。',
+        '[](#/ch/b27-lambert)で出てきた式と、一字一句同じものです。GLSL では max(dot(n, l), 0.0) と書きます。dot がそのまま内積の関数として用意されています。',
       worked: {
         given: '真上を向いた面 $\\mathbf{n} = (0,\\,1,\\,0)$ に、斜めの光 $\\mathbf{l} = (0.6,\\,0.8,\\,0)$ が当たったとき。',
         steps: [
@@ -247,12 +247,12 @@ const material = new THREE.ShaderMaterial({
       // 光の向き。時間でぐるりと回す
       vec3 l = normalize(vec3(cos(uTime * 0.7), 0.6, sin(uTime * 0.7)));
 
-      // --- ランバート：明るさ＝法線と光の内積（第1部 第3章・第11章） ---
+      // --- ランバート：明るさ＝法線と光の内積（法線と光の内積） ---
       float diffuse = max(dot(n, l), 0.0);
 
       // --- てかり：反射ベクトルとカメラの向きの内積 ---
       vec3 toCamera = normalize(-vViewPosition);   // ビュー空間ではカメラが原点
-      vec3 reflected = reflect(-l, n);             // 第1部 第11章の反射ベクトル
+      vec3 reflected = reflect(-l, n);             // 反射ベクトル
       float specular = pow(max(dot(reflected, toCamera), 0.0), uShininess);
 
       // 影の中が真っ黒に潰れないよう、わずかに底上げする

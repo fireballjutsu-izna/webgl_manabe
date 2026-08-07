@@ -14,7 +14,7 @@ export const chapter05: Chapter = {
       text: `
 ## まず、どこで困るか
 
-\`mesh.rotation.y = 90\` と書いて、90 度どころか物体が何周もして訳が分からなくなる——
+\`mesh.rotation.y = 90\` と書いて、90 度どころか物体が何周もして訳が分からなくなる――
 Three.js を触りはじめた誰もが通る道です。
 
 原因は単位です。**Three.js の角度は「度」ではありません。**

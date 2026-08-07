@@ -64,7 +64,7 @@ export const chapterT13: Chapter = {
       kind: 'formula',
       tex: 'y\' = y + A\\,\\sin(k\\,x + \\omega t)',
       readAloud:
-        '新しい高さは、もとの高さに波を足したものです。A が波の高さ、k が細かさ、ω が進む速さ。第1部の第5章で出てきた式と、まったく同じものです。',
+        '新しい高さは、もとの高さに波を足したものです。A が波の高さ、k が細かさ、ω が進む速さ。[](#/ch/05-trig)で出てきた式と、まったく同じものです。',
       worked: {
         given: '$A = 0.3$、$k = 4$、$t = 0$ で、$x = 0.3927$ の頂点を見ます（もとの高さは $y = 0$）。',
         steps: [
@@ -191,7 +191,7 @@ GLSL では \`mat2\` を作って掛けるのがいちばん短く書けます�
       kind: 'formula',
       tex: '\\begin{pmatrix} x\' \\\\ z\' \\end{pmatrix} = \\begin{pmatrix} \\cos\\theta & -\\sin\\theta \\\\ \\sin\\theta & \\cos\\theta \\end{pmatrix} \\begin{pmatrix} x \\\\ z \\end{pmatrix}',
       readAloud:
-        '平面の中で角度 θ だけ回す行列です。第1部の第6章で見た回転行列の、2 次元版そのものです。y はそのままなので、y 軸まわりの回転になります。',
+        '平面の中で角度 θ だけ回す行列です。[](#/ch/07-rotation)で見た回転行列の、2 次元版そのものです。y はそのままなので、y 軸まわりの回転になります。',
       worked: {
         given: '$\\theta = 90$ 度で、$(x,\\, z) = (1,\\, 0)$ の点を回します。',
         steps: [
@@ -236,7 +236,7 @@ const material = new THREE.ShaderMaterial({
     uniform float uTwist;
     varying vec3 vNormal;
 
-    // 平面の中で角度 angle だけ回す行列（第1部 第6章の 2 次元版）
+    // 平面の中で角度 angle だけ回す行列（回転行列の 2 次元版）
     mat2 rotate2d(float angle) {
       float c = cos(angle);
       float s = sin(angle);
@@ -263,7 +263,7 @@ const material = new THREE.ShaderMaterial({
     varying vec3 vNormal;
 
     void main() {
-      // 仮の陰影。法線と決め打ちの光の向きの内積（第1部 第3章）
+      // 仮の陰影。法線と決め打ちの光の向きの内積（法線と光の内積）
       vec3 lightDir = normalize(vec3(0.5, 0.8, 0.6));
       float brightness = max(dot(normalize(vNormal), lightDir), 0.0);
 
@@ -331,7 +331,7 @@ void main() {
   vec3 dx = displaced(position + vec3(e, 0.0, 0.0)) - here;
   vec3 dz = displaced(position + vec3(0.0, 0.0, e)) - here;
 
-  // 2辺の外積が、動かしたあとの面の法線（第1部 第4章）
+  // 2辺の外積が、動かしたあとの面の法線（外積）
   vNormal = normalize(cross(dz, dx));
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(here, 1.0);
